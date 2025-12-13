@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uchiyoso SNS Maker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-color: #f3f4f6;
+            --chat-bg: #7494c0; /* LINE風の背景色 */
+            --my-bubble: #8de055;
+            --other-bubble: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #e0e7ff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            gap: 40px;
+        }
+
+        /* --- エディタエリア (左側) --- */
+        .editor-panel {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 350px;
+            position: sticky;
+            top: 20px;
+        }
+        h1 { font-size: 1.2rem; margin-top: 0; color: var(--primary-color); }
+        
+        .control-group { margin-bottom: 16px; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-add { background-color: var(--primary-color); color: white; }
+        .btn-add:hover { background-color: #4338ca; }
+        
+        .btn-save { background-color: #10b981; color: white; margin-top: 20px; width: 100%; }
+        .btn-clear { background-color: #ef4444; color: white; }
+
+        /* --- プレビューエリア (右側・スマホ画面) --- */
+        .preview-container {
+            width: 375px; /* 一般的なスマホ幅 */
+            height: 700px; /* スマホ縦幅 */
+            background-color: #000;
+            border-radius: 30px;
+            padding: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        /* スマホ画面の中身 */
+        #capture-area {
+            width: 100%;
+            height: 100%;
+            background-color: var(--chat-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ヘッダー風 */
+        .chat-header {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #ccc;
+            z-index: 10;
+        }
+
+        /* チャットエリア */
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 吹き出し共通 */
+        .message-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 100%;
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-width: 240px;
+            position: relative;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* 改行を反映 */
+        }
+        
+        .name-label {
+            font-size: 0.7rem;
+            color: #333;
+            margin-bottom: 4px;
+            margin-left: 2px;
+        }
+
+        /* 相手（左側） */
+        .message-row.other .bubble {
+            background-color: var(--other-bubble);
+            color: #000;
+            border-top-left-radius: 2px;
+        }
+
+        /* 自分（右側） */
+        .message-row.me {
+            flex-direction: row-reverse;
+        }
+        .message-row.me .bubble {
+            background-color: var(--my-bubble);
+            color: #000;
+            border-top-right-radius: 2px;
+        }
+        .message-row.me .name-label, 
+        .message-row.me .icon {
+            display: none; /* 自分側のアイコン・名前は通常出さない */
+        }
+
+        /* 画像生成時の隠し要素制御 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="editor-panel">
+        <h1>💬 Uchiyoso Maker</h1>
+        
+        <div class="control-group">
+            <label>キャラクター選択</label>
+            <select id="char-select"></select>
+        </div>
+
+        <div class="control-group">
+            <label>メッセージ内容</label>
+            <textarea id="message-input" rows="3" placeholder="ここにセリフを入力..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-add" onclick="addMessage()">送信 (追加)</button>
+            <button class="btn-clear" onclick="undoMessage()">1つ戻る</button>
+        </div>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+        <div class="control-group">
+            <label>設定</label>
+            <input type="text" id="group-name" placeholder="トークルーム名 (例: いつもの4人)" oninput="updateHeader()">
+        </div>
+
+        <button class="btn-save" onclick="saveImage()">📸 画像として保存</button>
+    </div>
+
+    <div class="preview-container">
+        <div id="capture-area">
+            <div class="chat-header" id="header-title">トークルーム</div>
+            <div class="chat-body hide-scrollbar" id="chat-body">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. キャラクター設定 (ここを自由に書き換えてください) ---
+        const characters = [
+            { 
+                id: 'char1', 
+                name: '主人公', 
+                icon: 'https://placehold.co/100x100/4f46e5/white?text=YOU', // 自分のアイコンURL
+                isMe: true // 自分の場合はtrue
+            },
+            { 
+                id: 'char2', 
+                name: 'ヒロイン', 
+                icon: 'https://placehold.co/100x100/ec4899/white?text=A', // 相手AのアイコンURL
+                isMe: false 
+            },
+            { 
+                id: 'char3', 
+                name: '親友キャラ', 
+                icon: 'https://placehold.co/100x100/10b981/white?text=B', // 相手BのアイコンURL
+                isMe: false 
+            }
+        ];
+
+        // --- 2. 初期化処理 ---
+        const charSelect = document.getElementById('char-select');
+        const chatBody = document.getElementById('chat-body');
+        const messageInput = document.getElementById('message-input');
+
+        // セレクトボックスにキャラを追加
+        characters.forEach(char => {
+            const option = document.createElement('option');
+            option.value = char.id;
+            option.textContent = char.name + (char.isMe ? " (自分)" : "");
+            charSelect.appendChild(option);
+        });
+
+        // --- 3. メッセージ追加機能 ---
+        function addMessage() {
+            const text = messageInput.value;
+            if (!text.trim()) return;
+
+            const selectedCharId = charSelect.value;
+            const char = characters.find(c => c.id === selectedCharId);
+
+            // メッセージ要素を作成
+            const row = document.createElement('div');
+            row.className = `message-row ${char.isMe ? 'me' : 'other'}`;
+
+            // アイコンと名前（相手の場合のみ表示）
+            let innerHTML = '';
+            if (!char.isMe) {
+                innerHTML += `
+                    <div class="icon" style="background-image: url('${char.icon}')"></div>
+                    <div>
+                        <div class="name-label">${char.name}</div>
+                        <div class="bubble">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            } else {
+                // 自分の場合
+                innerHTML += `
+                    <div class="bubble">${escapeHtml(text)}</div>
+                `;
+            }
+
+            row.innerHTML = innerHTML;
+            chatBody.appendChild(row);
+
+            // 最下部へスクロール
+            chatBody.scrollTop = chatBody.scrollHeight;
+            
+            // 入力欄クリア
+            messageInput.value = '';
+        }
+
+        // --- 4. ひとつ戻る機能 ---
+        function undoMessage() {
+            if (chatBody.lastChild) {
+                chatBody.removeChild(chatBody.lastChild);
+            }
+        }
+
+        // --- 5. ヘッダー更新 ---
+        function updateHeader() {
+            document.getElementById('header-title').textContent = document.getElementById('group-name').value || 'トークルーム';
+        }
+
+        // --- 6. 画像保存機能 (html2canvas使用) ---
+        function saveImage() {
+            const captureArea = document.getElementById('capture-area');
+            
+            // 一瞬スクロールバーなどを非表示にして撮影
+            html2canvas(captureArea, {
+                scale: 2, // 高解像度で保存
+                useCORS: true, // 外部画像許可
+                backgroundColor: null
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'uchiyoso_chat.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // XSS対策用エスケープ関数
+        function escapeHtml(str) {
+            if(!str) return str;
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
