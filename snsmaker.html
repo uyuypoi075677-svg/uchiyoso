@@ -3,334 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uchiyoso SNS Maker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>S N S - G E N | 創作画像メーカー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --primary-color: #4f46e5;
-            --bg-color: #f3f4f6;
-            --chat-bg: #7494c0; /* LINE風の背景色 */
-            --my-bubble: #8de055;
-            --other-bubble: #ffffff;
-        }
-
-        * { box-sizing: border-box; }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #e0e7ff;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            gap: 40px;
+            overflow-x: hidden;
         }
 
-        /* --- エディタエリア (左側) --- */
-        .editor-panel {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 350px;
-            position: sticky;
-            top: 20px;
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
-        h1 { font-size: 1.2rem; margin-top: 0; color: var(--primary-color); }
-        
-        .control-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
-        
-        select, input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-        
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        
-        button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .btn-add { background-color: var(--primary-color); color: white; }
-        .btn-add:hover { background-color: #4338ca; }
-        
-        .btn-save { background-color: #10b981; color: white; margin-top: 20px; width: 100%; }
-        .btn-clear { background-color: #ef4444; color: white; }
 
-        /* --- プレビューエリア (右側・スマホ画面) --- */
-        .preview-container {
-            width: 375px; /* 一般的なスマホ幅 */
-            height: 700px; /* スマホ縦幅 */
-            background-color: #000;
-            border-radius: 30px;
-            padding: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        /* Smartphone Frame CSS */
+        .phone-frame {
+            width: 375px;
+            height: 700px;
+            border-radius: 40px;
+            border: 12px solid #1a1a1a;
+            background: #fff;
             position: relative;
-        }
-
-        /* スマホ画面の中身 */
-        #capture-area {
-            width: 100%;
-            height: 100%;
-            background-color: var(--chat-bg);
-            border-radius: 20px;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
         }
 
-        /* ヘッダー風 */
-        .chat-header {
-            background: rgba(255,255,255,0.9);
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border-bottom: 1px solid #ccc;
-            z-index: 10;
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background: #1a1a1a;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 50;
         }
 
-        /* チャットエリア */
-        .chat-body {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* 吹き出し共通 */
-        .message-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-        }
-
-        .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #ccc;
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
-        }
-
-        .bubble {
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            max-width: 240px;
-            position: relative;
-            word-wrap: break-word;
-            white-space: pre-wrap; /* 改行を反映 */
-        }
-        
-        .name-label {
-            font-size: 0.7rem;
-            color: #333;
-            margin-bottom: 4px;
-            margin-left: 2px;
-        }
-
-        /* 相手（左側） */
-        .message-row.other .bubble {
-            background-color: var(--other-bubble);
-            color: #000;
-            border-top-left-radius: 2px;
-        }
-
-        /* 自分（右側） */
-        .message-row.me {
-            flex-direction: row-reverse;
-        }
-        .message-row.me .bubble {
-            background-color: var(--my-bubble);
-            color: #000;
-            border-top-right-radius: 2px;
-        }
-        .message-row.me .name-label, 
-        .message-row.me .icon {
-            display: none; /* 自分側のアイコン・名前は通常出さない */
-        }
-
-        /* 画像生成時の隠し要素制御 */
-        .hide-scrollbar::-webkit-scrollbar {
+        /* Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar {
             display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* LINE Style Balloon */
+        .balloon-left {
+            background: #f0f0f0;
+            border-radius: 20px;
+            border-top-left-radius: 5px;
+            position: relative;
+        }
+        .balloon-right {
+            background: #8de055;
+            border-radius: 20px;
+            border-top-right-radius: 5px;
+            position: relative;
+        }
+
+        /* Animation */
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body>
+<body class="text-gray-800 flex items-center justify-center p-4 lg:p-10">
 
-    <div class="editor-panel">
-        <h1>💬 Uchiyoso Maker</h1>
-        
-        <div class="control-group">
-            <label>キャラクター選択</label>
-            <select id="char-select"></select>
+    <div class="flex flex-col lg:flex-row gap-10 w-full max-w-7xl items-start justify-center">
+
+        <div class="glass-panel rounded-3xl p-8 w-full lg:w-1/2 fade-in-up">
+            <h1 class="text-3xl font-bold text-white mb-6 tracking-widest">SNS MAKER</h1>
+            
+            <div class="flex gap-4 mb-8">
+                <button class="bg-white text-purple-700 px-6 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition">LINE Mode</button>
+                <button class="bg-white/30 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition" disabled>Insta Mode (WIP)</button>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-white text-sm font-bold mb-2">Character Select</label>
+                <div class="flex gap-4 overflow-x-auto pb-2" id="char-list">
+                    </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-white text-sm font-bold mb-2">Message</label>
+                <textarea id="message-input" rows="3" class="w-full p-4 rounded-xl border-none focus:ring-2 focus:ring-purple-400 outline-none bg-white/90" placeholder="セリフを入力..."></textarea>
+            </div>
+
+            <div class="flex gap-4 mb-8">
+                <button onclick="addMessage()" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold py-3 rounded-xl shadow-lg hover:opacity-90 transition transform active:scale-95">
+                    送信 (Add)
+                </button>
+                <button onclick="clearChat()" class="px-6 bg-red-400 text-white font-bold rounded-xl shadow-lg hover:bg-red-500 transition">
+                    Reset
+                </button>
+            </div>
+
+            <hr class="border-white/30 mb-8">
+
+            <button onclick="downloadImage()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                画像を保存する
+            </button>
         </div>
 
-        <div class="control-group">
-            <label>メッセージ内容</label>
-            <textarea id="message-input" rows="3" placeholder="ここにセリフを入力..."></textarea>
-        </div>
+        <div class="relative fade-in-up" style="animation-delay: 0.2s;">
+            <div class="phone-frame">
+                <div class="phone-notch"></div>
+                
+                <div id="capture-area" class="w-full h-full bg-[#7293c6] flex flex-col pt-12">
+                    <div class="px-4 pb-2 flex items-center bg-[#6582b0]/90 backdrop-blur-sm z-10 shadow-sm">
+                        <div class="text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </div>
+                        <div class="ml-4 text-white font-bold text-lg" id="group-title">創作グループ</div>
+                        <div class="ml-auto text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </div>
+                    </div>
 
-        <div class="btn-group">
-            <button class="btn-add" onclick="addMessage()">送信 (追加)</button>
-            <button class="btn-clear" onclick="undoMessage()">1つ戻る</button>
-        </div>
+                    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-[#7293c6]">
+                        </div>
 
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-
-        <div class="control-group">
-            <label>設定</label>
-            <input type="text" id="group-name" placeholder="トークルーム名 (例: いつもの4人)" oninput="updateHeader()">
-        </div>
-
-        <button class="btn-save" onclick="saveImage()">📸 画像として保存</button>
-    </div>
-
-    <div class="preview-container">
-        <div id="capture-area">
-            <div class="chat-header" id="header-title">トークルーム</div>
-            <div class="chat-body hide-scrollbar" id="chat-body">
+                    <div class="h-14 bg-white flex items-center px-3 gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gray-200"></div>
+                        <div class="flex-1 h-8 bg-gray-100 rounded-full"></div>
+                    </div>
                 </div>
+            </div>
+            <p class="text-white text-center mt-4 text-sm opacity-80">※プレビュー画面がそのまま画像になります</p>
         </div>
+
     </div>
 
     <script>
-        // --- 1. キャラクター設定 (ここを自由に書き換えてください) ---
+        // 1. Initial Data (Characters)
         const characters = [
-            { 
-                id: 'char1', 
-                name: '主人公', 
-                icon: 'https://placehold.co/100x100/4f46e5/white?text=YOU', // 自分のアイコンURL
-                isMe: true // 自分の場合はtrue
-            },
-            { 
-                id: 'char2', 
-                name: 'ヒロイン', 
-                icon: 'https://placehold.co/100x100/ec4899/white?text=A', // 相手AのアイコンURL
-                isMe: false 
-            },
-            { 
-                id: 'char3', 
-                name: '親友キャラ', 
-                icon: 'https://placehold.co/100x100/10b981/white?text=B', // 相手BのアイコンURL
-                isMe: false 
-            }
+            { id: 'char1', name: '主人公', color: 'bg-blue-500', icon: 'https://placehold.co/100x100/3b82f6/ffffff?text=A' },
+            { id: 'char2', name: 'ヒロイン', color: 'bg-pink-500', icon: 'https://placehold.co/100x100/ec4899/ffffff?text=B' },
+            { id: 'me', name: '自分', color: 'bg-green-500', icon: '' } // Special type
         ];
 
-        // --- 2. 初期化処理 ---
-        const charSelect = document.getElementById('char-select');
-        const chatBody = document.getElementById('chat-body');
-        const messageInput = document.getElementById('message-input');
+        let selectedCharId = 'char1';
 
-        // セレクトボックスにキャラを追加
-        characters.forEach(char => {
-            const option = document.createElement('option');
-            option.value = char.id;
-            option.textContent = char.name + (char.isMe ? " (自分)" : "");
-            charSelect.appendChild(option);
-        });
+        // 2. Render Character Selection UI
+        function renderCharSelector() {
+            const container = document.getElementById('char-list');
+            container.innerHTML = '';
 
-        // --- 3. メッセージ追加機能 ---
+            characters.forEach(char => {
+                const isSelected = char.id === selectedCharId;
+                const div = document.createElement('div');
+                div.className = `cursor-pointer transition transform hover:scale-110 flex flex-col items-center min-w-[60px]`;
+                div.onclick = () => {
+                    selectedCharId = char.id;
+                    renderCharSelector();
+                };
+
+                div.innerHTML = `
+                    <div class="w-14 h-14 rounded-full border-4 ${isSelected ? 'border-yellow-400' : 'border-transparent'} overflow-hidden shadow-md">
+                        ${char.icon ? `<img src="${char.icon}" class="w-full h-full object-cover">` : '<div class="w-full h-full bg-gray-300 flex items-center justify-center text-gray-500 text-xs">Me</div>'}
+                    </div>
+                    <span class="text-white text-xs mt-1 font-bold ${isSelected ? 'opacity-100' : 'opacity-70'}">${char.name}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 3. Add Message Logic
         function addMessage() {
-            const text = messageInput.value;
-            if (!text.trim()) return;
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
 
-            const selectedCharId = charSelect.value;
+            const container = document.getElementById('chat-container');
             const char = characters.find(c => c.id === selectedCharId);
+            
+            const msgDiv = document.createElement('div');
+            
+            // Current Time
+            const now = new Date();
+            const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-            // メッセージ要素を作成
-            const row = document.createElement('div');
-            row.className = `message-row ${char.isMe ? 'me' : 'other'}`;
-
-            // アイコンと名前（相手の場合のみ表示）
-            let innerHTML = '';
-            if (!char.isMe) {
-                innerHTML += `
-                    <div class="icon" style="background-image: url('${char.icon}')"></div>
-                    <div>
-                        <div class="name-label">${char.name}</div>
-                        <div class="bubble">${escapeHtml(text)}</div>
+            if (char.id === 'me') {
+                // Right Side (Me)
+                msgDiv.className = "flex justify-end items-end gap-2 fade-in-up";
+                msgDiv.innerHTML = `
+                    <div class="text-[10px] text-white/90 pb-1">${timeStr}</div>
+                    <div class="balloon-right py-2 px-4 max-w-[70%] text-sm text-gray-800 shadow-sm leading-relaxed whitespace-pre-wrap">
+                        ${text}
                     </div>
                 `;
             } else {
-                // 自分の場合
-                innerHTML += `
-                    <div class="bubble">${escapeHtml(text)}</div>
+                // Left Side (Other)
+                msgDiv.className = "flex justify-start items-start gap-2 fade-in-up";
+                msgDiv.innerHTML = `
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-300 border border-gray-100 shadow-sm">
+                            <img src="${char.icon}" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-start max-w-[70%]">
+                        <span class="text-[10px] text-white ml-1 mb-[2px]">${char.name}</span>
+                        <div class="flex items-end gap-2">
+                            <div class="balloon-left py-2 px-4 text-sm text-gray-800 shadow-sm leading-relaxed whitespace-pre-wrap">
+                                ${text}
+                            </div>
+                            <div class="text-[10px] text-white/90 pb-1">${timeStr}</div>
+                        </div>
+                    </div>
                 `;
             }
 
-            row.innerHTML = innerHTML;
-            chatBody.appendChild(row);
-
-            // 最下部へスクロール
-            chatBody.scrollTop = chatBody.scrollHeight;
+            container.appendChild(msgDiv);
             
-            // 入力欄クリア
-            messageInput.value = '';
+            // Auto scroll to bottom
+            container.scrollTop = container.scrollHeight;
+            input.value = '';
+            input.focus();
         }
 
-        // --- 4. ひとつ戻る機能 ---
-        function undoMessage() {
-            if (chatBody.lastChild) {
-                chatBody.removeChild(chatBody.lastChild);
-            }
+        function clearChat() {
+            document.getElementById('chat-container').innerHTML = '';
         }
 
-        // --- 5. ヘッダー更新 ---
-        function updateHeader() {
-            document.getElementById('header-title').textContent = document.getElementById('group-name').value || 'トークルーム';
-        }
-
-        // --- 6. 画像保存機能 (html2canvas使用) ---
-        function saveImage() {
+        // 4. Image Export Logic
+        function downloadImage() {
             const captureArea = document.getElementById('capture-area');
             
-            // 一瞬スクロールバーなどを非表示にして撮影
+            // Temporarily remove border radius for clean capture or keep it based on preference
+            // Here we capture specifically the inner screen area
+            
             html2canvas(captureArea, {
-                scale: 2, // 高解像度で保存
-                useCORS: true, // 外部画像許可
+                scale: 2, // High resolution
+                useCORS: true, // Allow external images
+                logging: false,
                 backgroundColor: null
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'uchiyoso_chat.png';
+                link.download = 'sns_scene.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
         }
 
-        // XSS対策用エスケープ関数
-        function escapeHtml(str) {
-            if(!str) return str;
-            return str.replace(/[&<>"']/g, function(m) {
-                return {
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#039;'
-                }[m];
-            });
-        }
+        // Initialize
+        renderCharSelector();
     </script>
 </body>
 </html>
