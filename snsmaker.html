@@ -923,6 +923,13 @@
              icons.forEach(icon => {
                  icon.style.transform = 'translateY(-5px)';
              });
+             
+             // 4. CALL ICON FIX (NEW - Added for Phone Icon Alignment)
+             // html2canvas renders the phone icon too low. We lift it up specifically during capture.
+             const callIcons = clonedDoc.querySelectorAll('.call-icon-circle i, .call-active-widget i');
+             callIcons.forEach(icon => {
+                 icon.style.transform = 'translateY(-5px)'; // Lift icon up
+             });
         }
 
         function downloadPhoneView() {
