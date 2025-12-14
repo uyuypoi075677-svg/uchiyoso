@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNS Maker v1.3 Chocolat Mer</title>
+    <title>SNS Maker v1.6 Chocolat Mer (Call UI Tweak)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,12 +35,12 @@
             gap: 1.5rem;
         }
 
-        /* Phone Frame */
+        /* Phone Frame - LARGER SIZE */
         .phone-frame {
-            width: 420px;
-            height: 900px;
-            border-radius: 55px;
-            border: 14px solid #1c1c1e;
+            width: 480px;
+            height: 1020px;
+            border-radius: 60px;
+            border: 16px solid #1c1c1e;
             background: #fff;
             position: relative;
             overflow: hidden;
@@ -53,20 +53,20 @@
         .notch {
             position: absolute;
             top: 0; left: 50%; transform: translateX(-50%);
-            width: 160px; height: 34px; background: #1c1c1e;
-            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+            width: 180px; height: 36px; background: #1c1c1e;
+            border-bottom-left-radius: 22px; border-bottom-right-radius: 22px;
             z-index: 50;
         }
         
         .status-bar-bg {
             background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
             z-index: 40;
-            height: 50px;
+            height: 54px;
         }
         
         .app-header {
-            height: 90px;
-            padding-top: 45px; 
+            height: 96px;
+            padding-top: 48px; 
             background: rgba(132, 158, 191, 0.95);
             backdrop-filter: blur(4px);
             z-index: 30;
@@ -90,20 +90,20 @@
         /* --- BUBBLE STYLE --- */
         .bubble-wrapper {
             display: flex;
-            align-items: flex-end; /* 時間位置修正: 下揃え */
+            align-items: flex-end;
             max-width: 100%;
         }
 
         .bubble {
             position: relative;
-            padding: 8px 12px;
-            border-radius: 18px;
-            font-size: 15px;
+            padding: 9px 14px;
+            border-radius: 20px;
+            font-size: 16px;
             line-height: 1.4;
-            min-height: 38px;
+            min-height: 40px;
             display: flex;
             align-items: center;
-            max-width: 260px;
+            max-width: 300px;
             word-wrap: break-word;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
             flex-shrink: 0;
@@ -136,18 +136,29 @@
             border-bottom: 6px solid transparent;
         }
 
-        /* --- CALL & PHOTO STYLES --- */
+        /* --- CALL & PHOTO STYLES (TWEAKED) --- */
+        .call-active-widget {
+            background: #242424; 
+            color: white; 
+            border-radius: 20px; 
+            padding: 16px; 
+            min-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Call History Bubbles */
         .call-history-bubble {
-            border-radius: 18px;
-            padding: 10px 12px;
+            border-radius: 20px;
+            padding: 14px 16px; /* Tweaked padding for better balance */
             display: flex;
             align-items: center;
-            gap: 10px;
-            min-width: 180px;
+            gap: 12px;
+            min-width: 220px;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
             position: relative;
             z-index: 1;
         }
+        
         .call-history-bubble.left { background: #ffffff; color: #242424; margin-left: 6px; border-top-left-radius: 0; }
         .call-history-bubble.left::before {
             content: ""; position: absolute; top: 0; left: -6px; width: 0; height: 0;
@@ -158,24 +169,31 @@
             content: ""; position: absolute; top: 0; right: -6px; width: 0; height: 0;
             border-top: 0px solid transparent; border-left: 6px solid var(--line-green); border-bottom: 6px solid transparent;
         }
-        .call-icon-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        
+        /* Icon Circle Size Tweak */
+        .call-icon-circle {
+            width: 42px;  /* Slightly larger */
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px; /* Slightly larger font */
+            flex-shrink: 0;
+        }
         .call-history-bubble.left .call-icon-circle { background: #f0f0f0; color: #242424; }
         .call-history-bubble.right .call-icon-circle { background: rgba(0,0,0,0.1); color: #242424; }
-        
-        .call-active-widget {
-            background: #242424; color: white; border-radius: 20px; padding: 14px; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
 
-        .photo-msg { border-radius: 14px; border: 1px solid rgba(0,0,0,0.1); max-width: 200px; }
+        .photo-msg { border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); max-width: 240px; }
 
         .meta-text {
-            font-size: 9px; color: #fff; line-height: 1.2;
+            font-size: 10px; color: #fff; line-height: 1.2;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             white-space: nowrap;
         }
         
         .header-count { box-shadow: none !important; text-shadow: none !important; }
-        .footer-icon { font-size: 1.5rem; color: #2e353d; cursor: pointer; }
+        .footer-icon { font-size: 1.6rem; color: #2e353d; cursor: pointer; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         [contenteditable="true"]:focus { outline: 2px solid #a78bfa; background: rgba(255,255,255,0.3); border-radius: 4px; }
@@ -183,7 +201,7 @@
 </head>
 <body class="flex items-center justify-center p-4 min-h-screen">
 
-    <div class="grid grid-cols-1 xl:grid-cols-[340px_auto_340px] gap-6 w-full max-w-[1800px] items-start h-[95vh]">
+    <div class="grid grid-cols-1 xl:grid-cols-[340px_auto_340px] gap-8 w-full max-w-[1900px] items-start h-[95vh]">
 
         <div class="glass-panel p-6 h-full overflow-y-auto no-scrollbar order-2 xl:order-1">
             
@@ -280,52 +298,52 @@
                     <div class="flex gap-1.5 text-white items-center">
                         <i class="fa-solid fa-signal text-[14px]"></i>
                         <i class="fa-solid fa-wifi text-[14px]"></i>
-                        <i class="fa-solid fa-battery-full text-[20px]"></i>
+                        <i class="fa-solid fa-battery-full text-[22px]"></i>
                     </div>
                 </div>
 
-                <div class="app-header flex items-end px-4 pb-3 justify-between sticky top-0 border-b border-black/5">
+                <div class="app-header flex items-end px-5 pb-4 justify-between sticky top-0 border-b border-black/5">
                     <div class="flex items-center gap-1 text-white cursor-pointer hover:opacity-70 pb-1">
                         <i class="fa-solid fa-chevron-left text-2xl"></i>
                         <span id="header-group-count" class="text-sm font-bold ml-1 hidden" contenteditable="true"></span>
                     </div>
                     
-                    <div class="text-white font-bold text-lg flex-1 ml-4 outline-none header-count pb-1 truncate" contenteditable="true" spellcheck="false" id="header-name">鱸</div>
+                    <div class="text-white font-bold text-xl flex-1 ml-4 outline-none header-count pb-1 truncate" contenteditable="true" spellcheck="false" id="header-name">鱸</div>
                     
-                    <div class="flex items-center gap-6 text-white pb-1 mr-1">
-                        <i class="fa-solid fa-magnifying-glass text-xl"></i>
-                        <i class="fa-solid fa-phone text-xl"></i>
-                        <i class="fa-solid fa-bars text-2xl"></i>
+                    <div class="flex items-center gap-7 text-white pb-1 mr-1">
+                        <i class="fa-solid fa-magnifying-glass text-2xl"></i>
+                        <i class="fa-solid fa-phone text-2xl"></i>
+                        <i class="fa-solid fa-bars text-3xl"></i>
                     </div>
                 </div>
 
-                <div id="capture-area" class="flex-1 chat-area-container overflow-y-auto p-4 space-y-1 no-scrollbar flex flex-col pb-4">
+                <div id="capture-area" class="flex-1 chat-area-container overflow-y-auto p-5 space-y-1 no-scrollbar flex flex-col pb-6">
                     <div class="bg-overlay" id="bg-overlay-layer"></div>
-                    <div class="flex justify-center my-2 relative z-10">
-                        <span class="bg-black/10 text-white text-[10px] px-3 py-1 rounded-full cursor-text date-label" contenteditable="true">今日</span>
+                    <div class="flex justify-center my-3 relative z-10">
+                        <span class="bg-black/10 text-white text-[11px] px-3 py-1 rounded-full cursor-text date-label" contenteditable="true">今日</span>
                     </div>
                     <div class="flex justify-start items-end gap-2 relative z-10">
-                        <img src="images/icons/lineicon-syu.png" onerror="this.src='https://placehold.co/100x100/orange/white?text=S'" class="w-11 h-11 rounded-full mb-auto border border-gray-300 bg-white object-cover">
+                        <img src="images/icons/lineicon-syu.png" onerror="this.src='https://placehold.co/100x100/orange/white?text=S'" class="w-12 h-12 rounded-full mb-auto border border-gray-300 bg-white object-cover">
                         <div>
                             <div class="bubble-wrapper">
                                 <div class="bubble bubble-left" contenteditable="true">サンプル</div>
                                 <div class="flex flex-col justify-end min-w-[30px] ml-1 pb-1">
-                                    <span class="meta-text text-[9px] text-white/80" contenteditable="true">18:20</span>
+                                    <span class="meta-text text-[10px] text-white/80" contenteditable="true">18:20</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white px-3 py-2 pb-6 border-t border-gray-200 flex items-center gap-4 shrink-0 z-20">
-                    <i class="fa-solid fa-plus footer-icon text-2xl"></i>
-                    <i class="fa-solid fa-camera footer-icon text-2xl"></i>
-                    <i class="fa-regular fa-image footer-icon text-2xl"></i>
-                    <div class="flex-1 bg-[#f2f2f2] rounded-full h-10 flex items-center px-3 justify-end relative cursor-text">
-                        <div class="absolute left-3 right-8 text-gray-800 text-sm overflow-hidden h-8 top-1 outline-none leading-8" contenteditable="true"></div>
-                        <i class="fa-regular fa-face-smile text-gray-500 text-xl cursor-pointer"></i>
+                <div class="bg-white px-4 py-3 pb-8 border-t border-gray-200 flex items-center gap-5 shrink-0 z-20">
+                    <i class="fa-solid fa-plus footer-icon text-3xl"></i>
+                    <i class="fa-solid fa-camera footer-icon text-3xl"></i>
+                    <i class="fa-regular fa-image footer-icon text-3xl"></i>
+                    <div class="flex-1 bg-[#f2f2f2] rounded-full h-11 flex items-center px-3 justify-end relative cursor-text">
+                        <div class="absolute left-3 right-8 text-gray-800 text-base overflow-hidden h-9 top-1 outline-none leading-9" contenteditable="true"></div>
+                        <i class="fa-regular fa-face-smile text-gray-500 text-2xl cursor-pointer"></i>
                     </div>
-                    <i class="fa-solid fa-microphone footer-icon text-xl"></i>
+                    <i class="fa-solid fa-microphone footer-icon text-2xl"></i>
                 </div>
             </div>
         </div>
@@ -502,11 +520,11 @@
                 const isEmoji = char.icon && !char.icon.includes('/') && !char.icon.includes('data:image');
                 
                 if (char.type === 'me') {
-                    iconHtml = `<div class="w-11 h-11 rounded-full bg-green-500 border-2 border-white flex items-center justify-center text-white text-[10px] shadow font-bold">自分</div>`;
+                    iconHtml = `<div class="w-12 h-12 rounded-full bg-green-500 border-2 border-white flex items-center justify-center text-white text-[10px] shadow font-bold">自分</div>`;
                 } else if (isEmoji) {
-                    iconHtml = `<div class="w-11 h-11 rounded-full bg-white border-2 border-white flex items-center justify-center text-2xl shadow">${char.icon}</div>`;
+                    iconHtml = `<div class="w-12 h-12 rounded-full bg-white border-2 border-white flex items-center justify-center text-2xl shadow">${char.icon}</div>`;
                 } else {
-                    iconHtml = `<img src="${char.icon}" onerror="this.src='https://placehold.co/100x100/gray/white?text=${char.name.charAt(0)}'" class="w-11 h-11 rounded-full border-2 border-white shadow object-cover">`;
+                    iconHtml = `<img src="${char.icon}" onerror="this.src='https://placehold.co/100x100/gray/white?text=${char.name.charAt(0)}'" class="w-12 h-12 rounded-full border-2 border-white shadow object-cover">`;
                 }
                 div.innerHTML = `${iconHtml}<span class="text-[9px] text-gray-500 mt-1 font-bold truncate max-w-[50px]">${char.name}</span>`;
                 container.appendChild(div);
@@ -638,13 +656,13 @@
             if(!label) return;
             const container = document.getElementById('capture-area');
             const div = document.createElement('div');
-            div.className = "flex justify-center my-4 relative z-10";
-            div.innerHTML = `<span class="bg-black/10 text-white text-[10px] px-3 py-1 rounded-full cursor-text date-label" contenteditable="true">${label}</span>`;
+            div.className = "flex justify-center my-3 relative z-10";
+            div.innerHTML = `<span class="bg-black/10 text-white text-[11px] px-3 py-1 rounded-full cursor-text date-label" contenteditable="true">${label}</span>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
 
-        // --- Chat Generation ---
+        // --- Chat Generation (TWEAKED) ---
         function addToChat() {
             const container = document.getElementById('capture-area');
             const char = characters.find(c => c.id === state.selectedCharId);
@@ -662,7 +680,7 @@
             }
             else if (state.mode === 'sticker') {
                 if (!state.selectedStickerSrc) return;
-                contentHtml = `<img src="${state.selectedStickerSrc}" class="rounded-lg max-w-[140px] relative z-10">`;
+                contentHtml = `<img src="${state.selectedStickerSrc}" class="rounded-lg max-w-[150px] relative z-10">`;
             }
             else if (state.mode === 'photo') {
                 if (!state.uploadedPhotoSrc) { alert('写真を選択してください'); return; }
@@ -687,16 +705,27 @@
                         </div>`;
                 } else {
                     let iconClass = ''; let title = '';
-                    if (status === 'voice') { iconClass = 'fa-solid fa-phone'; title = '音声通話'; } 
-                    else if (status === 'cancel') { iconClass = 'fa-solid fa-phone-slash'; title = 'キャンセル'; } 
-                    else if (status === 'noanswer') { iconClass = 'fa-solid fa-phone-slash'; title = '応答なし'; }
+                    // 時間表示用のHTMLを準備（デフォルトは表示）
+                    let durationHtml = `<div class="text-[10px] opacity-70" contenteditable="true">${duration}</div>`;
+
+                    if (status === 'voice') {
+                        iconClass = 'fa-solid fa-phone'; title = '音声通話';
+                    } 
+                    else if (status === 'cancel') {
+                        iconClass = 'fa-solid fa-phone-slash'; title = 'キャンセル';
+                        durationHtml = ''; // キャンセルは時間を非表示
+                    } 
+                    else if (status === 'noanswer') {
+                        iconClass = 'fa-solid fa-phone-slash'; title = '応答なし';
+                        durationHtml = ''; // 応答なしは時間を非表示
+                    }
                     const sideClass = isMe ? 'right' : 'left';
                     contentHtml = `
                         <div class="call-history-bubble ${sideClass}">
                             <div class="call-icon-circle"><i class="${iconClass}"></i></div>
-                            <div class="flex flex-col">
-                                <div class="text-sm font-bold" contenteditable="true">${title}</div>
-                                <div class="text-[10px] opacity-70" contenteditable="true">${duration}</div>
+                            <div class="flex flex-col justify-center">
+                                <div class="text-sm font-bold leading-tight" contenteditable="true">${title}</div>
+                                ${durationHtml}
                             </div>
                         </div>`;
                 }
@@ -717,8 +746,8 @@
                 } else {
                     msgRow.innerHTML = `
                         <div class="flex flex-col items-end min-w-[30px] text-right pb-1">
-                            <span class="meta-text text-[9px] text-white mb-[1px] cursor-pointer" contenteditable="true">${readLabel}</span>
-                            <span class="meta-text text-[9px] text-white/80 cursor-pointer" contenteditable="true">${timeStr}</span>
+                            <span class="meta-text text-[10px] text-white mb-[1px] cursor-pointer" contenteditable="true">${readLabel}</span>
+                            <span class="meta-text text-[10px] text-white/80 cursor-pointer" contenteditable="true">${timeStr}</span>
                         </div>
                         <div class="bubble-wrapper">${contentHtml}</div>
                     `;
@@ -729,8 +758,8 @@
                 } else {
                     const isEmoji = char.icon && !char.icon.includes('/') && !char.icon.includes('data:image');
                     const iconHtml = isEmoji 
-                        ? `<div class="w-11 h-11 rounded-full bg-white border border-gray-300 flex items-center justify-center text-2xl mb-auto shrink-0">${char.icon}</div>`
-                        : `<img src="${char.icon}" onerror="this.src='https://placehold.co/100x100/gray/white?text=${char.name.charAt(0)}'" class="w-11 h-11 rounded-full mb-auto border border-gray-300 bg-white object-cover shrink-0">`;
+                        ? `<div class="w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center text-2xl mb-auto shrink-0">${char.icon}</div>`
+                        : `<img src="${char.icon}" onerror="this.src='https://placehold.co/100x100/gray/white?text=${char.name.charAt(0)}'" class="w-12 h-12 rounded-full mb-auto border border-gray-300 bg-white object-cover shrink-0">`;
 
                     msgRow.innerHTML = `
                         ${iconHtml}
@@ -738,7 +767,7 @@
                             <div class="flex items-end gap-1 bubble-wrapper">
                                 ${contentHtml}
                                 <div class="flex flex-col justify-end min-w-[30px] ml-1 pb-1">
-                                    <span class="meta-text text-[9px] text-white/80 cursor-pointer" contenteditable="true">${timeStr}</span>
+                                    <span class="meta-text text-[10px] text-white/80 cursor-pointer" contenteditable="true">${timeStr}</span>
                                 </div>
                             </div>
                         </div>
@@ -804,7 +833,6 @@
         });
 
         // --- RESTORED ORIGINAL CAPTURE LOGIC (STRICT) ---
-        // 10時間試行錯誤された元のロジックを復元しました
         function adjustTextPosition(clonedDoc) {
              const bubbles = clonedDoc.querySelectorAll('.bubble');
              bubbles.forEach(b => {
