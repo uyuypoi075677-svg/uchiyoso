@@ -11,7 +11,8 @@
     <link id="mainStyle" rel="stylesheet" href="style.css">
     
     <script src="data.js" defer></script>
-    <script src="script.js" defer></script>
+<script type="module" src="firestore.js"></script>
+<script type="module" src="script.js"></script>
 </head>
 <body>
     <div class="scanlines"></div>
@@ -30,9 +31,12 @@
                     <input type="file" id="fileInput" accept=".txt">
                 </label>
                 <div class="sub-actions">
-                    <button id="btnLocalLoad" class="cyber-btn text-btn">LOAD MEMORY</button>
-                    <button id="btnLocalSave" class="cyber-btn text-btn">SAVE MEMORY</button>
-                </div>
+    <button id="btnLogin" class="cyber-btn text-btn">CONNECT NET (LOGIN)</button>
+    <button id="btnLogout" class="cyber-btn text-btn hidden">DISCONNECT</button>
+    
+    <button id="btnLocalLoad" class="cyber-btn text-btn">LOAD CLOUD</button>
+    <button id="btnLocalSave" class="cyber-btn text-btn">SAVE CLOUD</button>
+　　　　　　　</div>
             </div>
             <p class="version-info">TARGET: IaChara Export Format</p>
         </div>
