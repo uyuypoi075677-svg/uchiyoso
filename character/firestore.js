@@ -1,13 +1,13 @@
-// --- firestore.js ---
+// --- firestore.js (修正版) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ★あなたのプロジェクト設定（画像から転記済みです）
+// ★今貼っていただいた「正しい設定」に書き換えました！
 const firebaseConfig = {
-  apiKey: "AIzaSyBZYvH6NhFA_BSuyUW-sZV2QPSvSzdYJZWU",
+  apiKey: "AIzaSyBZVh6NhFA_BSuyUW-sZV2QPSvSzdYJZWU",
   authDomain: "chocolatmer-uchiyoso.firebaseapp.com",
   projectId: "chocolatmer-uchiyoso",
   storageBucket: "chocolatmer-uchiyoso.firebasestorage.app",
