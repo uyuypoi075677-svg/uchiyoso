@@ -207,7 +207,8 @@
     </dialog>
 
     <script type="module">
-
+        // "../header.js" だと「1つ上」を探してしまいますが、
+        // detail.html は外にあるので、header.js は「同じ場所（./）」にあります。
         import { initHeader } from "./header.js"; 
         initHeader();
     </script>
