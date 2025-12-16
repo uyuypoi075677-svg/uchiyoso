@@ -22,7 +22,7 @@ export function initHeader() {
         <header id="sys-header">
             <a href="${path.includes('/detail/') ? '../list.html' : 'list.html'}">
                 <div class="header-logo">
-                    <span>CYBER_OS <span class="header-version">// ${pageTitle}</span></span>
+                    <span>CHARACTER DATA<span class="header-version">// ${pageTitle}</span></span>
                     <span id="headerInfo">OFFLINE</span>
                 </div>
             </a>
