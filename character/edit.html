@@ -2,13 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATA EDITOR</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <link href="edit/header.css" rel="stylesheet">
-
     <style>
+        /* CSSスタイルは既存のまま維持 */
         body { background-color: #202020; color: #ddd; font-family: 'Noto Sans JP', sans-serif; margin: 0; padding: 0; }
         .container { max-width: 900px; margin: 0 auto; padding: 80px 20px 100px; }
         .toolbar { background: #333; padding: 20px; border-radius: 4px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
@@ -69,132 +67,6 @@
                 <div class="form-row"><label>NAME</label><input type="text" id="inpName"></div>
                 <div class="form-row"><label>KANA</label><input type="text" id="inpKana"></div>
             </div>
-            <div class="form-grid">
-                <div class="form-row"><label>JOB</label><input type="text" id="inpJob"></div>
-                <div class="form-row"><label>TAGS</label><input type="text" id="inpTags"></div>
-            </div>
-
-            <div class="grid-4" style="margin-top:15px;">
-                <div class="form-row"><label>AGE</label><input type="number" id="inpAge"></div>
-                <div class="form-row"><label>GENDER</label><input type="text" id="inpGender"></div>
-                <div class="form-row"><label>MONEY (所持金)</label><input type="text" id="inpMoney"></div>
-                <div class="form-row"><label>DEBT (借金)</label><input type="text" id="inpDebt"></div>
-            </div>
-            
-            <div class="grid-4" style="margin-top:15px;">
-                <div class="form-row"><label>BIRTHDAY</label><input type="text" id="inpBirthday"></div>
-                <div class="form-row"><label>BIRTHPLACE</label><input type="text" id="inpOrigin"></div>
-            </div>
-
-            <div id="eduCheckArea" class="analysis-box" style="display:none;"><span>🎓 EDU分析:</span><span id="eduMsg"></span></div>
-
-            <div class="grid-3" style="margin-top:20px; background:#2b2b2b; padding:15px; border-radius:4px;">
-                <div class="form-row"><label>HEIGHT (cm)</label><input type="number" id="inpHeight"></div>
-                <div class="form-row"><label>WEIGHT (kg)</label><input type="number" id="inpWeight"></div>
-                <div class="form-row"><label>HAIR / EYE / SKIN</label>
-                    <input type="text" id="inpHair" placeholder="髪色" style="margin-bottom:5px;">
-                    <input type="text" id="inpEye" placeholder="瞳の色" style="margin-bottom:5px;">
-                    <input type="text" id="inpSkin" placeholder="肌の色">
-                </div>
-            </div>
-            <div id="bodyCheckArea" class="analysis-box">
-                <div style="margin-bottom:5px;">📊 <b>BMI:</b> <span id="outBMI" class="calc-val">--</span></div>
-            </div>
-
-            <h2>VISUALS</h2>
-            <div class="visual-grid">
-                <div>
-                    <label>STANDING ART</label>
-                    <div class="img-preview-box"><img id="previewBody" class="img-preview"></div>
-                    <input type="text" id="inpImageBody" placeholder="URL..." style="margin-top:5px;">
-                </div>
-                <div>
-                    <label>FACE ICON</label>
-                    <div class="img-preview-box"><img id="previewIcon" class="img-preview"></div>
-                    <input type="text" id="inpImageIcon" placeholder="URL..." style="margin-top:5px;">
-                </div>
-            </div>
-
-            <h2>STATS & VITALS</h2>
-            <div class="stats-container">
-                <div class="stat-box"><label>STR</label><input type="number" id="s_str"></div>
-                <div class="stat-box"><label>CON</label><input type="number" id="s_con"></div>
-                <div class="stat-box"><label>POW</label><input type="number" id="s_pow"></div>
-                <div class="stat-box"><label>DEX</label><input type="number" id="s_dex"></div>
-                <div class="stat-box"><label>APP</label><input type="number" id="s_app"></div>
-                <div class="stat-box"><label>SIZ</label><input type="number" id="s_siz"></div>
-                <div class="stat-box"><label>INT</label><input type="number" id="s_int"></div>
-                <div class="stat-box"><label>EDU</label><input type="number" id="s_edu"></div>
-            </div>
-            <div class="grid-4" style="margin-top:20px;">
-                <div class="form-row"><label>HP</label><input type="number" id="v_hp"></div>
-                <div class="form-row"><label>MP</label><input type="number" id="v_mp"></div>
-                <div class="form-row"><label>SAN</label><input type="number" id="v_san"></div>
-                <div class="form-row"><label>DB</label><input type="text" id="v_db"></div>
-            </div>
-
-            <h2>DETAILS</h2>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                <div>
-                    <div class="text-section"><h3>経歴</h3><textarea id="txtBackground"></textarea></div>
-                    <div class="text-section"><h3>性格</h3><textarea id="txtPersonality"></textarea></div>
-                    <div class="text-section"><h3>人間関係</h3><textarea id="txtRelations"></textarea></div>
-                </div>
-                <div>
-                    <div class="text-section"><h3>外見的特徴</h3><textarea id="txtAppearance"></textarea></div>
-                    <div class="text-section"><h3>RP補足</h3><textarea id="txtRoleplay"></textarea></div>
-                    <div class="text-section"><h3>メモ</h3><textarea id="txtMemo"></textarea></div>
-                </div>
-            </div>
-            
-            <div class="form-grid">
-                <div class="text-section">
-                    <h3>技能詳細 (FLAVOR TEXT)</h3>
-                    <textarea id="txtSkillDetails" style="height:150px;"></textarea>
-                    <div class="helper-text">※技能の「理由」や「設定」などの文章</div>
-                </div>
-                <div class="text-section">
-                    <h3>技能値リスト (NUMERICAL DATA)</h3>
-                    <textarea id="txtSkillList" style="height:150px; font-family:monospace; font-size:0.8rem;"></textarea>
-                    <div class="helper-text">※いあキャラの技能一覧表（数値）</div>
-                </div>
-            </div>
-
-            <div class="text-section" style="margin-top:20px; border-left-color: #d4b346;">
-                <h3 style="color: #d4b346;">技能成長履歴 (GROWTH LOG)</h3>
-                <textarea id="txtGrowth" style="height:120px;" placeholder="例：&#13;シナリオA: 回避+5, 目星+3"></textarea>
-                <div class="helper-text">※どのシナリオで何が成長したかを自由に記録できます。</div>
-            </div>
-
-            <h2>INVENTORY & HISTORY</h2>
-            <div class="grid-3">
-                <div class="form-row full" style="grid-column:span 2;">
-                    <label>所持品 (ITEMS)</label>
-                    <textarea id="txtItems" style="height:200px;" placeholder="アイテム名 : 説明文"></textarea>
-                </div>
-                <div class="form-row">
-                    <label>魔術/AF (SPELLS/ARTIFACTS)</label>
-                    <textarea id="txtSpells" style="height:90px;"></textarea>
-                    
-                    <label style="margin-top:10px;">遭遇した存在 (ENTITIES)</label>
-                    <textarea id="txtEncountered" style="height:90px;"></textarea>
-                </div>
-            </div>
-
-            <div class="form-row full" style="margin-top:20px;">
-                <label>通過シナリオ詳細 (SCENARIO LOGS & MEMORIES)</label>
-                <textarea id="txtScenarioDetails" style="height:200px;" placeholder="[シナリオタイトル]&#13;内容..."></textarea>
-                <div class="form-row">
-                    <label>通過シナリオ(簡易一覧)</label>
-                    <textarea id="txtScenarios" style="height:60px;" placeholder="シナリオ名..."></textarea>
-                </div>
-            </div>
-
-            <div class="form-row full" style="margin-top:15px;">
-                <label>戦闘・武器・防具 (WEAPONS)</label>
-                <textarea id="txtWeapons" style="height:100px; font-family:monospace;" placeholder="武器データ..."></textarea>
-            </div>
-
             <div style="margin-top:50px; text-align:right;">
                 <button id="btnDelete" class="btn-delete">DELETE CHARACTER</button>
             </div>
@@ -203,8 +75,8 @@
 
     <script type="module">
         import { loadFromCloud, monitorAuth } from "./firestore.js";
-        // ★修正：共通ロジックとして parseIaChara も読み込む
-        import { collectFormData, parseIaChara, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./deta/schema.js";
+        // ★重要：共通ロジックとマッピングを読み込む
+        import { collectFormData, parseIaChara, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
 
         const getEl = (id) => document.getElementById(id);
         const setVal = (id, v) => { const el = getEl(id); if(el) el.value = (v == null ? '' : v); };
@@ -249,13 +121,12 @@
             if(target) loadCharacterToForm(target);
         });
 
+        // データ読み込み（schema.jsのマッピング利用）
         function loadCharacterToForm(d) {
             getEl('editorArea').style.opacity='1';
             getEl('editorArea').style.pointerEvents='auto';
             
-            FIELD_MAPPING.forEach(field => {
-                setVal(field.id, d[field.key]);
-            });
+            FIELD_MAPPING.forEach(field => setVal(field.id, d[field.key]));
             setSrc('previewBody', d.image);
             setSrc('previewIcon', d.icon);
 
@@ -276,7 +147,6 @@
             setVal('txtAppearance', extract('外見的特徴')||extract('外見'));
             setVal('txtRoleplay', extract('RP補足')||extract('RP用補足'));
             setVal('txtSkillDetails', extract('技能詳細')||extract('職業P振り分け詳細'));
-            
             if(!fullMemo.includes('[')) setVal('txtMemo', fullMemo);
             else setVal('txtMemo', extract('メモ'));
 
@@ -301,61 +171,35 @@
                     setVal('txtScenarioDetails', '');
                 }
             }
-
             runCalculations();
         }
 
+        // 保存（共通ロジック利用）
         window.prepareSaveData = function() {
             if(!currentId) return null;
             const originalData = Object.values(allData).find(c=>c.id==currentId);
             if(!originalData) return null;
-
-            // ★共通ロジックでデータを収集
             const finalData = collectFormData(originalData, false);
-
             alert("保存しました！");
             return finalData;
         };
 
-        // ★スマートインポート：schema.js の parseIaChara を使用
+        // スマートインポート（共通ロジック parseIaChara 利用）
         getEl('btnMerge').addEventListener('click', () => {
             const text = getEl('txtImportSource').value;
             if(!text) return;
-            
-            // ★ここが変更点：共通ロジック呼び出し
-            const p = parseIaChara(text);
+            const p = parseIaChara(text); // ★共通化！
             
             const fillIfEmpty = (id, val) => {
                 const current = getEl(id)?.value;
                 if(!current && val) setVal(id, val);
             };
 
-            // マージ処理
-            fillIfEmpty('inpName', p.name);
-            fillIfEmpty('inpKana', p.kana);
-            fillIfEmpty('inpJob', p.job);
-            fillIfEmpty('inpTags', p.tags);
-            fillIfEmpty('inpAge', p.age);
-            fillIfEmpty('inpGender', p.gender);
-            fillIfEmpty('inpBirthday', p.birthday);
-            fillIfEmpty('inpOrigin', p.origin);
-            fillIfEmpty('inpHeight', p.height);
-            fillIfEmpty('inpWeight', p.weight);
-            fillIfEmpty('inpHair', p.hair);
-            fillIfEmpty('inpEye', p.eye);
-            fillIfEmpty('inpSkin', p.skin);
-            fillIfEmpty('inpImageBody', p.image);
-            fillIfEmpty('inpImageIcon', p.icon);
-            fillIfEmpty('inpMoney', p.money);
-            fillIfEmpty('inpDebt', p.debt);
-
-            fillIfEmpty('s_str', p.stats.STR); fillIfEmpty('s_con', p.stats.CON);
-            fillIfEmpty('s_pow', p.stats.POW); fillIfEmpty('s_dex', p.stats.DEX);
-            fillIfEmpty('s_app', p.stats.APP); fillIfEmpty('s_siz', p.stats.SIZ);
-            fillIfEmpty('s_int', p.stats.INT); fillIfEmpty('s_edu', p.stats.EDU);
-            fillIfEmpty('v_hp', p.vitals.hp); fillIfEmpty('v_mp', p.vitals.mp);
-            fillIfEmpty('v_san', p.vitals.san); fillIfEmpty('v_db', p.db);
-
+            // マッピングを利用して自動入力（簡略化可能だが安全のため明示）
+            FIELD_MAPPING.forEach(f => fillIfEmpty(f.id, p[f.key]));
+            STATS_MAPPING.forEach(f => fillIfEmpty(f.id, p.stats[f.key]));
+            VITALS_MAPPING.forEach(f => fillIfEmpty(f.id, p.vitals[f.key]));
+            
             fillIfEmpty('txtBackground', p.memo.background);
             fillIfEmpty('txtPersonality', p.memo.personality);
             fillIfEmpty('txtRelations', p.memo.relations);
@@ -363,45 +207,35 @@
             fillIfEmpty('txtRoleplay', p.memo.roleplay);
             fillIfEmpty('txtSkillDetails', p.memo.skillDetails);
             fillIfEmpty('txtMemo', p.memo.memo);
-            
-            fillIfEmpty('txtSpells', p.spells);
-            fillIfEmpty('txtEncountered', p.encountered);
-            fillIfEmpty('txtGrowth', p.growth);
-            fillIfEmpty('txtSkillList', p.skillList);
-            fillIfEmpty('txtWeapons', p.weapons);
-            fillIfEmpty('txtScenarioDetails', p.scenarioDetailsText);
 
             if(p.itemsStr) {
                 const currentItems = getEl('txtItems').value;
                 if(!currentItems) setVal('txtItems', p.itemsStr);
                 else setVal('txtItems', currentItems + '\n' + p.itemsStr);
             }
-
             if(p.image && !getEl('previewBody').src) setSrc('previewBody', p.image);
             if(p.icon && !getEl('previewIcon').src) setSrc('previewIcon', p.icon);
 
-            alert("不足データを補完しました！(共通ロジック使用)");
+            alert("不足データを補完しました！");
             runCalculations();
         });
 
+        // 計算ロジック
         function runCalculations() {
             const age = parseInt(getEl('inpAge')?.value)||0;
             const edu = parseInt(getEl('s_edu')?.value)||0;
             const eduArea = getEl('eduCheckArea');
-            const eduMsg = getEl('eduMsg');
             if(eduArea) {
                 if(edu>0 && age>0) {
                     const minAge=edu+6;
                     eduArea.style.display='block';
-                    if(age<minAge){ eduMsg.className='warn-text'; eduMsg.textContent=`⚠️ 年齢不足 (EDU${edu}なら最低${minAge}歳)`; }
-                    else { eduMsg.className='calc-val'; eduMsg.textContent=`✅ OK (最低${minAge}歳)`; }
+                    const msg = getEl('eduMsg');
+                    if(age<minAge){ msg.className='warn-text'; msg.textContent=`⚠️ 年齢不足 (EDU${edu}なら最低${minAge}歳)`; }
+                    else { msg.className='calc-val'; msg.textContent=`✅ OK (最低${minAge}歳)`; }
                 } else eduArea.style.display='none';
             }
             const h = parseFloat(getEl('inpHeight')?.value), w = parseFloat(getEl('inpWeight')?.value);
-            if(h>0 && w>0) {
-                const bmi = w/((h/100)**2);
-                getEl('outBMI').textContent = `${bmi.toFixed(1)}`;
-            }
+            if(h>0 && w>0) getEl('outBMI').textContent = (w/((h/100)**2)).toFixed(1);
         }
         ['inpAge','inpHeight','inpWeight','s_edu'].forEach(id=>getEl(id)?.addEventListener('input', runCalculations));
 
