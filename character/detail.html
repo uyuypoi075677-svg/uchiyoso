@@ -1,408 +1,219 @@
-// detail/script.js
-import { login, logout, monitorAuth, saveToCloud, loadFromCloud } from "../firestore.js";
-// ★共通の解析ロジックを読み込む
-import { parseIaChara } from "../data/schema.js";
-
-// --- GLOBAL STATE ---
-let charData = null;
-let charts = { main: null, category: null };
-const els = {
-    boot: document.getElementById('boot-screen'),
-    file: document.getElementById('fileInput'),
-    tabs: document.getElementById('skillTabs'),
-    listBody: document.getElementById('skillListBody'),
-    hideToggle: document.getElementById('hideInitToggle'),
-    shortDescToggle: document.getElementById('shortDescToggle'),
-    summaryViz: document.getElementById('summaryViz'),
-    localSave: document.getElementById('btnLocalSave'),
-    localLoad: document.getElementById('btnLocalLoad'),
-    modal: document.getElementById('loadDialog'),
-    savedList: document.getElementById('savedList'),
-    infoTabs: document.getElementById('infoTabs'),
-    chartTitle: document.getElementById('chartTitle'),
-    chartDesc: document.getElementById('chartDesc'),
-    dashboard: document.getElementById('dashboard'),
-    themeSwitcher: document.getElementById('themeSwitcher'),
-    mainStyle: document.getElementById('mainStyle')
-};
-
-const CAT_COLORS = {
-    combat: '#ff4444',
-    explore: '#44ff44',
-    action: '#ffaa00',
-    negotiate: '#d000ff',
-    knowledge: '#0088ff',
-    summary: '#00f3ff'
-};
-
-function adjustHeight(el) {
-    if(document.querySelector('.short-view') && !el.matches(':focus') && !el.matches(':hover')) return;
-    el.style.height = 'auto';
-    el.style.height = (el.scrollHeight) + 'px';
-}
-
-// --- EVENTS ---
-const btnLogin = document.getElementById('btnLogin');
-const btnLogout = document.getElementById('btnLogout');
-const btnCloudSave = document.getElementById('btnLocalSave');
-const btnCloudLoad = document.getElementById('btnLocalLoad');
-
-if(btnLogin) btnLogin.addEventListener('click', login);
-if(btnLogout) btnLogout.addEventListener('click', logout);
-
-monitorAuth(
-    (user) => {
-        if(btnLogin) btnLogin.classList.add('hidden');
-        if(btnLogout) {
-            btnLogout.classList.remove('hidden');
-            btnLogout.textContent = "DISCONNECT (" + user.displayName + ")";
-        }
-    },
-    () => {
-        if(btnLogin) btnLogin.classList.remove('hidden');
-        if(btnLogout) btnLogout.classList.add('hidden');
-    }
-);
-
-if(btnCloudSave) {
-    btnCloudSave.addEventListener('click', () => {
-        if(!charData) return;
-        charData.memo = document.getElementById('memoArea').value;
-        saveToCloud(charData);
-    });
-}
-
-if(btnCloudLoad) {
-    btnCloudLoad.addEventListener('click', async () => {
-        const cloudStore = await loadFromCloud();
-        if(cloudStore) {
-            const list = document.getElementById('savedList'); 
-            list.innerHTML='';
-            Object.keys(cloudStore).forEach(k => {
-                const li = document.createElement('li');
-                li.textContent = "☁️ " + (cloudStore[k].name || "No Name");
-                li.onclick = () => { launchDashboard(cloudStore[k]); document.getElementById('loadDialog').close(); };
-                list.appendChild(li);
-            });
-            document.getElementById('loadDialog').showModal();
-        }
-    });
-}
-
-els.file.addEventListener('change', handleFile);
-els.hideToggle.addEventListener('change', () => renderCurrentTab());
-
-els.shortDescToggle.addEventListener('change', (e) => {
-    if(e.target.checked) els.listBody.classList.add('short-view');
-    else {
-        els.listBody.classList.remove('short-view');
-        document.querySelectorAll('.skill-desc-inp').forEach(tx => adjustHeight(tx));
-    }
-});
-
-els.themeSwitcher.addEventListener('click', () => {
-    const currentHref = els.mainStyle.getAttribute('href');
-    if (currentHref.includes('style-cork.css')) {
-        els.mainStyle.setAttribute('href', 'detail/style.css');
-        els.themeSwitcher.textContent = '◆ THEME: CYBER';
-    } else {
-        els.mainStyle.setAttribute('href', 'detail/style-cork.css');
-        els.themeSwitcher.textContent = '◆ THEME: ANALOG';
-    }
-});
-
-els.tabs.addEventListener('click', (e) => {
-    if(e.target.classList.contains('tab')) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        renderSkillSection(e.target.dataset.cat);
-    }
-});
-
-els.infoTabs.addEventListener('click', (e) => {
-    if(e.target.classList.contains('d-tab')) {
-        document.querySelectorAll('.d-tab').forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        const targetId = e.target.dataset.target;
-        document.querySelectorAll('.deck-pane').forEach(p => p.classList.remove('active'));
-        const targetPane = document.getElementById(targetId);
-        targetPane.classList.add('active');
-        targetPane.querySelectorAll('textarea').forEach(tx => adjustHeight(tx));
-    }
-});
-
-document.querySelectorAll('.swap-btn-trigger').forEach(btn => {
-    btn.addEventListener('click', () => {
-        els.dashboard.classList.toggle('swapped');
-        setTimeout(() => {
-            document.querySelectorAll('textarea').forEach(tx => {
-                if(tx.offsetParent !== null) adjustHeight(tx);
-            });
-        }, 300); 
-    });
-});
-
-// --- LOGIC ---
-function handleFile(e) {
-    const f = e.target.files[0];
-    if(!f) return;
-    const r = new FileReader();
-    r.onload = (ev) => {
-        try {
-            // ★schema.js の共通解析ロジックを使用
-            // これにより編集画面と同じデータを取得できます
-            const d = parseIaChara(ev.target.result);
-            launchDashboard(d);
-        } catch(err) { console.error(err); alert('Parse Error: ' + err.message); }
-    };
-    r.readAsText(f);
-}
-
-function launchDashboard(data) {
-    charData = data;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DETAIL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Zen+Kaku+Gothic+New:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    // 描画処理（チャート含む）
-    renderProfile(data);
-    renderSkillSection('summary'); 
-    renderItems(data.items);
+    <link href="detail/header.css" rel="stylesheet">
+
+    <link id="mainStyle" rel="stylesheet" href="detail/style.css">
     
-    // テキスト反映
-    document.getElementById('memoArea').value = data.memo;
+    <script src="deta/data.js" defer></script>
+
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <button id="themeSwitcher" class="theme-switch-btn">◆ THEME: CYBER</button>
     
-    const histBox = document.getElementById('scenarioList');
-    if(histBox) {
-        histBox.innerHTML = '';
-        if(Array.isArray(data.scenarioList) && data.scenarioList.length > 0) {
-            data.scenarioList.forEach(scn => {
-                const div = document.createElement('div');
-                div.className = 'scenario-entry';
-                div.style.marginBottom = "15px";
-                div.innerHTML = `<h4 style="color:var(--secondary); margin-bottom:5px;">${scn.title}</h4><div style="font-size:0.9rem; color:#aaa;">${scn.desc}</div>`;
-                histBox.appendChild(div);
-            });
-        } else {
-            renderSimpleList('scenarioList', data.scenarios, 'scenario-tag');
-        }
-    }
 
-    const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || 'No records.'; };
-    setTxt('spellsList', data.spells);
-    setTxt('entitiesList', data.encountered);
-    setTxt('growthList', data.growth);
-    setTxt('weaponList', data.weapons);
-
-    const moneyEl = document.getElementById('valMoney');
-    if(moneyEl) {
-        const m = data.money || '0';
-        const d = data.debt || '0';
-        moneyEl.textContent = `Money: ${m} / Debt: ${d}`;
-    }
-
-    els.boot.classList.add('hidden');
-    document.body.classList.add('loaded');
-}
-
-function renderCurrentTab() {
-    const activeCat = document.querySelector('.tab.active').dataset.cat;
-    renderSkillSection(activeCat);
-}
-
-// -----------------------------------------------------------
-// ★以下、グラフ描画などの詳細画面固有ロジックはそのまま維持
-// -----------------------------------------------------------
-
-function renderProfile(d) {
-    document.getElementById('charName').textContent = d.name;
-    document.getElementById('charKana').textContent = d.kana;
-    document.getElementById('charJob').textContent = d.job;
-    document.getElementById('charAge').textContent = `AGE: ${d.age}`;
-    document.getElementById('charImage').src = d.image || 'https://placehold.co/400x600/000/333?text=NO+IMAGE';
-    document.getElementById('valDB').textContent = d.db; 
-
-    const tags = document.getElementById('charTags'); tags.innerHTML='';
-    if(d.tags) d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
-
-    setBar('HP', d.vitals.hp, 15);
-    setBar('MP', d.vitals.mp, 18);
-    setBar('SAN', d.vitals.san, 99);
-
-    const sGrid = document.getElementById('rawStatsGrid'); sGrid.innerHTML='';
-    Object.keys(d.stats).forEach(k => sGrid.innerHTML+=`<div class="stat-box"><small>${k}</small><span>${d.stats[k]}</span></div>`);
-
-    const ctx = document.getElementById('mainStatsChart').getContext('2d');
-    if(charts.main) charts.main.destroy();
-    charts.main = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: Object.keys(d.stats),
-            datasets: [{
-                label: 'BASE', data: Object.values(d.stats),
-                backgroundColor: 'rgba(255,0,85,0.2)', borderColor: '#ff0055', borderWidth: 1, pointRadius: 0
-            }]
-        },
-        options: chartOpts(18)
-    });
-}
-
-function renderSimpleList(id, text, tagClass) {
-    const box = document.getElementById(id);
-    if(!box) return;
-    box.innerHTML = '';
-    if(!text) { box.textContent = 'No records.'; return; }
-    const lines = text.split('\n');
-    lines.forEach(l => {
-        if(!l.trim()) return;
-        const div = document.createElement('div');
-        if(tagClass) div.innerHTML = l.replace(/\[(.*?)\]/g, `<span class="${tagClass}">$1</span>`);
-        else div.textContent = l;
-        box.appendChild(div);
-    });
-}
-
-function setBar(id, v, m) {
-    const elVal = document.getElementById(`val${id}`);
-    const elBar = document.getElementById(`bar${id}`);
-    if(elVal) elVal.textContent = `${v}/${m}`;
-    if(elBar) elBar.style.width = Math.min(100, (v/m)*100) + '%';
-}
-
-function renderSkillSection(cat) {
-    const hideInit = els.hideToggle.checked;
-    let skillsToRender = [];
-    
-    if(cat === 'summary') {
-        ['combat','explore','action','negotiate','knowledge'].forEach(c => {
-            skillsToRender = skillsToRender.concat(charData.skills[c]);
-        });
-    } else {
-        skillsToRender = charData.skills[cat] || [];
-    }
-
-    skillsToRender.sort((a,b) => b.total - a.total);
-
-    els.listBody.innerHTML = '';
-    skillsToRender.forEach(s => {
-        if(hideInit && s.total === s.init) return;
-        const row = document.createElement('tr');
-        row.className = `cat-${s.category || cat}`;
-
-        let badge = '';
-        if(s.total >= 90) badge = `<span class="mastery-badge badge-legend">LEGEND</span>`;
-        else if(s.total >= 80) badge = `<span class="mastery-badge badge-master">MASTER</span>`;
-
-        const max = 100;
-        const pInit = (s.init/max)*100;
-        const pJob = (s.job/max)*100;
-        const pInt = (s.interest/max)*100;
-        const pGrow = (s.growth/max)*100;
-
-        row.innerHTML = `
-            <td>
-                <div style="font-weight:bold; color:var(--text-main); font-size:0.9rem;">${s.name}${badge}</div>
-                <textarea class="skill-desc-inp" placeholder="..." rows="1">${s.desc}</textarea>
-            </td>
-            <td style="font-family:var(--font-head); font-size:1.2rem; text-align:center; color:#fff">${s.total}</td>
-            <td>
-                <div class="val-row">
-                    <span>Init:${s.init}</span>
-                    <span style="color:var(--secondary)">Job:${s.job}</span>
-                    <span style="color:var(--accent)">Int:${s.interest}</span>
-                    <span style="color:var(--grow)">Grow:${s.growth}</span>
+    <div id="boot-screen">
+        <div class="boot-terminal">
+            <h1 class="glitch" data-text="DATA DETAIL">DATA DETAIL</h1>
+            <div class="loader-bar"><div class="bar-fill"></div></div>
+            <p class="sys-msg">> EXPANDING VISUAL MODULES...</p>
+            
+            <div class="upload-area">
+                <label class="cyber-btn large">
+                    <span class="icon">📂</span> IMPORT DATA [.txt]
+                    <input type="file" id="fileInput" accept=".txt">
+                </label>
+                <div class="sub-actions">
+                    <button id="btnLogin" class="cyber-btn text-btn">CONNECT NET (LOGIN)</button>
+                    <button id="btnLogout" class="cyber-btn text-btn hidden">DISCONNECT</button>
+                    
+                    <button id="btnLocalLoad" class="cyber-btn text-btn">LOAD CLOUD</button>
+                    <button id="btnLocalSave" class="cyber-btn text-btn">SAVE CLOUD</button>
                 </div>
-                <div class="dist-bar-track">
-                    <div class="d-init" style="width:${pInit}%"></div>
-                    <div class="d-job" style="width:${pJob}%"></div>
-                    <div class="d-int" style="width:${pInt}%"></div>
-                    <div class="d-grow" style="width:${pGrow}%"></div>
+            </div>
+            <p class="version-info">TARGET: IaChara Export Format</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid" id="dashboard">
+        <aside class="col-left">
+            <div class="panel profile-card">
+                <div class="img-frame">
+                    <img src="" id="charImage" alt="NO_SIGNAL">
+                    <div class="scan-bar"></div>
                 </div>
-            </td>
-        `;
+                <div class="name-box">
+                    <h2 id="charName">NO DATA</h2>
+                    <span id="charKana" class="kana-text"></span>
+                </div>
+                <div class="meta-info">
+                    <div id="charJob" class="job-text">UNKNOWN CLASS</div>
+                    <div id="charAge" class="age-text">AGE: ??</div>
+                </div>
+                <div id="charTags" class="tag-cloud"></div>
+            </div>
 
-        const tx = row.querySelector('textarea');
-        tx.addEventListener('input', (e) => { s.desc = e.target.value; adjustHeight(e.target); });
-        setTimeout(() => adjustHeight(tx), 0);
-        els.listBody.appendChild(row);
-    });
-    
-    if(els.shortDescToggle.checked) els.listBody.classList.add('short-view');
-    renderTabChart(cat, skillsToRender);
-}
+            <div class="panel vitals-module">
+                <h3>VITAL MONITOR</h3>
+                <div class="vital-row">
+                    <div class="vital-head"><span>HP</span><span id="valHP" class="vital-val">0/0</span></div>
+                    <div class="bar-track"><div id="barHP" class="bar-fill hp"></div></div>
+                </div>
+                <div class="vital-row">
+                    <div class="vital-head"><span>MP</span><span id="valMP" class="vital-val">0/0</span></div>
+                    <div class="bar-track"><div id="barMP" class="bar-fill mp"></div></div>
+                </div>
+                <div class="vital-row">
+                    <div class="vital-head"><span>SAN</span><span id="valSAN" class="vital-val">0/0</span></div>
+                    <div class="bar-track"><div id="barSAN" class="bar-fill san"></div></div>
+                </div>
+                <div class="db-row">
+                    <span class="db-label">DAMAGE BONUS (DB)</span>
+                    <span id="valDB" class="db-val">±0</span>
+                </div>
+            </div>
 
-function renderTabChart(cat, skills) {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    if(charts.category) charts.category.destroy();
+            <div class="panel stats-module">
+                <h3>ATTRIBUTE MATRIX</h3>
+                <div class="chart-container-sq">
+                    <canvas id="mainStatsChart"></canvas>
+                </div>
+                <div class="stats-grid" id="rawStatsGrid"></div>
+                
+                <div class="status-flavor-container">
+                    <h4>STATUS EVALUATION</h4>
+                    <ul id="statusFlavorList" class="flavor-list"></ul>
+                </div>
+            </div>
+        </aside>
 
-    let labels = [];
-    let data = [];
-    let labelText = '';
-    let descText = '';
-    let chartColor = CAT_COLORS[cat] || CAT_COLORS.summary;
+        <section class="col-center panel skill-panel">
+            <div class="panel-header sticky-header">
+                <div class="header-top">
+                    <div class="header-title-area">
+                        <h3>SKILL ANALYZER</h3>
+                        <button class="swap-btn-trigger swap-btn" title="Swap Layout">⇄ SWAP</button>
+                    </div>
+                    
+                    <div class="toggles-area">
+                        <label class="toggle-switch" title="説明文を短く表示">
+                            <input type="checkbox" id="shortDescToggle">
+                            <span class="slider"></span>
+                            <span class="label-text">SHORT DESC</span>
+                        </label>
+                        
+                        <label class="toggle-switch" title="初期値から成長していない技能を隠す">
+                            <input type="checkbox" id="hideInitToggle">
+                            <span class="slider"></span>
+                            <span class="label-text">HIDE INITIAL</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="tabs" id="skillTabs">
+                    <button class="tab active" data-cat="summary">総合 (SUMMARY)</button>
+                    <button class="tab" data-cat="combat">戦闘</button>
+                    <button class="tab" data-cat="explore">探索</button>
+                    <button class="tab" data-cat="action">行動</button>
+                    <button class="tab" data-cat="negotiate">交渉</button>
+                    <button class="tab" data-cat="knowledge">知識</button>
+                </div>
+            </div>
 
-    if (cat === 'summary') {
-        const cats = ['combat','explore','action','negotiate','knowledge'];
-        const catLabels = ['戦闘','探索','行動','交渉','知識'];
-        labels = catLabels;
-        data = cats.map(c => {
-            const sorted = [...charData.skills[c]].sort((a,b)=>b.total-a.total);
-            if(sorted.length === 0) return 0;
-            const top = sorted.slice(0, 3);
-            const sum = top.reduce((a,b) => a + b.total, 0);
-            return sum / top.length;
-        });
-        labelText = 'BALANCE ANALYSIS';
-        descText = 'Average proficiency of top 3 skills per category.';
-    } else {
-        const topSkills = skills.slice(0, 6); 
-        labels = topSkills.map(s => s.name);
-        data = topSkills.map(s => s.total);
-        labelText = cat.toUpperCase() + ' PROFICIENCY';
-        descText = 'Top rated skills in this category.';
-    }
+            <div class="skill-content-area">
+                <div id="summaryViz" class="summary-viz">
+                    <div class="viz-wrapper large-viz">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="viz-info">
+                        <h4 id="chartTitle">ANALYSIS</h4>
+                        <p id="chartDesc">Select a category to view details.</p>
+                    </div>
+                </div>
 
-    els.chartTitle.textContent = labelText;
-    els.chartDesc.textContent = descText;
+                <div class="table-wrapper scroller">
+                    <table class="skill-table">
+                        <thead>
+                            <tr>
+                                <th width="25%">SKILL NAME</th>
+                                <th width="10%">VAL</th>
+                                <th width="65%">POINT DISTRIBUTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="skillListBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    charts.category = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'VAL', data: data,
-                backgroundColor: chartColor + '33', borderColor: chartColor, borderWidth: 2, pointBackgroundColor: '#fff', pointRadius: 3
-            }]
-        },
-        options: chartOpts(99) 
-    });
-}
+        <aside class="col-right panel info-deck">
+            <div class="deck-header">
+                <div class="header-top">
+                    <div class="header-title-area">
+                        <h3>DATABASE</h3>
+                        <button class="swap-btn-trigger swap-btn" title="Swap Layout">⇄ SWAP</button>
+                    </div>
+                </div>
+                <div class="deck-tabs" id="infoTabs">
+                    <button class="d-tab active" data-target="panelMemo">MEMO</button>
+                    <button class="d-tab" data-target="panelItem">ITEMS</button>
+                    <button class="d-tab" data-target="panelSpells">MAGIC/AF</button> 
+                    <button class="d-tab" data-target="panelEntities">ENTITY</button> 
+                    <button class="d-tab" data-target="panelHistory">LOGS</button>
+                </div>
+            </div>
 
-function renderItems(items) {
-    const list = document.getElementById('itemList'); list.innerHTML='';
-    items.forEach(i => {
-        const d = document.createElement('div');
-        d.className = 'item-row';
-        d.innerHTML = `<span class="item-name">${i.name}</span><textarea class="item-desc-inp" rows="1">${i.desc}</textarea>`;
-        const tx = d.querySelector('textarea');
-        tx.addEventListener('input', (e)=>{ i.desc=e.target.value; adjustHeight(e.target); });
-        setTimeout(() => adjustHeight(tx), 0);
-        list.appendChild(d);
-    });
-}
+            <div class="deck-content scroller">
+                <div id="panelMemo" class="deck-pane active">
+                    <textarea id="memoArea" class="cyber-input" placeholder="Character notes..."></textarea>
+                </div>
 
-function chartOpts(max) {
-    return {
-        scales: { r: { 
-            angleLines: {color:'rgba(255,255,255,0.1)'}, grid: {color:'rgba(255,255,255,0.1)'},
-            pointLabels: {color:'#ddd', font:{size:11, family:'"Zen Kaku Gothic New", sans-serif'}}, 
-            suggestedMin:0, suggestedMax:max, 
-            ticks:{display:false, backdropColor:'transparent'}
-        }},
-        plugins: { legend: {display:false} }, maintainAspectRatio: false
-    };
-}
+                <div id="panelItem" class="deck-pane">
+                    <div class="item-list" id="itemList"></div>
+                </div>
 
-window.prepareSaveData = function() {
-    if(!charData) { alert("データが読み込まれていません。"); return null; }
-    const memo = document.getElementById('memoArea');
-    if(memo) charData.memo = memo.value;
-    return charData; 
-};
+                <div id="panelSpells" class="deck-pane">
+                    <div class="content-box" id="spellsList"></div>
+                </div>
+
+                <div id="panelEntities" class="deck-pane">
+                    <div class="content-box" id="entitiesList"></div>
+                </div>
+
+                <div id="panelHistory" class="deck-pane">
+                    <div class="content-box" id="scenarioList"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <dialog id="loadDialog">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h3>Load from Local Storage</h3>
+                <button class="close-btn" onclick="document.getElementById('loadDialog').close()">×</button>
+            </div>
+            <ul id="savedList" class="scroller"></ul>
+        </div>
+    </dialog>
+
+    <script type="module">
+        // "../header.js" だと「1つ上」を探してしまいますが、
+        // detail.html は外にあるので、header.js は「同じ場所（./）」にあります。
+        import { initHeader } from "./header.js"; 
+        initHeader();
+    </script>
+
+    <script src="detail/script.js" type="module"></script>
+
+</body>
+</html>

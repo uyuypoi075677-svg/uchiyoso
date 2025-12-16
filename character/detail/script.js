@@ -1,5 +1,7 @@
-// --- script.js ---
+// detail/script.js
 import { login, logout, monitorAuth, saveToCloud, loadFromCloud } from "../firestore.js";
+// ★共通の解析ロジックを読み込む
+import { parseIaChara } from "../data/schema.js";
 
 // --- GLOBAL STATE ---
 let charData = null;
@@ -12,8 +14,7 @@ const els = {
     hideToggle: document.getElementById('hideInitToggle'),
     shortDescToggle: document.getElementById('shortDescToggle'),
     summaryViz: document.getElementById('summaryViz'),
-    // 古いローカル保存ボタンは使わないので削除しても良いですが、エラー防止のため残してもOK
-    localSave: document.getElementById('btnLocalSave'), // HTMLでIDを変えたので、下で再取得します
+    localSave: document.getElementById('btnLocalSave'),
     localLoad: document.getElementById('btnLocalLoad'),
     modal: document.getElementById('loadDialog'),
     savedList: document.getElementById('savedList'),
@@ -43,41 +44,37 @@ function adjustHeight(el) {
 // --- EVENTS ---
 const btnLogin = document.getElementById('btnLogin');
 const btnLogout = document.getElementById('btnLogout');
-const btnCloudSave = document.getElementById('btnLocalSave'); 
-const btnCloudLoad = document.getElementById('btnLocalLoad'); 
+const btnCloudSave = document.getElementById('btnLocalSave');
+const btnCloudLoad = document.getElementById('btnLocalLoad');
 
 if(btnLogin) btnLogin.addEventListener('click', login);
 if(btnLogout) btnLogout.addEventListener('click', logout);
 
-// 認証状態を監視してボタンを切り替える
 monitorAuth(
-    (user) => { 
+    (user) => {
         if(btnLogin) btnLogin.classList.add('hidden');
         if(btnLogout) {
             btnLogout.classList.remove('hidden');
             btnLogout.textContent = "DISCONNECT (" + user.displayName + ")";
         }
     },
-    () => { 
+    () => {
         if(btnLogin) btnLogin.classList.remove('hidden');
         if(btnLogout) btnLogout.classList.add('hidden');
     }
 );
 
-// 保存ボタン（クラウド用）
 if(btnCloudSave) {
     btnCloudSave.addEventListener('click', () => {
         if(!charData) return;
         charData.memo = document.getElementById('memoArea').value;
-        saveToCloud(charData); 
+        saveToCloud(charData);
     });
 }
 
-// 読み込みボタン（クラウド用）
 if(btnCloudLoad) {
     btnCloudLoad.addEventListener('click', async () => {
-        const cloudStore = await loadFromCloud(); 
-        
+        const cloudStore = await loadFromCloud();
         if(cloudStore) {
             const list = document.getElementById('savedList'); 
             list.innerHTML='';
@@ -92,14 +89,12 @@ if(btnCloudLoad) {
     });
 }
 
-// --- 既存の機能 ---
 els.file.addEventListener('change', handleFile);
 els.hideToggle.addEventListener('change', () => renderCurrentTab());
 
 els.shortDescToggle.addEventListener('change', (e) => {
-    if(e.target.checked) {
-        els.listBody.classList.add('short-view');
-    } else {
+    if(e.target.checked) els.listBody.classList.add('short-view');
+    else {
         els.listBody.classList.remove('short-view');
         document.querySelectorAll('.skill-desc-inp').forEach(tx => adjustHeight(tx));
     }
@@ -107,7 +102,6 @@ els.shortDescToggle.addEventListener('change', (e) => {
 
 els.themeSwitcher.addEventListener('click', () => {
     const currentHref = els.mainStyle.getAttribute('href');
-    
     if (currentHref.includes('style-cork.css')) {
         els.mainStyle.setAttribute('href', 'detail/style.css');
         els.themeSwitcher.textContent = '◆ THEME: CYBER';
@@ -131,7 +125,6 @@ els.infoTabs.addEventListener('click', (e) => {
         e.target.classList.add('active');
         const targetId = e.target.dataset.target;
         document.querySelectorAll('.deck-pane').forEach(p => p.classList.remove('active'));
-        
         const targetPane = document.getElementById(targetId);
         targetPane.classList.add('active');
         targetPane.querySelectorAll('textarea').forEach(tx => adjustHeight(tx));
@@ -156,7 +149,9 @@ function handleFile(e) {
     const r = new FileReader();
     r.onload = (ev) => {
         try {
-            const d = parseData(ev.target.result);
+            // ★schema.js の共通解析ロジックを使用
+            // これにより編集画面と同じデータを取得できます
+            const d = parseIaChara(ev.target.result);
             launchDashboard(d);
         } catch(err) { console.error(err); alert('Parse Error: ' + err.message); }
     };
@@ -166,22 +161,21 @@ function handleFile(e) {
 function launchDashboard(data) {
     charData = data;
     
-    // 1. 既存の描画処理（チャート含む）
+    // 描画処理（チャート含む）
     renderProfile(data);
     renderSkillSection('summary'); 
     renderItems(data.items);
     
-    // 2. テキストエリアへの反映
+    // テキスト反映
     document.getElementById('memoArea').value = data.memo;
     
-    // 3. シナリオ詳細
     const histBox = document.getElementById('scenarioList');
     if(histBox) {
         histBox.innerHTML = '';
         if(Array.isArray(data.scenarioList) && data.scenarioList.length > 0) {
             data.scenarioList.forEach(scn => {
                 const div = document.createElement('div');
-                div.className = 'scenario-entry'; 
+                div.className = 'scenario-entry';
                 div.style.marginBottom = "15px";
                 div.innerHTML = `<h4 style="color:var(--secondary); margin-bottom:5px;">${scn.title}</h4><div style="font-size:0.9rem; color:#aaa;">${scn.desc}</div>`;
                 histBox.appendChild(div);
@@ -191,14 +185,12 @@ function launchDashboard(data) {
         }
     }
 
-    // 4. その他テキストデータ反映
     const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || 'No records.'; };
     setTxt('spellsList', data.spells);
-    setTxt('entitiesList', data.encountered); 
+    setTxt('entitiesList', data.encountered);
     setTxt('growthList', data.growth);
     setTxt('weaponList', data.weapons);
 
-    // 5. 所持金
     const moneyEl = document.getElementById('valMoney');
     if(moneyEl) {
         const m = data.money || '0';
@@ -215,122 +207,9 @@ function renderCurrentTab() {
     renderSkillSection(activeCat);
 }
 
-// --- PARSER (チャート用構造を維持しつつ新項目を追加) ---
-function parseData(text) {
-    const d = {
-        id: crypto.randomUUID(),
-        name: '', kana: '', job: '', age: '??', tags: '', image: '', db: '±0',
-        stats: {}, vitals: {}, 
-        skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[]},
-        items: [], memo: '', scenarios: '', spells: '', 
-        encountered: '', growth: '', weapons: '', money: '', debt: '', scenarioList: []
-    };
-
-    const m = (regex) => (text.match(regex)||[])[1]||'';
-
-    const nameLine = (text.match(/名前:\s*(.+)/)||[])[1] || 'Unknown';
-    const nameMatch = nameLine.match(/^(.+?)[\s　]*[(（](.+?)[)）]/);
-    if(nameMatch) { d.name = nameMatch[1].trim(); d.kana = nameMatch[2].trim(); } 
-    else { d.name = nameLine; }
-
-    d.job = m(/職業:\s*(.+)/);
-    d.age = m(/年齢:\s*(.+?)\s/)||'??';
-    d.tags = m(/タグ:\s*(.+)/);
-    d.image = m(/【アイコン】\s*:?(\s*https?:\/\/[^\s]+)/);
-    d.money = m(/(?:現在の)?所持金[:：]\s*(.+)/);
-    d.debt = m(/借金[:：]\s*(.+)/);
-
-    // ステータス（チャートに必須）
-    ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(k => {
-        const regex = new RegExp(`${k}\\s+(\\d+)`);
-        d.stats[k] = parseInt((text.match(regex)||['', '0'])[1]);
-    });
-    
-    d.vitals.hp = m(/HP\s+(\d+)/)||0;
-    d.vitals.mp = m(/MP\s+(\d+)/)||0;
-    d.vitals.san = m(/現在SAN値\s*(\d+)/)||0;
-    d.db = m(/DB\s*([+-\d]+[dD\d]*)/) || '±0';
-
-    const descMap = {};
-    const detailSec = text.split('[技能詳細]')[1];
-    if(detailSec) {
-        detailSec.split('\n').forEach(l => {
-            const match = l.match(/^([^\s…]+)[…\s]+(.+)/);
-            if(match) descMap[match[1].trim()] = match[2].trim();
-        });
-    }
-
-    // 技能リスト（チャートに必須）
-    const lines = text.split('\n');
-    let cat = null;
-    lines.forEach(l => {
-        l = l.trim();
-        if(l.includes('『戦闘技能』')) cat='combat';
-        else if(l.includes('『探索技能』')) cat='explore';
-        else if(l.includes('『行動技能』')) cat='action';
-        else if(l.includes('『交渉技能』')) cat='negotiate';
-        else if(l.includes('『知識技能』')) cat='knowledge';
-        else if(l.startsWith('【')) cat=null;
-
-        if(cat) {
-            const match = l.match(/^([^\d]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
-            if(match && match[1].trim()!=='技能名') {
-                const n = match[1].trim();
-                d.skills[cat].push({
-                    name: n, total: parseInt(match[2]), init: parseInt(match[3]), job: parseInt(match[4]), interest: parseInt(match[5]), growth: parseInt(match[6]),
-                    desc: descMap[n]||'',
-                    category: cat
-                });
-            }
-        }
-    });
-
-    const iSec = text.match(/【所持品】([\s\S]+?)【/);
-    if(iSec) iSec[1].split('\n').forEach(l=>{
-        l=l.trim(); 
-        if(l && !l.startsWith('名称') && !l.startsWith('単価')) {
-            const p = l.split(/\s{2,}/); 
-            d.items.push({name:p[0], desc:p[p.length-1]!==p[0]?p[p.length-1]:''});
-        }
-    });
-
-    const getSec = (tag) => (text.match(new RegExp(`〈${tag}〉([\\s\\S]*?)(〈|【|$)`))||[])[1]||'';
-    d.spells = getSec('魔導書、呪文、アーティファクト').trim();
-    d.encountered = getSec('遭遇した超自然の存在').trim();
-    d.growth = getSec('新たに得た知識・経験').trim();
-    d.scenarios = getSec('通過したシナリオ名').trim();
-
-    if(d.scenarios) {
-        const entries = d.scenarios.split(/\n(?=\[)/g);
-        d.scenarioList = entries.map(entry => {
-            const match = entry.match(/^\[(.*?)\]([\s\S]*)$/);
-            if (match) { return { title: match[1].trim(), desc: match[2].trim() }; }
-            return { title: entry.trim(), desc: '' };
-        }).filter(e => e.title);
-    }
-
-    const wMatch = text.match(/【戦闘・武器・防具】([\s\S]*?)【/);
-    if(wMatch) d.weapons = wMatch[1].trim();
-
-    const memoTag = text.match(/【メモ】([\s\S]*?)【経歴】/);
-    const background = text.match(/【経歴】([\s\S]*?)【性格】/);
-    const personality = text.match(/【性格】([\s\S]*?)【人間関係】/);
-    const relation = text.match(/【人間関係】([\s\S]*?)【外見】/);
-    const appearance = text.match(/【外見】([\s\S]*?)【RP用/);
-    const rp = text.match(/【RP用補足メモ】([\s\S]*?)\[技能詳細\]/);
-
-    let fullMemo = "";
-    if(memoTag) fullMemo += "[メモ]\n" + memoTag[1].trim() + "\n\n";
-    if(background) fullMemo += "[経歴]\n" + background[1].trim() + "\n\n";
-    if(personality) fullMemo += "[性格]\n" + personality[1].trim() + "\n\n";
-    if(relation) fullMemo += "[人間関係]\n" + relation[1].trim() + "\n\n";
-    if(appearance) fullMemo += "[外見]\n" + appearance[1].trim() + "\n\n";
-    if(rp) fullMemo += "[RP補足]\n" + rp[1].trim();
-
-    d.memo = fullMemo || ((text.match(/【メモ】([\s\S]*)/)||[])[1]||'');
-
-    return d;
-}
+// -----------------------------------------------------------
+// ★以下、グラフ描画などの詳細画面固有ロジックはそのまま維持
+// -----------------------------------------------------------
 
 function renderProfile(d) {
     document.getElementById('charName').textContent = d.name;
@@ -341,7 +220,7 @@ function renderProfile(d) {
     document.getElementById('valDB').textContent = d.db; 
 
     const tags = document.getElementById('charTags'); tags.innerHTML='';
-    d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
+    if(d.tags) d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
 
     setBar('HP', d.vitals.hp, 15);
     setBar('MP', d.vitals.mp, 18);
@@ -522,10 +401,7 @@ function chartOpts(max) {
 }
 
 window.prepareSaveData = function() {
-    if(!charData) {
-        alert("データが読み込まれていません。");
-        return null;
-    }
+    if(!charData) { alert("データが読み込まれていません。"); return null; }
     const memo = document.getElementById('memoArea');
     if(memo) charData.memo = memo.value;
     return charData; 
