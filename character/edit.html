@@ -40,10 +40,65 @@
         .text-section { border-left: 3px solid #444; padding-left: 15px; margin-bottom: 20px; }
         .text-section h3 { font-size: 0.9rem; color: #44ff44; margin: 0 0 10px 0; opacity: 0.8; }
         .helper-text { font-size: 0.7rem; color: #666; margin-top: 2px; }
-    </style>
-</head>
-<body>
-    <script type="module">import { initHeader } from "./header.js"; initHeader();</script>
+        
+        /* テーブル・リスト用のスタイル追加 */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .data-table th { background: #333; color: #aaa; font-weight: normal; padding: 5px; text-align: left; }
+        .data-table td { padding: 5px; border-bottom: 1px solid #333; }
+        .data-table input { background: transparent; border: none; color: #fff; width: 100%; font-family: 'Roboto Mono', monospace; }
+        .data-table input:focus { background: #222; outline: 1px solid #555; }
+    
+        .list-container { background: #252525; border: 1px solid #444; border-radius: 4px; padding: 10px; margin-top: 5px; }
+        .list-row { display: grid; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; align-items: center; }
+        .btn-add { background: #444; color: #fff; border: none; width: 100%; padding: 5px; cursor: pointer; font-size: 0.8rem; margin-top: 5px; }
+        .btn-add:hover { background: #555; }
+        .btn-remove { background: #552222; color: #ffaaaa; border: none; padding: 2px 8px; cursor: pointer; font-size: 0.7rem; border-radius: 2px; }
+
+       /* 武器テーブル用グリッド */
+        .weapon-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; font-size: 0.7rem; color: #888; margin-bottom: 5px; padding: 0 5px; }
+        .weapon-entry { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; margin-bottom: 5px; }
+        .weapon-entry input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem; width: 100%; }
+
+        /* 技能リスト用 */
+        .skill-category { margin-bottom: 20px; }
+        .skill-category h4 { margin: 5px 0; color: #44ff44; font-size: 0.9rem; border-bottom: 1px solid #444; }
+        .skill-table { width: 100%; font-size: 0.8rem; }
+        .skill-table th { color: #888; text-align: center; font-weight: normal; font-size: 0.7rem; }
+        .skill-table td { padding: 2px; }
+        .skill-table input[type="number"] { text-align: center; color: #44ff44; }
+        .skill-desc-input { width: 100%; color: #ddd; font-size: 0.8rem; }
+     </style>
+
+<div class="form-grid full-width-skills">
+    <div class="text-section full" style="grid-column: span 2;">
+        <h3>技能データ (SKILLS & DETAIL)</h3>
+        <div id="skillArea" class="list-container" style="max-height: 500px; overflow-y: auto;">
+            </div>
+    </div>
+</div>
+
+<div class="grid-3">
+    <div class="form-row full" style="grid-column:span 2;">
+        <label>所持品 (ITEMS)</label>
+        <div class="list-container">
+            <div id="itemList"></div>
+            <button type="button" class="btn-add" onclick="addItemRow()">+ ADD ITEM</button>
+        </div>
+    </div>
+    </div>
+
+<div class="form-row full" style="margin-top:15px;">
+    <label>戦闘・武器・防具 (WEAPONS)</label>
+    <div class="list-container">
+        <div class="weapon-header">
+            <div>名前</div><div>成功率</div><div>ダメ</div><div>射程</div><div>回数</div><div>装弾</div><div>HP</div><div>故障</div><div></div>
+        </div>
+        <div id="weaponList"></div>
+        <button type="button" class="btn-add" onclick="addWeaponRow()">+ ADD WEAPON</button>
+    </div>
+</div>
+
+<script type="module">import { initHeader } from "./header.js"; initHeader();</script>
 
     <div class="container">
         <div class="toolbar">
