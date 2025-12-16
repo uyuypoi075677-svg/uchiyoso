@@ -102,7 +102,7 @@ els.shortDescToggle.addEventListener('change', (e) => {
 
 els.themeSwitcher.addEventListener('click', () => {
     const currentHref = els.mainStyle.getAttribute('href');
-    if (currentHref.includes('style-cork.css')) {
+    if (currentHref.includes('detail/style.css')) {
         els.mainStyle.setAttribute('href', 'detail/style.css');
         els.themeSwitcher.textContent = '◆ THEME: CYBER';
     } else {
