@@ -1,6 +1,6 @@
 // --- script.js ---
 // ★一番上にこの行がないと動きません！
-import { login, logout, monitorAuth, saveToCloud, loadFromCloud } from "./firestore.js";
+import { login, logout, monitorAuth, saveToCloud, loadFromCloud } from "../firestore.js";
 
 // --- GLOBAL STATE ---
 let charData = null;
