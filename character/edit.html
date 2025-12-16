@@ -266,6 +266,36 @@
         const setVal = (id, v) => { const el = getEl(id); if(el) el.value = (v == null ? '' : v); };
         const setSrc = (id, s) => { const el = getEl(id); if(el) el.src = s || ''; };
 
+        // ▼グローバル関数として定義してHTMLから呼べるようにする
+    window.addItemRow = (val={name:'', desc:''}) => {
+        const div = document.createElement('div');
+        div.className = 'list-row item-entry';
+        div.style.gridTemplateColumns = '1fr 2fr auto';
+        div.innerHTML = `
+            <input type="text" class="i-name" placeholder="名称" value="${val.name}">
+            <input type="text" class="i-desc" placeholder="効果・備考" value="${val.desc}">
+            <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+        `;
+        document.getElementById('itemList').appendChild(div);
+    };
+
+    window.addWeaponRow = (val={name:'', rate:'', damage:'', range:'', attacks:'', capacity:'', hp:'', malfunction:''}) => {
+        const div = document.createElement('div');
+        div.className = 'weapon-entry';
+        div.innerHTML = `
+            <input type="text" class="w-name" value="${val.name}">
+            <input type="text" class="w-rate" value="${val.rate}">
+            <input type="text" class="w-dmg" value="${val.damage}">
+            <input type="text" class="w-range" value="${val.range}">
+            <input type="text" class="w-atk" value="${val.attacks}">
+            <input type="text" class="w-cap" value="${val.capacity}">
+            <input type="text" class="w-hp" value="${val.hp}">
+            <input type="text" class="w-mal" value="${val.malfunction}">
+            <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+        `;
+        document.getElementById('weaponList').appendChild(div);
+    };
+
         // メモ欄のマッピング（parseIaCharaの戻り値オブジェクトとHTML IDの対応）
         const MEMO_ID_MAP = {
             background: 'txtBackground',
@@ -354,33 +384,87 @@
             if(!fullMemo.includes('[')) setVal('txtMemo', fullMemo);
             else setVal('txtMemo', extract('メモ'));
 
-            // 4. アイテムリスト（配列 -> テキスト）
-            if(Array.isArray(d.items)) {
-                const lines = d.items.map(i => i.desc ? `${i.name} : ${i.desc}` : i.name);
-                setVal('txtItems', lines.join('\n'));
-            } else {
-                setVal('txtItems', '');
-            }
+           // 4. アイテムリスト描画
+        document.getElementById('itemList').innerHTML = '';
+        if(Array.isArray(d.items)) d.items.forEach(i => addItemRow(i));
+        else addItemRow(); // 空行1つ
 
-            // 5. シナリオ詳細（配列 -> テキスト）
-            if(Array.isArray(d.scenarioList)) {
-                const text = d.scenarioList.map(scn => `[${scn.title}]\n${scn.desc}`).join('\n\n');
-                setVal('txtScenarioDetails', text);
-            } else {
-                // 旧データ形式への対応
-                const simpleList = d.scenarios || "";
-                if (simpleList && !d.scenarioList) {
-                    const converted = simpleList.split('\n')
-                        .filter(l => l.trim())
-                        .map(l => `[${l.replace(/[\[\]]/g, '')}]\n(詳細未記入)`).join('\n\n');
-                    setVal('txtScenarioDetails', converted);
-                } else {
-                    setVal('txtScenarioDetails', '');
-                }
-            }
+        // 5. 武器リスト描画
+        document.getElementById('weaponList').innerHTML = '';
+        if(Array.isArray(d.weapons)) d.weapons.forEach(w => addWeaponRow(w));
+        else addWeaponRow(); 
 
-            runCalculations();
-        }
+        // 6. 技能リスト描画
+        renderSkills(d.skills);
+        
+        runCalculations();
+    }
+
+    // 技能描画関数
+    function renderSkills(skillsObj) {
+        const area = document.getElementById('skillArea');
+        area.innerHTML = '';
+        
+        // カテゴリ定義
+        const cats = [
+            {id:'combat', label:'戦闘技能'}, {id:'explore', label:'探索技能'}, 
+            {id:'action', label:'行動技能'}, {id:'negotiate', label:'交渉技能'}, 
+            {id:'knowledge', label:'知識技能'}
+        ];
+
+        cats.forEach(c => {
+            const list = skillsObj ? skillsObj[c.id] : [];
+            if(!list || list.length === 0) return;
+
+            const box = document.createElement('div');
+            box.className = 'skill-category';
+            box.id = `skill-cat-${c.id}`;
+            
+            // ヘッダー
+            let html = `<h4>${c.label}</h4>
+            <table class="skill-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px; text-align:left;">技能名</th>
+                        <th style="width:40px;">合計</th>
+                        <th style="width:40px;">初期</th>
+                        <th style="width:40px;">職業</th>
+                        <th style="width:40px;">興味</th>
+                        <th style="width:40px;">成長</th>
+                        <th style="text-align:left; padding-left:10px;">技能詳細 (Flavor Text)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            list.forEach(s => {
+                html += `
+                <tr class="skill-entry">
+                    <td class="s-name" style="font-weight:bold;">${s.name}</td>
+                    <td><input type="number" class="s-total" value="${s.total}" readonly tabindex="-1"></td>
+                    <td><input type="number" class="s-init" value="${s.init}" readonly tabindex="-1" style="color:#888;"></td>
+                    <td><input type="number" class="s-job" value="${s.job}"></td>
+                    <td><input type="number" class="s-interest" value="${s.interest}"></td>
+                    <td><input type="number" class="s-growth" value="${s.growth}"></td>
+                    <td style="padding-left:10px;"><input type="text" class="s-desc skill-desc-input" value="${s.desc || ''}" placeholder="設定や理由など..."></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            box.innerHTML = html;
+            area.appendChild(box);
+            
+            // 合計値の自動計算イベント付与
+            box.querySelectorAll('input').forEach(inp => {
+                inp.addEventListener('input', (e) => {
+                    const row = e.target.closest('tr');
+                    const init = parseInt(row.querySelector('.s-init').value)||0;
+                    const job = parseInt(row.querySelector('.s-job').value)||0;
+                    const int = parseInt(row.querySelector('.s-interest').value)||0;
+                    const gro = parseInt(row.querySelector('.s-growth').value)||0;
+                    row.querySelector('.s-total').value = init + job + int + gro;
+                });
+            });
+        });
+    }
 
         // ★保存処理: schema.js の collectFormData を使用してデータ収集
         window.prepareSaveData = function() {
@@ -402,12 +486,19 @@
             if(!text) return;
             
             // schema.jsのパーサーを利用
-            const p = parseIaChara(text);
-
-            const fillIfEmpty = (id, val) => {
-                const current = getEl(id)?.value;
-                if(!current && val) setVal(id, val);
-            };
+           const p = parseIaChara(text);
+        
+        // 配列データの反映
+        if(p.items && p.items.length > 0) {
+            const list = document.getElementById('itemList');
+            // 既存に追加するか、置換するかはUX次第ですが、ここでは追記にします
+            p.items.forEach(i => addItemRow(i));
+        }
+        if(p.weapons && p.weapons.length > 0) {
+            p.weapons.forEach(w => addWeaponRow(w));
+        }
+        // スキルは全書き換えが安全
+        if(p.skills) renderSkills(p.skills);
 
             // 1. 基本フィールドの埋め込み
             FIELD_MAPPING.forEach(f => {
