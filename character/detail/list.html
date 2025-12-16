@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Select - SYSTEM_V6</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Teko:wght@500&display=swap" rel="stylesheet">
+    <style>
+        /* --- デザイン設定 --- */
+        :root {
+            --bg-color: #1a1a1d;
+            --card-width: 180px; 
+            --card-height: 55vh;
+            --gap: 15px;
+            --letterbox-height: 40px;
+            --accent-blue: #5b8ba8;
+            --accent-yellow: #d4b346;
+            --accent-gray: #555555;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center bottom;
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex; flex-direction: column;
+        }
+
+        .sub-header {
+            width: 100%; height: var(--letterbox-height);
+            background-color: #000;
+            display: flex; align-items: center; justify-content: center;
+            color: #555; font-family: 'Teko', sans-serif; letter-spacing: 0.3em; font-size: 0.9rem;
+            z-index: 10; border-bottom: 1px solid #333;
+        }
+
+        .stage-wrapper {
+            flex: 1; position: relative; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+
+        .stage-container {
+            display: flex; align-items: center;
+            padding: 0 5vw;
+            overflow-x: auto; scroll-behavior: smooth;
+            perspective: 1500px;
+            scrollbar-width: none; -ms-overflow-style: none;
+            height: 100%; width: 100%;
+        }
+        .stage-container::-webkit-scrollbar { display: none; }
+
+        .char-card {
+            flex: 0 0 var(--card-width);
+            height: var(--card-height);
+            margin: 0 var(--gap);
+            position: relative; cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease, margin 0.3s ease;
+            display: flex; flex-direction: column; justify-content: flex-end; 
+        }
+
+        .card-bg-panel {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #222; border-radius: 2px; overflow: hidden; z-index: 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            background: rgba(20, 20, 25, 0.9);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-bg-image {
+            width: 100%; height: 100%;
+            background-size: cover; background-position: center top;
+            opacity: 0.3; filter: grayscale(1) blur(2px);
+            transition: transform 0.5s ease;
+        }
+
+        .card-banner {
+            position: absolute; top: 15px; left: 10px; width: 32px; height: 160px;
+            z-index: 2; color: #fff; writing-mode: vertical-rl; text-orientation: upright;
+            display: flex; align-items: center; justify-content: flex-start;
+            padding-top: 10px; letter-spacing: 0.15em; font-family: 'Teko', sans-serif;
+            font-size: 1rem; box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+        }
+        .banner-role { font-size: 0.6rem; margin-bottom: 8px; opacity: 0.8; writing-mode: horizontal-tb; }
+
+        .char-shadow-contact {
+            position: absolute; bottom: -5px; left: 50%;
+            transform: translateX(-50%) scaleY(0.4); 
+            width: 90px; height: 30px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, transparent 80%);
+            z-index: 3; filter: blur(4px); opacity: 0.9;
+        }
+
+        .char-figure {
+            position: absolute; bottom: -10px; left: 50%;
+            transform: translateX(-50%);
+            height: 90%;
+            width: auto; max-width: none;
+            z-index: 10; pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0px 5px 4px rgba(0,0,0,0.6));
+            object-fit: contain;
+        }
+
+        .char-card:hover { z-index: 20; transform: translateY(-10px); }
+        .char-card:hover .card-bg-image { transform: scale(1.1); filter: grayscale(0) opacity(0.8) blur(0); }
+        .char-card:hover .char-figure { transform: translateX(-50%) scale(1.05); }
+        .char-card:hover .card-bg-panel { box-shadow: 0 0 25px rgba(0, 243, 255, 0.3); border-color: rgba(0, 243, 255, 0.5); }
+
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 50px; height: 50px; background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 100; transition: all 0.3s;
+        }
+        .nav-btn:hover { background: rgba(0, 243, 255, 0.3); border-color: #00f3ff; }
+        .nav-btn.prev { left: 20px; } .nav-btn.next { right: 20px; }
+
+        #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .particle {
+            position: absolute; background: rgba(255, 255, 255, 0.8); border-radius: 50%;
+            filter: blur(1px); animation: floatUp linear forwards;
+        }
+        @keyframes floatUp {
+            from { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.5; }
+            to { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        .color-blue { background: var(--accent-blue); }
+        .color-yellow { background: var(--accent-yellow); color: #222; }
+        .color-gray { background: var(--accent-gray); }
+        .color-red { background: #d9333f; }
+
+        .empty-msg { color: #888; font-family: 'Teko', sans-serif; font-size: 1.5rem; letter-spacing: 0.1em; }
+    </style>
+</head>
+<body>
+    <div class="sub-header">SQUAD SELECTION // DATABASE</div>
+    
+    <div id="particles"></div>
+
+    <div class="stage-wrapper">
+        <div class="nav-btn prev" id="btnPrev">◀</div>
+        <div class="stage-container" id="stage">
+            <div class="empty-msg">CONNECTING TO NETWORK...</div>
+        </div>
+        <div class="nav-btn next" id="btnNext">▶</div>
+    </div>
+
+    <div class="sub-header" style="height: 30px; font-size: 0.7rem;">CONFIRM OPERATION</div>
+
+    <script type="module">
+        import { initHeader } from "./js/header.js";
+        initHeader();
+    </script>
+
+    <script type="module">
+        import { loadFromCloud } from "./js/firestore.js";
+
+        const stage = document.getElementById('stage');
+
+        function getColorByJob(job) {
+            if(!job) return 'color-gray';
+            if(job.includes('探偵') || job.includes('警官')) return 'color-blue';
+            if(job.includes('医') || job.includes('学者')) return 'color-yellow';
+            if(job.includes('戦') || job.includes('自衛')) return 'color-red';
+            return 'color-gray';
+        }
+
+        window.renderCharacterList = function(data) {
+            stage.innerHTML = ''; 
+
+            if (!data || Object.keys(data).length === 0) {
+                stage.innerHTML = '<div class="empty-msg">NO DATA FOUND<br><span style="font-size:0.8rem">PLEASE CREATE NEW DATA</span></div>';
+                return;
+            }
+
+            Object.values(data).forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'char-card';
+                
+                const imgSource = char.image || 'https://placehold.co/200x500/333/666?text=NO+IMG';
+                const roleText = char.job ? char.job.substring(0, 8) : 'UNKNOWN';
+                const colorClass = getColorByJob(char.job);
+
+                card.innerHTML = `
+                    <div class="card-bg-panel">
+                        <div class="card-bg-image" style="background-image: url('${imgSource}');"></div>
+                    </div>
+                    <div class="card-banner ${colorClass}">
+                        <span class="banner-role">JOB</span>${char.name}
+                    </div>
+                    <div class="char-shadow-contact"></div>
+                    <img src="${imgSource}" class="char-figure" onerror="this.style.opacity='0'">
+                `;
+
+                card.onclick = () => {
+                    // ★ 移動先を detail.html に修正済み
+                    window.location.href = `detail.html?id=${char.id}`;
+                };
+
+                stage.appendChild(card);
+            });
+        };
+
+        loadFromCloud().then(data => {
+            if(data) window.renderCharacterList(data);
+        });
+
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        const SCROLL_AMOUNT = 210; 
+        btnNext.onclick = () => stage.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+        btnPrev.onclick = () => stage.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 3 + 2;
+            p.style.width = size + 'px'; p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            document.getElementById('particles').appendChild(p);
+            setTimeout(() => p.remove(), 10000);
+        }
+        setInterval(createParticle, 200);
+    </script>
+</body>
+</html>
