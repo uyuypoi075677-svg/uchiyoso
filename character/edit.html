@@ -1,252 +1,7 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DATA EDITOR</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <link href="edit/header.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #202020; color: #ddd;
-            font-family: 'Noto Sans JP', sans-serif;
-            margin: 0; padding: 0;
-        }
-        .container {
-            max-width: 900px; margin: 0 auto; padding: 80px 20px 100px;
-        }
-
-        /* ツールバー */
-        .toolbar {
-            background: #333; padding: 20px; border-radius: 4px; margin-bottom: 30px;
-            display: flex; justify-content: space-between; align-items: center; border: 1px solid #444;
-        }
-        select { padding: 10px; background: #111; color: #fff; border: 1px solid #555; width: 300px; border-radius: 4px; }
-        .btn-new { background: #44ff44; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        .btn-delete { background: #ff4444; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
-
-        /* レイアウト */
-        h2 { border-bottom: 2px solid #555; padding-bottom: 10px; margin-top: 40px; color: #aaa; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: flex-end; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-row { margin-bottom: 15px; }
-        .form-row.full { grid-column: span 2; }
-        .form-row.tri { grid-column: span 3; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-
-        label { display: block; color: #888; font-size: 0.75rem; margin-bottom: 5px; font-family: 'Roboto Mono', monospace; }
-        
-        input[type="text"], input[type="number"], input[type="date"] {
-            width: 100%; padding: 10px; box-sizing: border-box;
-            background: #2a2a2a; border: 1px solid #444; color: #fff;
-            border-radius: 4px; font-size: 0.95rem;
-        }
-        input:focus, textarea:focus, select:focus { border-color: #44ff44; outline: none; background: #333; }
-        textarea {
-            width: 100%; padding: 10px; box-sizing: border-box;
-            background: #2a2a2a; border: 1px solid #444; color: #fff;
-            border-radius: 4px; font-size: 0.9rem; line-height: 1.6; min-height: 80px; resize: vertical;
-        }
-
-        /* 分析エリア（右側のヒント） */
-        .calc-hint {
-            font-size: 0.75rem; color: #00f3ff; margin-top: 5px; text-align: right;
-            background: rgba(0, 243, 255, 0.1); padding: 5px 10px; border-radius: 4px;
-            display: inline-block; float: right;
-        }
-        .warn-hint { color: #ffaa00; background: rgba(255, 170, 0, 0.1); }
-
-        /* 画像エリア */
-        .visual-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
-            background: #252525; padding: 20px; border-radius: 4px; border: 1px solid #444;
-        }
-        .img-preview-box {
-            width: 100%; height: 200px; background: #000; border: 1px solid #444;
-            display: flex; align-items: center; justify-content: center; position: relative;
-        }
-        .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .img-label { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #aaa; padding: 2px 6px; font-size: 0.7rem; }
-
-        /* ステータス */
-        .stats-container {
-            display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px;
-            background: #252525; padding: 15px; border-radius: 4px;
-        }
-        .stat-box { text-align: center; }
-        .stat-box input { text-align: center; font-weight: bold; color: #44ff44; font-size: 1.1rem; }
-        .derived-val { color: #888; font-size: 0.8rem; margin-top: 5px; }
-
-        /* テキスト詳細のタブ風切り替え（シンプルに並べる形式に変更） */
-        .text-section {
-            border-left: 3px solid #444; padding-left: 15px; margin-bottom: 20px;
-        }
-        .text-section h3 { font-size: 0.9rem; color: #44ff44; margin: 0 0 10px 0; opacity: 0.8; }
-    </style>
-</head>
-<body>
-
-    <script type="module">
-        import { initHeader } from "./header.js"; 
-        initHeader();
-    </script>
-
-    <div class="container">
-        
-        <div class="toolbar">
-            <div>
-                <label>EDIT TARGET</label>
-                <select id="charSelect"><option value="">LOADING...</option></select>
-            </div>
-            <div>
-                <button id="btnCreateNew" class="btn-new">+ NEW</button>
-            </div>
-        </div>
-
-        <div id="editorArea" style="opacity:0.3; pointer-events:none;">
-            
-            <h2>BASIC PROFILE</h2>
-            <div class="form-grid">
-                <div class="form-row"><label>NAME (名前)</label><input type="text" id="inpName"></div>
-                <div class="form-row"><label>KANA (フリガナ)</label><input type="text" id="inpKana"></div>
-                <div class="form-row"><label>JOB (職業)</label><input type="text" id="inpJob"></div>
-                <div class="form-row"><label>TAGS (タグ)</label><input type="text" id="inpTags"></div>
-            </div>
-
-            <div class="grid-4">
-                <div class="form-row">
-                    <label>AGE (年齢)</label>
-                    <input type="number" id="inpAge">
-                    <div id="eduHint" class="calc-hint" style="display:none;"></div>
-                </div>
-                <div class="form-row"><label>GENDER (性別)</label><input type="text" id="inpGender" placeholder="男/女/その他"></div>
-                <div class="form-row"><label>BIRTHDAY (誕生日)</label><input type="text" id="inpBirthday" placeholder="12月6日"></div>
-                <div class="form-row"><label>BIRTHPLACE (出身)</label><input type="text" id="inpOrigin"></div>
-            </div>
-
-            <div class="grid-3" style="background:#252525; padding:15px; border-radius:4px; margin-top:10px;">
-                <div class="form-row">
-                    <label>HEIGHT (cm)</label>
-                    <input type="number" id="inpHeight">
-                    <div id="heightAvg" class="calc-hint derived-val"></div>
-                </div>
-                <div class="form-row">
-                    <label>WEIGHT (kg)</label>
-                    <input type="number" id="inpWeight">
-                    <div id="weightAvg" class="calc-hint derived-val"></div>
-                </div>
-                <div class="form-row">
-                    <label>BMI / BODY TYPE</label>
-                    <input type="text" id="outBMI" readonly style="background:#111; color:#888; border:none;">
-                </div>
-            </div>
-
-            <div class="grid-3" style="margin-top:15px;">
-                <div class="form-row"><label>HAIR COLOR (髪色)</label><input type="text" id="inpHair"></div>
-                <div class="form-row"><label>EYE COLOR (瞳の色)</label><input type="text" id="inpEye"></div>
-                <div class="form-row"><label>SKIN COLOR (肌の色)</label><input type="text" id="inpSkin"></div>
-            </div>
-
-            <h2>VISUALS</h2>
-            <div class="visual-grid">
-                <div>
-                    <label>STANDING ART (全身)</label>
-                    <div class="img-preview-box"><span class="img-label">BODY</span><img id="previewBody" class="img-preview"></div>
-                    <input type="text" id="inpImageBody" placeholder="URL..." style="margin-top:5px;">
-                </div>
-                <div>
-                    <label>FACE ICON (アイコン)</label>
-                    <div class="img-preview-box"><span class="img-label">ICON</span><img id="previewIcon" class="img-preview"></div>
-                    <input type="text" id="inpImageIcon" placeholder="URL..." style="margin-top:5px;">
-                </div>
-            </div>
-
-            <h2>STATS & VITALS <span style="font-size:0.8rem; font-weight:normal;">(自動算出: 知識=EDU*5, アイデア=INT*5, 幸運=POW*5)</span></h2>
-            <div class="stats-container">
-                <div class="stat-box"><label>STR</label><input type="number" id="s_str"></div>
-                <div class="stat-box"><label>CON</label><input type="number" id="s_con"></div>
-                <div class="stat-box"><label>POW</label><input type="number" id="s_pow"><div class="derived-val">LUCK:<span id="val_luck">0</span></div></div>
-                <div class="stat-box"><label>DEX</label><input type="number" id="s_dex"></div>
-                <div class="stat-box"><label>APP</label><input type="number" id="s_app"></div>
-                <div class="stat-box"><label>SIZ</label><input type="number" id="s_siz"></div>
-                <div class="stat-box"><label>INT</label><input type="number" id="s_int"><div class="derived-val">IDE:<span id="val_idea">0</span></div></div>
-                <div class="stat-box"><label>EDU</label><input type="number" id="s_edu"><div class="derived-val">KNOW:<span id="val_know">0</span></div></div>
-            </div>
-
-            <div class="grid-4" style="margin-top:20px;">
-                <div class="form-row"><label>HP (Max)</label><input type="number" id="v_hp"></div>
-                <div class="form-row"><label>MP (Max)</label><input type="number" id="v_mp"></div>
-                <div class="form-row"><label>SAN (現在値)</label><input type="number" id="v_san"></div>
-                <div class="form-row"><label>DB</label><input type="text" id="v_db"></div>
-            </div>
-
-            <h2>DETAILS (PROFILE & TEXT)</h2>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                <div>
-                    <div class="text-section">
-                        <h3>経歴 (BACKGROUND)</h3>
-                        <textarea id="txtBackground"></textarea>
-                    </div>
-                    <div class="text-section">
-                        <h3>性格 (PERSONALITY)</h3>
-                        <textarea id="txtPersonality"></textarea>
-                    </div>
-                    <div class="text-section">
-                        <h3>人間関係 (RELATIONSHIPS)</h3>
-                        <textarea id="txtRelations"></textarea>
-                    </div>
-                </div>
-                <div>
-                    <div class="text-section">
-                        <h3>外見的特徴 (APPEARANCE)</h3>
-                        <textarea id="txtAppearance"></textarea>
-                    </div>
-                    <div class="text-section">
-                        <h3>RP用補足 (ROLEPLAY NOTES)</h3>
-                        <textarea id="txtRoleplay"></textarea>
-                    </div>
-                    <div class="text-section">
-                        <h3>その他のメモ (GENERAL MEMO)</h3>
-                        <textarea id="txtMemo"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-section">
-                <h3>技能詳細 (SKILL DETAILS / POINT ALLOCATION)</h3>
-                <textarea id="txtSkillDetails" placeholder="例：図書館…調べ物に慣れている(30P) など"></textarea>
-            </div>
-
-            <h2>INVENTORY & LOGS</h2>
-            <div class="grid-3">
-                <div class="form-row"><label>所持品 (ITEMS)</label><textarea id="txtItems"></textarea></div>
-                <div class="form-row"><label>魔術/AF (SPELLS/AF)</label><textarea id="txtSpells"></textarea></div>
-                <div class="form-row"><label>通過シナリオ (SCENARIOS)</label><textarea id="txtScenarios"></textarea></div>
-            </div>
-
-            <div style="margin-top:50px; text-align:right;">
-                <button id="btnDelete" class="btn-delete">DELETE CHARACTER</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
+<script type="module">
         import { loadFromCloud, saveToCloud, monitorAuth } from "./firestore.js";
 
-        // DOM要素取得
-        const ids = [
-            'inpName','inpKana','inpJob','inpTags','inpAge','inpGender','inpBirthday','inpOrigin',
-            'inpHeight','inpWeight','inpHair','inpEye','inpSkin',
-            'inpImageBody','inpImageIcon',
-            's_str','s_con','s_pow','s_dex','s_app','s_siz','s_int','s_edu',
-            'v_hp','v_mp','v_san','v_db',
-            'txtBackground','txtPersonality','txtRelations','txtAppearance','txtRoleplay','txtMemo','txtSkillDetails',
-            'txtItems','txtSpells','txtScenarios'
-        ];
-        const el = {};
-        ids.forEach(id => el[id] = document.getElementById(id));
+        // DOM要素取得 (エラーが出ないように安全に取得する方式に変更)
         const charSelect = document.getElementById('charSelect');
         const editorArea = document.getElementById('editorArea');
 
@@ -264,7 +19,7 @@
             if (user) {
                 init();
             } else {
-                charSelect.innerHTML = '<option>LOGIN REQUIRED</option>';
+                if(charSelect) charSelect.innerHTML = '<option>LOGIN REQUIRED</option>';
             }
         });
 
@@ -277,6 +32,7 @@
         }
 
         function renderSelect() {
+            if(!charSelect) return;
             charSelect.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
             Object.values(allData).forEach(char => {
                 const opt = document.createElement('option');
@@ -287,55 +43,61 @@
             if(currentId) charSelect.value = currentId;
         }
 
-        charSelect.addEventListener('change', (e) => {
-            currentId = e.target.value;
-            if(!currentId) {
-                editorArea.style.opacity = '0.3';
-                editorArea.style.pointerEvents = 'none';
-                return;
-            }
-            loadCharacterToForm(allData[currentId]);
-        });
+        if(charSelect) {
+            charSelect.addEventListener('change', (e) => {
+                currentId = e.target.value;
+                if(!currentId) {
+                    if(editorArea) {
+                        editorArea.style.opacity = '0.3';
+                        editorArea.style.pointerEvents = 'none';
+                    }
+                    return;
+                }
+                loadCharacterToForm(allData[currentId]);
+            });
+        }
 
-        // --- ロジック: データ読み込み ---
+        // --- ロジック: データ読み込み (安全版) ---
         function loadCharacterToForm(d) {
+            if(!d || !editorArea) return;
+
             editorArea.style.opacity = '1';
             editorArea.style.pointerEvents = 'auto';
 
+            // ★ここが修正点: 1つ見つからなくても止まらない「安全なセット関数」を使います
             // 基本フィールド
-            el.inpName.value = d.name || '';
-            el.inpKana.value = d.kana || '';
-            el.inpJob.value = d.job || '';
-            el.inpTags.value = d.tags || '';
-            el.inpAge.value = d.age || '';
-            el.inpGender.value = d.gender || '';
-            el.inpBirthday.value = d.birthday || '';
-            el.inpOrigin.value = d.birthplace || '';
-            el.inpHeight.value = d.height || '';
-            el.inpWeight.value = d.weight || '';
-            el.inpHair.value = d.colorHair || '';
-            el.inpEye.value = d.colorEye || '';
-            el.inpSkin.value = d.colorSkin || '';
+            safeSetVal('inpName', d.name);
+            safeSetVal('inpKana', d.kana);
+            safeSetVal('inpJob', d.job);
+            safeSetVal('inpTags', d.tags);
+            safeSetVal('inpAge', d.age);
+            safeSetVal('inpGender', d.gender);
+            safeSetVal('inpBirthday', d.birthday);
+            safeSetVal('inpOrigin', d.birthplace);
+            safeSetVal('inpHeight', d.height);
+            safeSetVal('inpWeight', d.weight);
+            safeSetVal('inpHair', d.colorHair);
+            safeSetVal('inpEye', d.colorEye);
+            safeSetVal('inpSkin', d.colorSkin);
 
             // 画像
-            el.inpImageBody.value = d.image || '';
-            el.inpImageIcon.value = d.icon || '';
-            document.getElementById('previewBody').src = d.image || '';
-            document.getElementById('previewIcon').src = d.icon || '';
+            safeSetVal('inpImageBody', d.image);
+            safeSetVal('inpImageIcon', d.icon);
+            safeSetSrc('previewBody', d.image);
+            safeSetSrc('previewIcon', d.icon);
 
             // ステータス
             const s = d.stats || {};
-            el.s_str.value = s.STR; el.s_con.value = s.CON; el.s_pow.value = s.POW;
-            el.s_dex.value = s.DEX; el.s_app.value = s.APP; el.s_siz.value = s.SIZ;
-            el.s_int.value = s.INT; el.s_edu.value = s.EDU;
+            safeSetVal('s_str', s.STR); safeSetVal('s_con', s.CON); safeSetVal('s_pow', s.POW);
+            safeSetVal('s_dex', s.DEX); safeSetVal('s_app', s.APP); safeSetVal('s_siz', s.SIZ);
+            safeSetVal('s_int', s.INT); safeSetVal('s_edu', s.EDU);
 
             // バイタル
             const v = d.vitals || {};
-            el.v_hp.value = v.hp; el.v_mp.value = v.mp; el.v_san.value = v.san;
-            el.v_db.value = d.db || '±0';
+            safeSetVal('v_hp', v.hp); safeSetVal('v_mp', v.mp); safeSetVal('v_san', v.san);
+            safeSetVal('v_db', d.db || '±0');
 
-            // ★メモの分解ロジック
-            // いあきゃら形式の[ヘッダー]を検知して各ボックスへ振り分ける
+            // メモの分解ロジック
             const fullMemo = d.memo || '';
             
             function extractSection(tag) {
@@ -344,27 +106,26 @@
                 return match ? match[1].trim() : '';
             }
 
-            el.txtBackground.value = extractSection('経歴');
-            el.txtPersonality.value = extractSection('性格');
-            el.txtRelations.value = extractSection('人間関係');
-            el.txtAppearance.value = extractSection('外見');
-            el.txtRoleplay.value = extractSection('RP用補足') || extractSection('RP補足');
-            el.txtSkillDetails.value = extractSection('技能詳細') || extractSection('職業P振り分け詳細'); // 揺らぎ対応
+            safeSetVal('txtBackground', extractSection('経歴'));
+            safeSetVal('txtPersonality', extractSection('性格'));
+            safeSetVal('txtRelations', extractSection('人間関係'));
+            safeSetVal('txtAppearance', extractSection('外見'));
+            safeSetVal('txtRoleplay', extractSection('RP用補足') || extractSection('RP補足'));
+            safeSetVal('txtSkillDetails', extractSection('技能詳細') || extractSection('職業P振り分け詳細'));
             
-            // 残りのメモ（ヘッダー以外の部分）を抽出するのは難しいので、
-            // ヘッダーが含まれていない場合は「その他のメモ」に入れる
             if (!fullMemo.includes('[')) {
-                el.txtMemo.value = fullMemo;
+                safeSetVal('txtMemo', fullMemo);
             } else {
-                el.txtMemo.value = extractSection('メモ');
+                safeSetVal('txtMemo', extractSection('メモ'));
             }
 
-            el.txtSpells.value = d.spells || '';
-            el.txtScenarios.value = d.scenarios || '';
+            safeSetVal('txtSpells', d.spells);
+            safeSetVal('txtScenarios', d.scenarios);
+            
             if(Array.isArray(d.items)) {
-                el.txtItems.value = d.items.map(i => i.name).join('\n');
+                safeSetVal('txtItems', d.items.map(i => i.name).join('\n'));
             } else {
-                el.txtItems.value = '';
+                safeSetVal('txtItems', '');
             }
 
             updateCalculations();
@@ -375,49 +136,56 @@
             if(!currentId) return null;
             const char = allData[currentId];
 
-            char.name = el.inpName.value;
-            char.kana = el.inpKana.value;
-            char.job = el.inpJob.value;
-            char.tags = el.inpTags.value;
-            char.age = el.inpAge.value;
-            char.gender = el.inpGender.value;
-            char.birthday = el.inpBirthday.value;
-            char.birthplace = el.inpOrigin.value;
-            char.height = el.inpHeight.value;
-            char.weight = el.inpWeight.value;
-            char.colorHair = el.inpHair.value;
-            char.colorEye = el.inpEye.value;
-            char.colorSkin = el.inpSkin.value;
+            char.name = getSafeVal('inpName');
+            char.kana = getSafeVal('inpKana');
+            char.job = getSafeVal('inpJob');
+            char.tags = getSafeVal('inpTags');
+            char.age = getSafeVal('inpAge');
+            char.gender = getSafeVal('inpGender');
+            char.birthday = getSafeVal('inpBirthday');
+            char.birthplace = getSafeVal('inpOrigin');
+            char.height = getSafeVal('inpHeight');
+            char.weight = getSafeVal('inpWeight');
+            char.colorHair = getSafeVal('inpHair');
+            char.colorEye = getSafeVal('inpEye');
+            char.colorSkin = getSafeVal('inpSkin');
 
-            char.image = el.inpImageBody.value;
-            char.icon = el.inpImageIcon.value;
+            char.image = getSafeVal('inpImageBody');
+            char.icon = getSafeVal('inpImageIcon');
 
             char.stats = {
-                STR: parseInt(el.s_str.value)||0, CON: parseInt(el.s_con.value)||0, POW: parseInt(el.s_pow.value)||0,
-                DEX: parseInt(el.s_dex.value)||0, APP: parseInt(el.s_app.value)||0, SIZ: parseInt(el.s_siz.value)||0,
-                INT: parseInt(el.s_int.value)||0, EDU: parseInt(el.s_edu.value)||0
+                STR: parseInt(getSafeVal('s_str'))||0, CON: parseInt(getSafeVal('s_con'))||0, POW: parseInt(getSafeVal('s_pow'))||0,
+                DEX: parseInt(getSafeVal('s_dex'))||0, APP: parseInt(getSafeVal('s_app'))||0, SIZ: parseInt(getSafeVal('s_siz'))||0,
+                INT: parseInt(getSafeVal('s_int'))||0, EDU: parseInt(getSafeVal('s_edu'))||0
             };
             char.vitals = char.vitals || {};
-            char.vitals.hp = parseInt(el.v_hp.value)||0;
-            char.vitals.mp = parseInt(el.v_mp.value)||0;
-            char.vitals.san = parseInt(el.v_san.value)||0;
-            char.db = el.v_db.value;
+            char.vitals.hp = parseInt(getSafeVal('v_hp'))||0;
+            char.vitals.mp = parseInt(getSafeVal('v_mp'))||0;
+            char.vitals.san = parseInt(getSafeVal('v_san'))||0;
+            char.db = getSafeVal('v_db');
 
-            // ★メモの再結合
+            // メモ再結合
             let combinedMemo = "";
-            if(el.txtBackground.value) combinedMemo += `[経歴]\n${el.txtBackground.value}\n\n`;
-            if(el.txtPersonality.value) combinedMemo += `[性格]\n${el.txtPersonality.value}\n\n`;
-            if(el.txtRelations.value) combinedMemo += `[人間関係]\n${el.txtRelations.value}\n\n`;
-            if(el.txtAppearance.value) combinedMemo += `[外見]\n${el.txtAppearance.value}\n\n`;
-            if(el.txtRoleplay.value) combinedMemo += `[RP用補足]\n${el.txtRoleplay.value}\n\n`;
-            if(el.txtSkillDetails.value) combinedMemo += `[技能詳細]\n${el.txtSkillDetails.value}\n\n`;
-            if(el.txtMemo.value) combinedMemo += `[メモ]\n${el.txtMemo.value}`;
+            const parts = [
+                {t:'経歴', v: getSafeVal('txtBackground')},
+                {t:'性格', v: getSafeVal('txtPersonality')},
+                {t:'人間関係', v: getSafeVal('txtRelations')},
+                {t:'外見', v: getSafeVal('txtAppearance')},
+                {t:'RP用補足', v: getSafeVal('txtRoleplay')},
+                {t:'技能詳細', v: getSafeVal('txtSkillDetails')},
+                {t:'メモ', v: getSafeVal('txtMemo')}
+            ];
+            
+            parts.forEach(p => {
+                if(p.v) combinedMemo += `[${p.t}]\n${p.v}\n\n`;
+            });
             
             char.memo = combinedMemo.trim();
-            char.spells = el.txtSpells.value;
-            char.scenarios = el.txtScenarios.value;
+            char.spells = getSafeVal('txtSpells');
+            char.scenarios = getSafeVal('txtScenarios');
 
-            char.items = el.txtItems.value.split('\n').filter(t => t.trim()!=='').map(t => ({name: t, desc: ''}));
+            const itemsStr = getSafeVal('txtItems');
+            char.items = itemsStr.split('\n').filter(t => t.trim()!=='').map(t => ({name: t, desc: ''}));
 
             alert("保存しました！");
             return char;
@@ -425,98 +193,124 @@
 
         // --- 便利機能: 計算とヒント ---
         function updateCalculations() {
-            // 派生ステータス
-            const pow = parseInt(el.s_pow.value)||0;
-            const int = parseInt(el.s_int.value)||0;
-            const edu = parseInt(el.s_edu.value)||0;
-            document.getElementById('val_luck').textContent = pow * 5;
-            document.getElementById('val_idea').textContent = int * 5;
-            document.getElementById('val_know').textContent = edu * 5;
+            // 安全に値を取得
+            const pow = parseInt(getSafeVal('s_pow'))||0;
+            const int = parseInt(getSafeVal('s_int'))||0;
+            const edu = parseInt(getSafeVal('s_edu'))||0;
+            safeSetText('val_luck', pow * 5);
+            safeSetText('val_idea', int * 5);
+            safeSetText('val_know', edu * 5);
 
             // EDU年齢チェック
-            const age = parseInt(el.inpAge.value);
+            const age = parseInt(getSafeVal('inpAge'));
             const eduHint = document.getElementById('eduHint');
-            if(age && edu) {
-                const minAge = edu + 6;
-                if(age < minAge) {
-                    eduHint.style.display = 'block';
-                    eduHint.className = 'calc-hint warn-hint';
-                    eduHint.textContent = `⚠️ EDU${edu}の最低年齢は${minAge}歳です`;
+            if(eduHint) {
+                if(age && edu) {
+                    const minAge = edu + 6;
+                    if(age < minAge) {
+                        eduHint.style.display = 'block';
+                        eduHint.className = 'calc-hint warn-hint';
+                        eduHint.textContent = `⚠️ EDU${edu}の最低年齢は${minAge}歳です`;
+                    } else {
+                        eduHint.style.display = 'block';
+                        eduHint.className = 'calc-hint';
+                        eduHint.textContent = `✅ EDU${edu} (最低年齢: ${minAge}歳)`;
+                    }
                 } else {
-                    eduHint.style.display = 'block';
-                    eduHint.className = 'calc-hint';
-                    eduHint.textContent = `✅ EDU${edu} (最低年齢: ${minAge}歳)`;
+                    eduHint.style.display = 'none';
                 }
-            } else {
-                eduHint.style.display = 'none';
             }
 
-            // BMIと平均値
-            const h = parseFloat(el.inpHeight.value);
-            const w = parseFloat(el.inpWeight.value);
-            const gender = el.inpGender.value;
+            // BMI計算
+            const h = parseFloat(getSafeVal('inpHeight'));
+            const w = parseFloat(getSafeVal('inpWeight'));
+            const gender = getSafeVal('inpGender');
             
-            // 平均値表示
             let avgH = 0, avgW = 0;
             if(gender && (gender.includes('男') || gender.includes('male'))) {
                 avgH = AVG_DATA.male.h; avgW = AVG_DATA.male.w;
             } else {
-                // デフォルトは女性基準（または中間）にするか、指定があれば
                 avgH = AVG_DATA.female.h; avgW = AVG_DATA.female.w;
             }
             
-            if(h) {
-                document.getElementById('heightAvg').textContent = `(平均: ${avgH}cm)`;
-            }
-            if(w) {
-                document.getElementById('weightAvg').textContent = `(平均: ${avgW}kg)`;
-            }
+            if(h) safeSetText('heightAvg', `(平均: ${avgH}cm)`);
+            if(w) safeSetText('weightAvg', `(平均: ${avgW}kg)`);
 
-            // BMI計算
-            if(h > 0 && w > 0) {
-                const bmi = w / ((h/100) * (h/100));
-                let type = "普通";
-                if(bmi < 18.5) type = "低体重";
-                else if(bmi >= 25) type = "肥満";
-                document.getElementById('outBMI').value = `BMI: ${bmi.toFixed(1)} (${type})`;
-            } else {
-                document.getElementById('outBMI').value = "";
+            const bmiEl = document.getElementById('outBMI');
+            if(bmiEl) {
+                if(h > 0 && w > 0) {
+                    const bmi = w / ((h/100) * (h/100));
+                    let type = "普通";
+                    if(bmi < 18.5) type = "低体重";
+                    else if(bmi >= 25) type = "肥満";
+                    bmiEl.value = `BMI: ${bmi.toFixed(1)} (${type})`;
+                } else {
+                    bmiEl.value = "";
+                }
             }
         }
 
-        // イベントリスナー登録
-        ['inpAge','s_edu','inpHeight','inpWeight','inpGender','s_pow','s_int'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updateCalculations);
+        // --- 安全な操作ヘルパー関数（これが今回のキモです） ---
+        function safeSetVal(id, val) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.value = (val === undefined || val === null) ? '' : val;
+            }
+        }
+        function safeSetText(id, text) {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        }
+        function safeSetSrc(id, src) {
+            const el = document.getElementById(id);
+            if(el) el.src = src || '';
+        }
+        function getSafeVal(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+        }
+
+        // イベントリスナー登録 (エラーが出ても止まらないようにtry-catchは不要だが、念のため安全に)
+        const watchIds = ['inpAge','s_edu','inpHeight','inpWeight','inpGender','s_pow','s_int'];
+        watchIds.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('input', updateCalculations);
         });
 
         // 画像プレビュー
-        document.getElementById('inpImageBody').addEventListener('input', (e)=>document.getElementById('previewBody').src = e.target.value);
-        document.getElementById('inpImageIcon').addEventListener('input', (e)=>document.getElementById('previewIcon').src = e.target.value);
+        const ib = document.getElementById('inpImageBody');
+        if(ib) ib.addEventListener('input', (e)=> safeSetSrc('previewBody', e.target.value));
+        const ii = document.getElementById('inpImageIcon');
+        if(ii) ii.addEventListener('input', (e)=> safeSetSrc('previewIcon', e.target.value));
 
         // 新規作成
-        document.getElementById('btnCreateNew').addEventListener('click', () => {
-            const newId = crypto.randomUUID();
-            const newChar = {
-                id: newId, name: "新規キャラクター",
-                stats: {STR:10, CON:10, POW:10, DEX:10, APP:10, SIZ:10, INT:10, EDU:10},
-                vitals: {hp:10, mp:10, san:50},
-                items: [], skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[]}
-            };
-            allData[newId] = newChar;
-            currentId = newId;
-            renderSelect();
-            loadCharacterToForm(newChar);
-        });
+        const btnNew = document.getElementById('btnCreateNew');
+        if(btnNew) {
+            btnNew.addEventListener('click', () => {
+                const newId = crypto.randomUUID();
+                const newChar = {
+                    id: newId, name: "新規キャラクター",
+                    stats: {STR:10, CON:10, POW:10, DEX:10, APP:10, SIZ:10, INT:10, EDU:10},
+                    vitals: {hp:10, mp:10, san:50},
+                    items: [], skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[]}
+                };
+                allData[newId] = newChar;
+                currentId = newId;
+                renderSelect();
+                loadCharacterToForm(newChar);
+            });
+        }
         
-        document.getElementById('btnDelete').addEventListener('click', async () => {
-            if(!currentId) return;
-            if(confirm('削除しますか？')) {
-                delete allData[currentId];
-                alert('削除しました。反映にはリロードが必要です。');
-                location.reload();
-            }
-        });
+        const btnDel = document.getElementById('btnDelete');
+        if(btnDel) {
+            btnDel.addEventListener('click', async () => {
+                if(!currentId) return;
+                if(confirm('削除しますか？')) {
+                    delete allData[currentId];
+                    alert('削除しました。反映にはリロードが必要です。');
+                    location.reload();
+                }
+            });
+        }
 
     </script>
-</body>
-</html>
