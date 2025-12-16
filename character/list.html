@@ -116,12 +116,9 @@
         .char-card:hover .char-figure { transform: translateX(-50%) scale(1.05); }
         .char-card:hover .card-bg-panel { box-shadow: 0 0 25px rgba(0, 243, 255, 0.3); border-color: rgba(0, 243, 255, 0.5); }
 
-        /* --- ★追加: カード全体をクリック可能にするための透明なカバー --- */
-        .card-click-area {
-            position: absolute; inset: 0; z-index: 30; cursor: pointer;
-        }
+        /* --- クリックエリアとボタン --- */
+        .card-click-area { position: absolute; inset: 0; z-index: 30; cursor: pointer; }
 
-        /* --- ★追加: 画像編集ボタン --- */
         .edit-img-btn {
             position: absolute; top: 10px; right: 10px;
             width: 30px; height: 30px;
@@ -132,7 +129,6 @@
         }
         .edit-img-btn:hover { background: #00f3ff; color: #000; border-color: #00f3ff; }
         .char-card:hover .edit-img-btn { opacity: 1; }
-
 
         .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
@@ -164,8 +160,9 @@
     </style>
 </head>
 <body>
+
     <script type="module">
-        import { initHeader } from "./js/header.js";
+        import { initHeader } from "./header.js";
         initHeader();
     </script>
 
@@ -184,7 +181,7 @@
     <div class="sub-header" style="height: 30px; font-size: 0.7rem;">CONFIRM OPERATION</div>
 
     <script type="module">
-        import { loadFromCloud, saveToCloud } from "./js/firestore.js";
+        import { loadFromCloud, saveToCloud } from "./firestore.js";
 
         const stage = document.getElementById('stage');
 
@@ -222,30 +219,28 @@
                     <img src="${imgSource}" class="char-figure" onerror="this.style.opacity='0'">
                     
                     <div class="edit-img-btn" title="画像を登録/変更する">📷</div>
-                    
                     <div class="card-click-area"></div>
                 `;
 
-                // 1. 画像編集ボタンを押した時
+                // 画像編集
                 const editBtn = card.querySelector('.edit-img-btn');
                 editBtn.onclick = (e) => {
-                    e.stopPropagation(); // 詳細ページへの移動をキャンセル
+                    e.stopPropagation();
                     const newUrl = prompt("【立ち絵登録】\n画像のURLを入力してください：", char.image || "");
                     
-                    if(newUrl !== null) { // キャンセル以外なら保存
+                    if(newUrl !== null) {
                         char.image = newUrl;
-                        // ここで保存！リスト画面から直接保存します
                         saveToCloud(char).then(() => {
-                            // 保存完了後、自動的にリストを再描画（自分自身をリロード）
                             window.renderCharacterList(data);
                         });
                     }
                 };
 
-                // 2. カード自体をクリックした時（詳細へ）
+                // 詳細へ移動
                 const clickArea = card.querySelector('.card-click-area');
                 clickArea.onclick = () => {
-                    window.location.href = `detail.html?id=${char.id}`;
+                    // ★修正点：スクショに合わせて詳細画面の場所を指定
+                    window.location.href = `character/detail/detail.html?id=${char.id}`;
                 };
 
                 stage.appendChild(card);
