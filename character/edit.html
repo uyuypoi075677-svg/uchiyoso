@@ -15,9 +15,13 @@
         select { padding: 10px; background: #111; color: #fff; border: 1px solid #555; width: 300px; border-radius: 4px; }
         .btn-new { background: #44ff44; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; }
         .btn-delete { background: #ff4444; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
-        .import-area { background: #2a2a2d; padding: 20px; border-radius: 4px; border: 1px dashed #666; margin-bottom: 30px; }
-        .import-area textarea { height: 100px; font-size: 0.8rem; color: #aaa; width: 100%; box-sizing: border-box; background: #222; border: 1px solid #444; padding: 10px; }
+        
+        /* Drop Zone */
+        .import-area { background: #2a2a2d; padding: 20px; border-radius: 4px; border: 2px dashed #666; margin-bottom: 30px; transition: 0.3s; }
+        .import-area.dragover { background: #3a3a40; border-color: #00f3ff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
+        .import-area textarea { height: 100px; font-size: 0.8rem; color: #aaa; width: 100%; box-sizing: border-box; background: #222; border: 1px solid #444; padding: 10px; margin-top: 10px; }
         .btn-merge { background: #00f3ff; color: #000; border: none; padding: 8px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
+        
         h2 { border-bottom: 2px solid #555; padding-bottom: 10px; margin-top: 40px; color: #aaa; font-size: 1.1rem; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-row { margin-bottom: 15px; }
@@ -30,9 +34,12 @@
         .analysis-box { background: #252525; padding: 15px; border-radius: 4px; border: 1px solid #444; margin-top: 5px; font-size: 0.85rem; color: #ccc; }
         .calc-val { color: #44ff44; font-weight: bold; margin-left: 5px; }
         .warn-text { color: #ffaa00; }
+        
         .visual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; background: #252525; padding: 20px; border-radius: 4px; border: 1px solid #444; }
-        .img-preview-box { width: 100%; height: 200px; background: #000; border: 1px solid #444; display: flex; align-items: center; justify-content: center; position: relative; }
+        .img-preview-box { width: 100%; height: 200px; background: #000; border: 1px solid #444; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .drop-msg { position: absolute; color: #666; font-size: 0.8rem; pointer-events: none; }
+        
         .stats-container { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; background: #252525; padding: 15px; border-radius: 4px; }
         .stat-box { text-align: center; }
         .stat-box input { text-align: center; font-weight: bold; color: #44ff44; font-size: 1.1rem; }
@@ -40,26 +47,26 @@
         .text-section h3 { font-size: 0.9rem; color: #44ff44; margin: 0 0 10px 0; opacity: 0.8; }
         .helper-text { font-size: 0.7rem; color: #666; margin-top: 2px; }
 
-        /* --- 新規追加スタイル (リスト・テーブル用) --- */
+        /* List & Tables */
         .list-container { background: #252525; border: 1px solid #444; border-radius: 4px; padding: 10px; margin-top: 5px; }
         .list-row { display: grid; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; align-items: center; }
         .btn-add { background: #444; color: #fff; border: none; width: 100%; padding: 5px; cursor: pointer; font-size: 0.8rem; margin-top: 5px; }
         .btn-add:hover { background: #555; }
         .btn-remove { background: #552222; color: #ffaaaa; border: none; padding: 2px 8px; cursor: pointer; font-size: 0.7rem; border-radius: 2px; }
 
-        /* 武器テーブル用グリッド */
         .weapon-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; font-size: 0.7rem; color: #888; margin-bottom: 5px; padding: 0 5px; }
         .weapon-entry { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; margin-bottom: 5px; }
         .weapon-entry input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem; width: 100%; }
 
-        /* 技能リスト用 */
         .skill-category { margin-bottom: 20px; }
         .skill-category h4 { margin: 5px 0; color: #44ff44; font-size: 0.9rem; border-bottom: 1px solid #444; }
         .skill-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
         .skill-table th { color: #888; text-align: center; font-weight: normal; font-size: 0.7rem; padding: 4px; }
         .skill-table td { padding: 2px; }
-        .skill-table input[type="number"] { text-align: center; color: #44ff44; padding: 4px; }
-        .skill-desc-input { width: 100%; color: #ddd; font-size: 0.8rem; background: #1a1a1a; border: 1px solid #444; padding: 4px; }
+        .skill-table input[type="number"] { text-align: center; color: #44ff44; padding: 4px; width: 100%; box-sizing: border-box; background: #1a1a1a; border: 1px solid #333; }
+        .skill-desc-input { width: 100%; color: #ddd; font-size: 0.8rem; background: #1a1a1a; border: 1px solid #444; padding: 4px; box-sizing: border-box; }
+        
+        input[type="color"] { width: 100%; height: 40px; padding: 2px; background: #2a2a2a; border: 1px solid #444; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -78,10 +85,10 @@
 
         <div id="editorArea" style="opacity:0.3; pointer-events:none;">
             
-            <div class="import-area">
-                <h3 style="margin-top:0; color:#00f3ff;">SMART IMPORT (いあきゃらテキスト読込)</h3>
-                <p style="font-size:0.8rem; color:#888; margin-bottom:5px;">テキストデータを貼り付けて「不足を埋める」を押すと、空欄部分を自動で補完します。</p>
-                <textarea id="txtImportSource" placeholder="ここにテキストデータを貼り付け..."></textarea>
+            <div id="dropZone" class="import-area">
+                <h3 style="margin-top:0; color:#00f3ff;">SMART IMPORT (Drop .txt File Here)</h3>
+                <p style="font-size:0.8rem; color:#888; margin-bottom:5px;">いあきゃらのテキストファイル(.txt)をここにドロップするか、テキストを貼り付けてください。</p>
+                <textarea id="txtImportSource" placeholder="テキストデータを貼り付け..."></textarea>
                 <button id="btnMerge" class="btn-merge">✨ FILL MISSING INFO (解析＆補完)</button>
             </div>
 
@@ -105,6 +112,7 @@
             <div class="grid-4" style="margin-top:15px;">
                 <div class="form-row"><label>BIRTHDAY</label><input type="text" id="inpBirthday"></div>
                 <div class="form-row"><label>BIRTHPLACE</label><input type="text" id="inpOrigin"></div>
+                <div class="form-row"><label>THEME COLOR</label><input type="color" id="inpThemeColor" value="#d9333f"></div>
             </div>
 
             <div id="eduCheckArea" class="analysis-box" style="display:none;"><span>🎓 EDU分析:</span><span id="eduMsg"></span></div>
@@ -122,17 +130,23 @@
                 <div style="margin-bottom:5px;">📊 <b>BMI:</b> <span id="outBMI" class="calc-val">--</span></div>
             </div>
 
-            <h2>VISUALS</h2>
+            <h2>VISUALS (Drag & Drop Image)</h2>
             <div class="visual-grid">
                 <div>
-                    <label>STANDING ART</label>
-                    <div class="img-preview-box"><img id="previewBody" class="img-preview"></div>
-                    <input type="text" id="inpImageBody" placeholder="URL..." style="margin-top:5px;">
+                    <label>STANDING ART (立ち絵)</label>
+                    <div class="img-preview-box" id="dropBody">
+                        <span class="drop-msg">Drop Image Here</span>
+                        <img id="previewBody" class="img-preview">
+                    </div>
+                    <input type="text" id="inpImageBody" placeholder="URL or Base64..." style="margin-top:5px;">
                 </div>
                 <div>
-                    <label>FACE ICON</label>
-                    <div class="img-preview-box"><img id="previewIcon" class="img-preview"></div>
-                    <input type="text" id="inpImageIcon" placeholder="URL..." style="margin-top:5px;">
+                    <label>FACE ICON (顔アイコン)</label>
+                    <div class="img-preview-box" id="dropIcon">
+                        <span class="drop-msg">Drop Image Here</span>
+                        <img id="previewIcon" class="img-preview">
+                    </div>
+                    <input type="text" id="inpImageIcon" placeholder="URL or Base64..." style="margin-top:5px;">
                 </div>
             </div>
 
@@ -188,6 +202,7 @@
                     <div class="list-container">
                         <div id="itemList"></div>
                         <button type="button" class="btn-add" onclick="addItemRow()">+ ADD ITEM</button>
+                        <textarea id="txtItems" style="display:none;"></textarea> <!-- Hidden for compatibility -->
                     </div>
                 </div>
                 <div class="form-row">
@@ -226,7 +241,7 @@
     </div>
 
     <script type="module">
-        import { loadFromCloud, monitorAuth } from "./firestore.js";
+        import { loadFromCloud, monitorAuth, saveToCloud } from "./firestore.js";
         import { collectFormData, parseIaChara, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
 
         const getEl = (id) => document.getElementById(id);
@@ -245,7 +260,7 @@
         let allData = {};
         let currentId = null;
 
-        // --- グローバル関数定義 (ボタン操作用) ---
+        // --- グローバル関数定義 ---
         window.addItemRow = (val={name:'', desc:''}) => {
             const div = document.createElement('div');
             div.className = 'list-row item-entry';
@@ -321,6 +336,9 @@
             setSrc('previewBody', d.image);
             setSrc('previewIcon', d.icon);
 
+            // 追加項目: カラー
+            setVal('inpThemeColor', d.color || '#d9333f');
+
             const s = d.stats || {};
             STATS_MAPPING.forEach(f => setVal(f.id, s[f.key]));
             const v = d.vitals || {};
@@ -336,26 +354,22 @@
             setVal('txtBackground', extract('経歴'));
             setVal('txtPersonality', extract('性格'));
             setVal('txtRelations', extract('人間関係'));
-            setVal('txtAppearance', extract('外見的特徴')||extract('外見'));
+            setVal('txtAppearance', extract('外見')||extract('外見的特徴'));
             setVal('txtRoleplay', extract('RP補足')||extract('RP用補足'));
             
             if(!fullMemo.includes('[')) setVal('txtMemo', fullMemo);
             else setVal('txtMemo', extract('メモ'));
 
-            // 4. アイテムリスト
             getEl('itemList').innerHTML = '';
             if(Array.isArray(d.items)) d.items.forEach(i => addItemRow(i));
             else addItemRow();
 
-            // 5. 武器リスト
             getEl('weaponList').innerHTML = '';
             if(Array.isArray(d.weapons)) d.weapons.forEach(w => addWeaponRow(w));
             else addWeaponRow();
 
-            // 6. 技能リスト
             renderSkills(d.skills);
 
-            // 7. シナリオ詳細
             if(Array.isArray(d.scenarioList)) {
                 const text = d.scenarioList.map(scn => `[${scn.title}]\n${scn.desc}`).join('\n\n');
                 setVal('txtScenarioDetails', text);
@@ -374,7 +388,6 @@
             runCalculations();
         }
 
-        // 技能テーブル描画
         function renderSkills(skillsObj) {
             const area = getEl('skillArea');
             area.innerHTML = '';
@@ -424,7 +437,6 @@
                 box.innerHTML = html;
                 area.appendChild(box);
                 
-                // 自動計算イベント
                 box.querySelectorAll('input').forEach(inp => {
                     inp.addEventListener('input', (e) => {
                         const row = e.target.closest('tr');
@@ -438,15 +450,73 @@
             });
         }
 
-        window.prepareSaveData = function() {
-            if(!currentId) return null;
-            const originalData = Object.values(allData).find(c=>c.id==currentId);
-            if(!originalData) return null;
-            // 空欄保護モード(false)で保存
-            const finalData = collectFormData(originalData, false);
-            alert("保存しました！");
-            return finalData;
+        // --- ドラッグ＆ドロップ (テキスト) ---
+        const dropZone = getEl('dropZone');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+            dropZone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+        });
+        dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if(file && file.type.match('text.*')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => getEl('txtImportSource').value = ev.target.result;
+                reader.readAsText(file);
+            }
+        });
+
+        // --- ドラッグ＆ドロップ (画像) ---
+        const setupImgDrop = (zoneId, inputId, imgId) => {
+            const zone = getEl(zoneId);
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+                zone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+            });
+            zone.addEventListener('drop', (e) => {
+                const file = e.dataTransfer.files[0];
+                if(file && file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        getEl(inputId).value = ev.target.result; // Base64
+                        getEl(imgId).src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         };
+        setupImgDrop('dropBody', 'inpImageBody', 'previewBody');
+        setupImgDrop('dropIcon', 'inpImageIcon', 'previewIcon');
+
+        // 保存処理
+        window.saveData = async function() {
+            if(!currentId) return;
+            const originalData = Object.values(allData).find(c=>c.id==currentId);
+            if(!originalData) return;
+            
+            // アイテム欄をtextarea形式にも反映させておく(互換性のため)
+            const itemRows = document.querySelectorAll('.item-entry');
+            const itemsArr = [];
+            itemRows.forEach(row => {
+                const n = row.querySelector('.i-name').value;
+                const d = row.querySelector('.i-desc').value;
+                if(n) itemsArr.push(d ? `${n} : ${d}` : n);
+            });
+            getEl('txtItems').value = itemsArr.join('\n');
+
+            const finalData = collectFormData(originalData, false);
+            await saveToCloud(finalData); // Cloud Save
+            alert("保存しました！");
+        };
+
+        // UIからSaveボタンを呼び出せるようにする (ツールバーに追加推奨)
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'SAVE DATA';
+        saveBtn.className = 'btn-new';
+        saveBtn.style.background = '#00f3ff';
+        saveBtn.onclick = window.saveData;
+        document.querySelector('.toolbar > div:last-child').appendChild(saveBtn);
+
 
         getEl('btnMerge').addEventListener('click', () => {
             const text = getEl('txtImportSource').value;
@@ -462,11 +532,15 @@
             STATS_MAPPING.forEach(f => fillIfEmpty(f.id, p.stats[f.key]));
             VITALS_MAPPING.forEach(f => fillIfEmpty(f.id, p.vitals[f.key]));
             
+            // カラー
+            if(p.colorHair) fillIfEmpty('inpHair', p.colorHair);
+            if(p.colorEye) fillIfEmpty('inpEye', p.colorEye);
+            if(p.colorSkin) fillIfEmpty('inpSkin', p.colorSkin);
+
             Object.keys(MEMO_ID_MAP).forEach(key => {
                 if(p.memo[key]) fillIfEmpty(MEMO_ID_MAP[key], p.memo[key]);
             });
 
-            // リストデータは追記or上書き（ここでは追記・更新）
             if(p.items && p.items.length > 0) {
                 p.items.forEach(i => addItemRow(i));
             }
@@ -475,8 +549,14 @@
             }
             if(p.skills) renderSkills(p.skills);
 
-            if(p.image && !getEl('previewBody').src) setSrc('previewBody', p.image);
-            if(p.icon && !getEl('previewIcon').src) setSrc('previewIcon', p.icon);
+            if(p.image && !getEl('previewBody').src) {
+                setVal('inpImageBody', p.image);
+                setSrc('previewBody', p.image);
+            }
+            if(p.icon && !getEl('previewIcon').src) {
+                setVal('inpImageIcon', p.icon);
+                setSrc('previewIcon', p.icon);
+            }
 
             alert("解析・補完しました！\n所持品・武器・技能表が更新されています。");
             runCalculations();
