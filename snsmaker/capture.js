@@ -16,8 +16,8 @@ function adjustTextPosition(clonedDoc) {
     dateRows.forEach(row => {
         // 【修正箇所】間隔を 2px -> 10px に広げました
         // これにより、日付ラベル同士やメッセージとの間隔が適切に空きます
-        row.style.marginTop = '5px';
-        row.style.marginBottom = '5px';
+        row.style.marginTop = '-5px';
+        row.style.marginBottom = '15px';
     });
 
     const dateLabels = clonedDoc.querySelectorAll('.date-label');
