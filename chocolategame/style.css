@@ -14,25 +14,24 @@ body {
     background-color: var(--bg-color);
     font-family: var(--font-main);
     width: 100vw; height: 100vh;
-    overflow: hidden;
     display: flex; justify-content: center; align-items: center;
+    overflow: auto; /* 小さい画面ではスクロール可能に */
     user-select: none;
 }
 
-/* 画面サイズに合わせて拡大縮小するためのラッパー */
-#wrapper {
-    width: 100%; height: 100%;
+/* ゲーム画面を中央に固定配置 */
+#game-wrapper {
     display: flex; justify-content: center; align-items: center;
+    padding: 20px;
 }
 
-/* ゲーム画面の基本サイズ (16:9) */
 #game-container {
     position: relative;
-    width: 960px; height: 540px;
+    width: 960px; height: 540px; /* 固定サイズ */
     background: #000;
     box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    /* JSでtransform: scale()される */
-    transform-origin: center center; 
+    border: 4px solid #3e2723;
+    border-radius: 4px;
 }
 
 #game-stage {
@@ -74,7 +73,7 @@ body {
     transform-origin: bottom center;
     pointer-events: none; 
     z-index: 10;
-    image-rendering: pixelated; /* ドット絵をくっきり表示 */
+    image-rendering: pixelated; 
 }
 
 /* 吹き出し */
@@ -149,7 +148,7 @@ button:active { transform: translateY(3px); box-shadow: none; }
 }
 .action-btn:hover { filter: brightness(1.1); }
 .action-btn:disabled { background: #999; cursor: not-allowed; filter: none; }
-.close-btn { background: transparent; color: #888; margin-top: 15px; text-decoration: underline; box-shadow: none; }
+.close-btn { background: transparent; color: #888; margin-top: 15px; text-decoration: underline; box-shadow: none; cursor: pointer; }
 
 /* スタート画面 */
 #start-screen {
@@ -164,7 +163,7 @@ button:active { transform: translateY(3px); box-shadow: none; }
 #start-btn { 
     padding: 20px 60px; font-size: 30px; background: var(--gold); 
     border: 4px solid #fff; color: #3E2723; border-radius: 50px; 
-    box-shadow: 0 5px 0 #bfa020; margin-top: 20px;
+    box-shadow: 0 5px 0 #bfa020; margin-top: 20px; cursor: pointer;
 }
 #start-btn:active { transform: translateY(5px); box-shadow: none; }
 

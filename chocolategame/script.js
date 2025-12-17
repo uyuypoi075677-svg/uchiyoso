@@ -1,29 +1,35 @@
 /* --- 設定とデータ --- */
 const CONFIG = {
-    // 画像パス (指定のものに更新)
     charSrc: '../images/hoko/mahiru.png', 
+    charSize: 48,
+    walkSpeed: 4,
     
-    // キャラクター設定
-    charSize: 48,  // 表示サイズ
-    walkSpeed: 4,  // 少し速くしました
-    
-    // 障害物 (x, y, w, h) - 960x540のキャンバスに対する座標
-    // ここに入るとキャラクターは止まります
+    // 障害物 (x, y, w, h)
+    // 判定を小さくして、家具のキワまで歩けるように修正しました
     obstacles: [
-        { x: 0, y: 0, w: 260, h: 220 },     // 左上の棚周辺
-        { x: 170, y: 250, w: 320, h: 100 }, // 中央のショーケース
-        { x: 550, y: 0, w: 300, h: 180 },   // 右上のキッチンカウンター（右端の階段への通路を空けるために幅を縮小）
-        { x: 600, y: 320, w: 180, h: 220 }, // 右下のレジ・テーブル
-        // 画面端の壁判定（少し内側まで行けないように）
-        { x: -50, y: 0, w: 70, h: 540 },    // 左壁
-        { x: 940, y: 0, w: 50, h: 540 },    // 右壁
-        { x: 0, y: -50, w: 960, h: 70 },    // 上壁
-        { x: 0, y: 520, w: 960, h: 50 }     // 下壁
+        { x: 0, y: 0, w: 220, h: 200 },     // 左上の棚（少し小さく）
+        { x: 180, y: 280, w: 280, h: 60 },  // ショーケース（足元判定のみに）
+        { x: 560, y: 0, w: 280, h: 180 },   // 右上のキッチン
+        { x: 620, y: 350, w: 140, h: 180 }, // 右下のレジ
+        
+        // 画面外へ出ないための壁
+        { x: -50, y: 0, w: 60, h: 540 },    // 左
+        { x: 950, y: 0, w: 50, h: 540 },    // 右
+        { x: 0, y: -50, w: 960, h: 100 },   // 上（奥行き制限）
+        { x: 0, y: 530, w: 960, h: 50 }     // 下
     ],
 
-    // 初期出現位置 (階段の下あたり、安全な場所)
+    // 初期出現位置 (階段下)
     spawnX: 880,
-    spawnY: 220
+    spawnY: 250,
+
+    // 各エリアをクリックした時の「立ち位置」（障害物にめり込まない座標）
+    safePoints: {
+        'zone-shelf': { x: 200, y: 250 },
+        'zone-display': { x: 320, y: 380 },
+        'zone-kitchen': { x: 700, y: 220 },
+        'zone-register': { x: 580, y: 450 }
+    }
 };
 
 const RECIPES = [
@@ -41,7 +47,7 @@ class Game {
         
         // 状態
         this.state = {
-            money: 900,
+            money: 1000,
             ingredients: 5,
             stock: 0,
             display: 0,
@@ -61,23 +67,6 @@ class Game {
         
         this.lastTime = 0;
         this.customerTimer = 0;
-
-        // リサイズ監視
-        window.addEventListener('resize', () => this.resize());
-        this.resize();
-    }
-
-    // 画面サイズに合わせてゲーム画面を拡大縮小
-    resize() {
-        const winW = window.innerWidth;
-        const winH = window.innerHeight;
-        const baseW = 960;
-        const baseH = 540;
-
-        // 比率を計算（画面に収まるように）
-        const scale = Math.min(winW / baseW, winH / baseH);
-        
-        this.container.style.transform = `scale(${scale})`;
     }
 
     start() {
@@ -85,7 +74,7 @@ class Game {
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         this.isPlaying = true;
 
-        // プレイヤー生成（修正した安全な位置に出現）
+        // プレイヤー生成
         this.player = new Actor(this, 'player', CONFIG.charSrc, CONFIG.spawnX, CONFIG.spawnY);
         
         this.ui.updateAll();
@@ -99,40 +88,27 @@ class Game {
     handleClick(e) {
         if (!this.isPlaying || this.player.isBusy) return;
 
-        // 拡大縮小されているため、getBoundingClientRectで正確な座標を取得
         const rect = this.stage.getBoundingClientRect();
-        // scaleの影響を打ち消すために比率で計算
-        const scaleX = 960 / rect.width;
-        const scaleY = 540 / rect.height;
-
-        const clickX = (e.clientX - rect.left) * scaleX;
-        const clickY = (e.clientY - rect.top) * scaleY;
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
 
         this.playSound('click');
 
         if (e.target.classList.contains('hotspot')) {
             const id = e.target.id;
-            const targetPos = this.getTargetPosition(e.target, scaleX, scaleY);
+            // 障害物内ではなく、定義された「安全な立ち位置」へ移動させる
+            const safePos = CONFIG.safePoints[id];
             
-            this.player.walkTo(targetPos.x, targetPos.y, () => {
-                this.logic.interact(id);
-            });
+            if (safePos) {
+                this.player.walkTo(safePos.x, safePos.y, () => {
+                    this.logic.interact(id);
+                });
+            }
         } else {
+            // 通常移動
             this.player.walkTo(clickX, clickY);
             this.ui.createSparkle(clickX, clickY);
         }
-    }
-
-    getTargetPosition(el, sx, sy) {
-        // ホットスポットの手前(下方向)の座標を計算
-        const elRect = el.getBoundingClientRect();
-        const stageRect = this.stage.getBoundingClientRect();
-        
-        // stage内での相対座標を元の960x540スケールに戻して計算
-        const centerX = ((elRect.left - stageRect.left) + elRect.width / 2) * sx;
-        const bottomY = ((elRect.bottom - stageRect.top)) * sy + 10; // 少し下
-        
-        return { x: centerX, y: bottomY };
     }
 
     loop(timestamp) {
@@ -169,11 +145,11 @@ class Game {
         
         // 入り口（下中央）から出現
         const customer = new Actor(this, 'customer', null, 480, 550);
-        // 色をランダムに
         customer.element.style.filter = `hue-rotate(${Math.random()*360}deg)`;
         
-        // レジへ向かう
-        customer.walkTo(580, 450, () => {
+        // レジの安全な位置へ向かう
+        const regPos = CONFIG.safePoints['zone-register'];
+        customer.walkTo(regPos.x, regPos.y, () => {
             setTimeout(() => {
                 if(this.state.display > 0) {
                     this.logic.sellItem();
@@ -251,7 +227,6 @@ class Actor {
         
         if (type === 'player' && imgSrc) {
             this.element.style.backgroundImage = `url(${imgSrc})`;
-            // 3列4行の画像を想定してサイズ調整
             this.element.style.backgroundSize = `${CONFIG.charSize * 3}px ${CONFIG.charSize * 4}px`;
         } else {
             // 客 (簡易シルエット)
@@ -280,15 +255,17 @@ class Actor {
             const dy = this.targetY - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
+            // 到着判定距離を少し甘くする（ピタッと止まれるように）
             if (dist > this.speed) {
                 let vx = (dx / dist) * this.speed;
                 let vy = (dy / dist) * this.speed;
 
-                // 衝突判定: X軸移動チェック
+                // 衝突判定 (簡易: 次の地点が障害物なら進まない)
+                // X軸だけ進めるか？
                 if (!this.checkCollision(this.x + vx, this.y)) {
                     this.x += vx;
                 }
-                // 衝突判定: Y軸移動チェック
+                // Y軸だけ進めるか？
                 if (!this.checkCollision(this.x, this.y + vy)) {
                     this.y += vy;
                 }
@@ -323,7 +300,6 @@ class Actor {
     }
 
     checkCollision(x, y) {
-        // 画像は足元が基準座標なので、足元の1点をチェック
         for (let obs of CONFIG.obstacles) {
             if (x > obs.x && x < obs.x + obs.w &&
                 y > obs.y && y < obs.y + obs.h) {
@@ -443,7 +419,8 @@ class GameLogic {
         this.game.state.display--;
         const earnings = 50 + (this.game.state.level * 5);
         this.game.state.money += earnings;
-        this.game.ui.createSparkle(600, 350); // レジ付近
+        // レジ付近にエフェクト
+        this.game.ui.createSparkle(600, 350); 
         this.game.ui.updateAll();
     }
 
