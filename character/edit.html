@@ -42,10 +42,10 @@
         .stats-container { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; background: #252525; padding: 15px; border-radius: 4px; }
         .stat-box { text-align: center; }
         .stat-box input { text-align: center; font-weight: bold; color: #44ff44; font-size: 1.1rem; }
+        
+        /* Text Sections & Clear Button */
         .text-section { border-left: 3px solid #444; padding-left: 15px; margin-bottom: 20px; position: relative; }
         .text-section h3 { font-size: 0.9rem; color: #44ff44; margin: 0 0 10px 0; opacity: 0.8; display: inline-block; }
-        
-        /* Clear Button (×) */
         .btn-clear-text {
             position: absolute; top: 0; right: 0;
             background: transparent; border: 1px solid #555; color: #888;
@@ -53,15 +53,44 @@
         }
         .btn-clear-text:hover { background: #442222; color: #ff8888; border-color: #ff4444; }
 
+        /* --- List & Tables (修正箇所) --- */
         .list-container { background: #252525; border: 1px solid #444; border-radius: 4px; padding: 10px; margin-top: 5px; }
-        .list-row { display: grid; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; align-items: center; }
+        
+        /* アイテム行のグリッド定義: 名前(1fr) 説明(2fr) 削除ボタン(30px) */
+        .item-entry { 
+            display: grid; 
+            grid-template-columns: 1fr 2fr 30px; /* ★ボタン幅を確保 */
+            gap: 10px; 
+            margin-bottom: 10px; 
+            padding-bottom: 10px; 
+            border-bottom: 1px solid #333; 
+            align-items: center; 
+        }
+
         .btn-add { background: #444; color: #fff; border: none; width: 100%; padding: 5px; cursor: pointer; font-size: 0.8rem; margin-top: 5px; }
         .btn-add:hover { background: #555; }
-        .btn-remove { background: #552222; color: #ffaaaa; border: none; padding: 2px 8px; cursor: pointer; font-size: 0.7rem; border-radius: 2px; }
+        
+        /* 削除ボタン */
+        .btn-remove { 
+            background: #552222; color: #ffaaaa; border: 1px solid #774444; 
+            padding: 0; height: 30px; width: 30px;
+            cursor: pointer; font-size: 0.8rem; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-remove:hover { background: #ff4444; color: #fff; }
 
-        .weapon-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; font-size: 0.7rem; color: #888; margin-bottom: 5px; padding: 0 5px; }
-        .weapon-entry { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 5px; margin-bottom: 5px; }
-        .weapon-entry input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem; width: 100%; }
+        /* 武器ヘッダーとエントリー */
+        .weapon-header { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 30px; /* ★最後を30pxに */
+            gap: 5px; font-size: 0.7rem; color: #888; margin-bottom: 5px; padding: 0 5px; 
+        }
+        .weapon-entry { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 30px; /* ★最後を30pxに */
+            gap: 5px; margin-bottom: 5px; align-items: center;
+        }
+        .weapon-entry input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem; width: 100%; box-sizing: border-box; }
 
         .skill-category { margin-bottom: 20px; }
         .skill-category h4 { margin: 5px 0; color: #44ff44; font-size: 0.9rem; border-bottom: 1px solid #444; }
@@ -174,7 +203,6 @@
             </div>
 
             <h2>DETAILS</h2>
-            <!-- ★ Clear Button付きのレイアウトに変更 -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div>
                     <div class="text-section">
@@ -286,10 +314,10 @@
         let currentId = null;
 
         // --- グローバル関数定義 (リスト操作) ---
+        // ★修正: 常にボタンを表示する構造にする
         window.addItemRow = (val={name:'', desc:''}) => {
             const div = document.createElement('div');
-            div.className = 'list-row item-entry';
-            div.style.gridTemplateColumns = '1fr 2fr auto';
+            div.className = 'item-entry'; // item-entryクラスを直接適用
             div.innerHTML = `
                 <input type="text" class="i-name" placeholder="名称" value="${val.name}">
                 <input type="text" class="i-desc" placeholder="効果・備考" value="${val.desc}">
@@ -330,7 +358,6 @@
             });
             getEl('txtItems').value = itemsArr.join('\n');
 
-            // ★ ここを true (空白上書き許可) に変更しました
             const finalData = collectFormData(originalData, true);
             alert("保存準備完了 (Cloud保存を実行します)");
             return finalData;
@@ -576,11 +603,26 @@
                 if(p.memo[key]) fillIfEmpty(MEMO_ID_MAP[key], p.memo[key]);
             });
 
+            // ★修正: 重複チェックを行いながら所持品を追加
             if(p.items && p.items.length > 0) {
-                p.items.forEach(i => addItemRow(i));
+                // 現在のDOMにあるアイテム名を取得
+                const existingNames = Array.from(document.querySelectorAll('.i-name')).map(el => el.value.trim());
+                p.items.forEach(i => {
+                    // 名前が完全一致するものがない場合のみ追加
+                    if (i.name && !existingNames.includes(i.name.trim())) {
+                        addItemRow(i);
+                    }
+                });
             }
+
             if(p.weapons && p.weapons.length > 0) {
-                p.weapons.forEach(w => addWeaponRow(w));
+                // 武器も同様にチェック（必要に応じて）
+                const existingWeapons = Array.from(document.querySelectorAll('.w-name')).map(el => el.value.trim());
+                p.weapons.forEach(w => {
+                    if (w.name && !existingWeapons.includes(w.name.trim())) {
+                        addWeaponRow(w);
+                    }
+                });
             }
             if(p.skills) renderSkills(p.skills);
 
