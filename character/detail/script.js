@@ -38,15 +38,13 @@ const CAT_COLORS = {
     summary: '#00f3ff'
 };
 
-// ★修正: テキストエリアの高さを調整する関数（バグ修正版）
+// textareaの高さ自動調整
 function adjustHeight(el) {
     if(document.querySelector('.short-view') && !el.matches(':focus') && !el.matches(':hover')) {
-        el.style.height = ''; // short-view時はCSSに任せる
+        el.style.height = ''; 
         return;
     }
-    // 一度高さをリセットして正しいscrollHeightを取得する
     el.style.height = 'auto';
-    // 最小高さを確保しつつ内容に合わせてリサイズ
     el.style.height = (el.scrollHeight) + 'px';
 }
 
@@ -104,11 +102,9 @@ els.hideToggle.addEventListener('change', () => renderCurrentTab());
 els.shortDescToggle.addEventListener('change', (e) => {
     if(e.target.checked) {
         els.listBody.classList.add('short-view');
-        // short-view有効時はスタイルをリセット
         document.querySelectorAll('.skill-desc-inp').forEach(tx => tx.style.height = '');
     } else {
         els.listBody.classList.remove('short-view');
-        // 解除時は再度高さを計算
         document.querySelectorAll('.skill-desc-inp').forEach(tx => adjustHeight(tx));
     }
 });
@@ -221,16 +217,13 @@ function renderProfile(d) {
     const tags = document.getElementById('charTags'); tags.innerHTML='';
     if(d.tags) d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
 
-    // ★ ステータスから最大値を計算 (6版ルール)
+    // ステータスから最大値を計算 (6版ルール)
     const stats = d.stats || {};
-    // CONとSIZがあれば (CON+SIZ)/2、なければ現在のHPを分母とする等のフォールバック
     const maxHP = (stats.CON && stats.SIZ) ? Math.ceil((parseInt(stats.CON) + parseInt(stats.SIZ)) / 2) : (d.vitals.hp || 1);
-    // MPはPOWと同値
     const maxMP = stats.POW ? parseInt(stats.POW) : (d.vitals.mp || 1);
     
     // SAN最大値: 99 - クトゥルフ神話技能
     let mythosVal = 0;
-    // 全技能から検索
     if(d.skills) {
         Object.values(d.skills).flat().forEach(s => {
             if(s.name && s.name.includes('クトゥルフ神話')) {
@@ -240,7 +233,6 @@ function renderProfile(d) {
     }
     const maxSAN = 99 - mythosVal;
 
-    // バーの更新
     setBar('HP', d.vitals.hp, maxHP);
     setBar('MP', d.vitals.mp, maxMP);
     setBar('SAN', d.vitals.san, maxSAN);
@@ -263,22 +255,21 @@ function renderProfile(d) {
         options: chartOpts(18)
     });
 
-    // ★ ステータス評価の表示（修正版）
+    // ★ ステータス評価の表示（修正済み: window.STATUS_FLAVORを参照）
     renderStatusFlavor(d.stats);
 }
 
-// ★ 修正: data.jsのSTATUS_FLAVORをwindowから取得
 function renderStatusFlavor(stats) {
     const list = els.flavorList;
     list.innerHTML = '';
 
-    // data.jsはmoduleではないscriptタグで読み込まれているため、global(window)にあるはず
+    // data.js で window.STATUS_FLAVOR に代入されている前提
     const flavorDB = window.STATUS_FLAVOR;
 
     if (!flavorDB) {
-        console.warn('STATUS_FLAVOR not found. Make sure data.js is loaded.');
+        console.warn('STATUS_FLAVOR not loaded from data.js');
         const li = document.createElement('li');
-        li.textContent = "Data definition not loaded.";
+        li.textContent = "Loading data...";
         list.appendChild(li);
         return;
     }
@@ -317,7 +308,6 @@ function setBar(id, v, m) {
     const elVal = document.getElementById(`val${id}`);
     const elBar = document.getElementById(`bar${id}`);
     if(elVal) elVal.textContent = `${v}/${m}`;
-    // バーの長さ計算（最大値を超えないように）
     const pct = Math.min(100, Math.max(0, (v/m)*100));
     if(elBar) elBar.style.width = pct + '%';
 }
@@ -356,10 +346,10 @@ function renderSkillSection(cat) {
 
         row.innerHTML = `
             <td>
-                <div style="font-weight:bold; color:var(--text-main); font-size:0.9rem;">${s.name}${badge}</div>
+                <div class="skill-name-row">${s.name}${badge}</div>
                 <textarea class="skill-desc-inp" placeholder="..." rows="1">${s.desc || ''}</textarea>
             </td>
-            <td style="font-family:var(--font-head); font-size:1.2rem; text-align:center; color:#fff">${s.total}</td>
+            <td style="font-family:var(--font-head); font-size:1.2rem; text-align:center; color:#fff" class="skill-val-cell">${s.total}</td>
             <td>
                 <div class="val-row">
                     <span>Init:${s.init}</span>
@@ -378,14 +368,12 @@ function renderSkillSection(cat) {
 
         const tx = row.querySelector('textarea');
         tx.addEventListener('input', (e) => { s.desc = e.target.value; adjustHeight(e.target); });
-        // ★修正: レイアウト描画後に確実に高さを調整
         requestAnimationFrame(() => adjustHeight(tx));
         els.listBody.appendChild(row);
     });
     
     if(els.shortDescToggle.checked) {
         els.listBody.classList.add('short-view');
-        // short-viewの場合、高さリセット
         els.listBody.querySelectorAll('textarea').forEach(t => t.style.height = '');
     }
     renderTabChart(cat, skillsToRender);

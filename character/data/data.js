@@ -61,3 +61,9 @@ const BASE_SKILLS = {
     "地質学": 1, "電子工学": 1, "天文学": 1, "博物学": 10, "物理学": 1, "法律": 5,
     "薬学": 1, "歴史": 20
 };
+
+// 他のモジュールから参照できるようにwindowオブジェクトに登録
+window.STATUS_FLAVOR = STATUS_FLAVOR;
+if (typeof BASE_SKILLS !== 'undefined') {
+    window.BASE_SKILLS = BASE_SKILLS;
+}
