@@ -1,5 +1,5 @@
 /* --- style-cork.css --- */
-/* THEME: ANALOG / INVESTIGATION BOARD (Final) */
+/* THEME: ANALOG / INVESTIGATION BOARD (Fixed) */
 
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Klee+One:wght@400;600&family=Shippori+Mincho:wght@400;700&display=swap');
 
@@ -34,7 +34,6 @@ body {
     color: var(--ink-main);
     font-family: 'Shippori Mincho', serif;
     
-    /* 画面からはみ出た場合のスクロール許可 */
     min-height: 100vh;
     overflow-y: auto; 
     overflow-x: auto; 
@@ -73,7 +72,6 @@ body {
     display: grid;
     grid-template-columns: 320px minmax(500px, 1fr) 350px;
     gap: 20px;
-    /* ヘッダー分を確保してマージンを設定 */
     padding: 20px;
     margin: 60px auto 20px auto; 
     max-width: 1920px;
@@ -219,17 +217,35 @@ body {
     border-bottom: 2px solid var(--ink-main); padding: 5px 15px; color: var(--ink-sub);
     position: sticky; top: 0; background: var(--paper-base); z-index: 5;
 }
-.skill-table td { padding: 0 15px; height: 60px; vertical-align: middle; border-bottom: none; }
+.skill-table td { padding: 5px 15px; vertical-align: top; border-bottom: none; }
 
 .skill-table td:nth-child(1) { font-family: 'Shippori Mincho', serif; font-weight: bold; font-size: 1.1rem; }
 .skill-table td:nth-child(2) { font-family: 'Courier Prime', monospace; font-size: 1.4rem; font-weight: bold; }
 
-.skill-desc-inp {
-    width: 100%; background: transparent; border: none; font-family: 'Klee One', cursive;
-    color: var(--ink-blue); font-size: 1rem; line-height: 1.5; resize: none; overflow: hidden; padding: 0;
+/* ★ スキル名の下線などの装飾 */
+.skill-name-row {
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 2px;
+    margin-bottom: 5px;
+    display: inline-block;
+    width: 100%;
 }
-.skill-desc-inp:focus { outline: none; }
 
+/* ★ 技能詳細入力欄（ズレ修正・視認性向上） */
+.skill-desc-inp {
+    display: block;
+    width: 95%; /* 少し右に余白 */
+    margin: 5px 0 10px 10px; /* 上と左に余白（インデント） */
+    background: transparent; border: none; 
+    font-family: 'Klee One', cursive;
+    color: var(--ink-blue); 
+    font-size: 0.95rem; line-height: 1.6; 
+    resize: none; overflow: hidden; padding: 0;
+    min-height: 1.6em;
+}
+.skill-desc-inp:focus { outline: none; background: rgba(0, 68, 204, 0.03); }
+
+/* SHORT VIEW MODE */
 .short-view .skill-desc-inp {
     height: 1.5em !important;
     white-space: nowrap; text-overflow: ellipsis; display: block; overflow: hidden !important; opacity: 0.8;
@@ -253,6 +269,7 @@ body {
     transform: rotate(-15deg); margin-left: 5px; display: inline-block;
 }
 
+/* ★ SWAP MODE FIXES */
 .dashboard-grid.swapped .skill-table th:nth-child(3),
 .dashboard-grid.swapped .skill-table td:nth-child(3) .dist-bar-track,
 .dashboard-grid.swapped .skill-table td:nth-child(3) .val-row { display: none; }
