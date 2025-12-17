@@ -16,7 +16,7 @@ function adjustTextPosition(clonedDoc) {
     dateRows.forEach(row => {
         // 【修正箇所】間隔を 2px -> 10px に広げました
         // これにより、日付ラベル同士やメッセージとの間隔が適切に空きます
-        row.style.marginTop = '-5px';
+        row.style.marginTop = '5px';
         row.style.marginBottom = '5px';
     });
 
@@ -35,8 +35,8 @@ function adjustTextPosition(clonedDoc) {
     sysRows.forEach(row => {
         // 【修正箇所】こちらも 2px -> 10px に広げました
         // これで「下が詰まる」現象が解消されます
-        row.style.marginTop = '10px';
-        row.style.marginBottom = '10px';
+        row.style.marginTop = '5px';
+        row.style.marginBottom = '5px';
     });
 
     // 4. ICONS
