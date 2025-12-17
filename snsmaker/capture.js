@@ -11,13 +11,11 @@ function adjustTextPosition(clonedDoc) {
         b.style.transform = 'none';
     });
 
-    // 2. DATE LABELS (Adjustment + Spacing)
+    // 2. DATE LABELS
     const dateRows = clonedDoc.querySelectorAll('.date-row');
     dateRows.forEach(row => {
-        // 【修正箇所】間隔を 2px -> 10px に広げました
-        // これにより、日付ラベル同士やメッセージとの間隔が適切に空きます
-        row.style.marginTop = '5px';
-        row.style.marginBottom = '5px';
+        row.style.marginTop = '2px';
+        row.style.marginBottom = '2px';
     });
 
     const dateLabels = clonedDoc.querySelectorAll('.date-label');
@@ -30,13 +28,14 @@ function adjustTextPosition(clonedDoc) {
         l.style.transform = 'translateY(-6px)'; 
     });
 
-    // 3. SYSTEM MESSAGES (Spacing)
+    // 3. SYSTEM MESSAGES (Spacing Adjustment)
     const sysRows = clonedDoc.querySelectorAll('.system-msg-row');
     sysRows.forEach(row => {
-        // 【修正箇所】こちらも 2px -> 10px に広げました
-        // これで「下が詰まる」現象が解消されます
-        row.style.marginTop = '10px';
-        row.style.marginBottom = '10px';
+        // 【修正箇所】日付ラベルの視覚的なズレを考慮してマージンを再配分
+        // 上側：日付ラベルが上に逃げるため、マージンをマイナスにして詰める
+        row.style.marginTop = '-5px';
+        // 下側：次の日付ラベルが上に食い込んでくるため、マージンを広げる
+        row.style.marginBottom = '15px';
     });
 
     // 4. ICONS
