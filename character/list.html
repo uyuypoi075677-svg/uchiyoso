@@ -4,37 +4,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD SELECTION</title>
+    <title>Character Select</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Teko:wght@300;500;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- フォント読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Teko:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- 既存のヘッダーCSSがあれば読み込み -->
     <link href="list/header.css" rel="stylesheet">
 
     <style>
+        /* --- デザイン変数定義 --- */
         :root {
-            --bg-dark: #0b0b0d;
-            --card-width: 260px; 
-            --card-height: 550px; /* 縦長のモニター比率 */
-            --card-gap: 40px;
+            --bg-color: #121214; /* より深いダークグレーで高級感を */
+            --card-width: 220px; /* カード幅を広めに調整 */
+            --card-height: 65vh; /* 高さを画面比率で確保 */
+            --card-gap: 30px;    /* 間隔を広げてゆとりを持たせる */
             
-            --neon-blue: #00f3ff;
-            --neon-yellow: #ffd700;
-            --neon-red: #ff2a6d;
-            --neon-gray: #a4b0be;
+            --accent-blue: #4a9eff;
+            --accent-yellow: #ffd700;
+            --accent-red: #ff4757;
+            --accent-gray: #a4b0be;
             
-            --tech-font: 'Rajdhani', sans-serif;
+            --glass-border: rgba(255, 255, 255, 0.1);
             --ui-font: 'Teko', sans-serif;
         }
 
         body {
             margin: 0; padding: 0;
-            background-color: var(--bg-dark);
-            /* 床のパースペクティブグリッド */
+            background-color: var(--bg-color);
+            /* テクニカルなグリッド背景 */
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                radial-gradient(circle at 50% 100%, #1a2a3a 0%, #000 80%);
-            background-size: 50px 50px, 50px 50px, 100% 100%;
+                radial-gradient(circle at center bottom, #2a2a30 0%, #121214 70%);
+            background-size: 60px 60px, 60px 60px, 100% 100%;
             background-position: center bottom;
+            background-repeat: repeat, repeat, no-repeat;
+            
             font-family: 'Noto Sans JP', sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -42,239 +48,280 @@
             color: #fff;
         }
 
-        /* --- ヘッダー --- */
+        /* --- ヘッダー・フッター装飾 --- */
         .sub-header {
-            width: 100%; height: 60px;
+            width: 100%; height: 40px;
+            background: rgba(0,0,0,0.8);
+            border-bottom: 1px solid var(--glass-border);
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 40px; box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-            z-index: 100; pointer-events: none;
+            padding: 0 20px; box-sizing: border-box;
+            z-index: 100;
+            backdrop-filter: blur(5px);
         }
-        .sh-title { font-family: var(--tech-font); letter-spacing: 0.2em; font-size: 1.4rem; color: #fff; text-shadow: 0 0 10px rgba(0,243,255,0.5); }
+        .sub-header-text {
+            color: #fff; font-family: var(--ui-font); letter-spacing: 0.2em; font-size: 1.1rem; opacity: 0.8;
+        }
 
-        /* --- メインステージ --- */
+        /* --- メインステージ（スクロール領域） --- */
         .stage-wrapper {
-            flex: 1; width: 100%;
+            flex: 1; position: relative; width: 100%;
             display: flex; align-items: center; justify-content: center;
-            perspective: 1200px; /* 強い遠近感 */
-            position: relative;
-            padding-bottom: 5vh; /* 全体を少し上に持ち上げる */
+            z-index: 10;
+            perspective: 1200px; /* 3D空間の奥行き定義 */
         }
 
         .stage-container {
-            display: flex; align-items: center; /* 垂直方向中央揃え */
-            padding: 0 calc(50vw - var(--card-width) / 2);
+            display: flex; align-items: center;
+            padding: 0 calc(50vw - var(--card-width) / 2); /* 最初と最後を中央に持ってくるパディング */
             overflow-x: auto; scroll-behavior: smooth;
             height: 100%; width: 100%;
-            scrollbar-width: none;
-            padding-top: 20px;
-            padding-bottom: 20px;
+            scrollbar-width: none; 
+            /* カードの配置調整 */
+            align-items: center;
         }
         .stage-container::-webkit-scrollbar { display: none; }
 
-        /* --- カード (3Dコンテナ) --- */
+        /* --- キャラクターカード（3Dコンテナ） --- */
         .char-card {
             flex: 0 0 var(--card-width);
             height: var(--card-height);
             margin: 0 var(--card-gap);
             position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform-style: preserve-3d; /* 子要素の3D配置を有効化 */
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             cursor: pointer;
         }
 
+        /* ホバー時のカード挙動 */
         .char-card:hover {
-            transform: translateZ(30px); /* ホバーで少し前に出る */
+            transform: translateY(-15px) scale(1.02);
             z-index: 50;
         }
 
-        /* --- Layer 1: 背景モニター (奥) --- */
-        .monitor-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 85%; /* 下部を空けてフィギュアスペースに */
-            background: #15151a;
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 4px;
-            overflow: hidden;
-            transform: translateZ(0px); /* 基準位置 */
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-            transition: 0.3s;
+        /* --- レイヤー1: 背景パネル (奥) --- */
+        .card-bg-panel {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 4px; overflow: hidden;
+            background: linear-gradient(135deg, #2b2b30 0%, #1a1a1d 100%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            transform: translateZ(0px); /* 基準面 */
+            transition: box-shadow 0.3s, border-color 0.3s;
         }
-
-        /* モニター内の拡大画像 */
-        .monitor-bg-img {
+        
+        /* 背景パネル内の拡大画像 */
+        .card-bg-image {
             width: 100%; height: 100%;
-            background-size: cover; 
-            background-position: top center; /* 顔周辺を表示 */
-            opacity: 0.5; 
-            filter: grayscale(80%) contrast(1.1);
-            transition: transform 0.5s, filter 0.3s, opacity 0.3s;
-        }
-        
-        /* モニターの走査線オーバーレイ */
-        .monitor-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none; z-index: 2;
-        }
-        
-        /* ホバー時のモニター変化 */
-        .char-card:hover .monitor-screen {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
-        }
-        .char-card:hover .monitor-bg-img {
-            opacity: 0.8; filter: grayscale(0%); transform: scale(1.05);
+            background-size: cover; background-position: top center;
+            opacity: 0.4; 
+            filter: grayscale(100%) contrast(1.2) brightness(0.6);
+            transition: transform 0.6s ease, filter 0.3s;
+            mix-blend-mode: luminosity; /* 背景となじませる */
         }
 
-        /* --- Layer 2: タグ (モニターの手前) --- */
-        .name-tag {
-            position: absolute; top: 20px; left: -10px;
-            width: 40px; height: 160px;
-            background: rgba(255,255,255,0.9);
-            color: #000;
-            display: flex; flex-direction: column; align-items: center; padding-top: 15px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
-            transform: translateZ(20px); /* モニターより少し浮かす */
+        .char-card:hover .card-bg-panel {
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.2);
+            border-color: rgba(74, 158, 255, 0.4);
+        }
+        .char-card:hover .card-bg-image {
+            transform: scale(1.1);
+            filter: grayscale(0%) contrast(1) brightness(0.8);
+            mix-blend-mode: normal;
+        }
+
+        /* --- レイヤー2: タグ/バナー (パネルより少し手前) --- */
+        .card-banner {
+            position: absolute; top: -10px; left: 15px; 
+            width: 36px; height: 180px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding-top: 15px;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
+            transform: translateZ(20px); /* 少し手前に浮かす */
             z-index: 5;
-            clip-path: polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%);
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%); /* 下部をリボン状に */
         }
-        .tag-job { writing-mode: vertical-rl; font-size: 0.7rem; color: #555; margin-bottom: 5px; font-family: var(--ui-font); letter-spacing: 0.1em; }
-        .tag-name { writing-mode: vertical-rl; text-orientation: upright; font-weight: bold; font-size: 1.1rem; letter-spacing: 0.2em; }
-        .tag-line { width: 2px; height: 30px; background: #000; margin-bottom: 5px; }
-
-        /* --- Layer 3: フィギュアエリア (手前・下部) --- */
         
-        /* 台座 (Base) */
-        .figure-base {
+        .banner-role {
+            writing-mode: vertical-rl; text-orientation: mixed;
+            font-family: var(--ui-font); font-size: 0.8rem; letter-spacing: 0.1em;
+            opacity: 0.8; margin-bottom: 10px;
+        }
+        .banner-name {
+            writing-mode: vertical-rl; text-orientation: upright;
+            font-family: 'Noto Sans JP', sans-serif; font-weight: 700; font-size: 1.1rem;
+            letter-spacing: 0.2em;
+        }
+        
+        /* バナーの色分けライン */
+        .banner-line {
+            width: 4px; height: 40px; margin-bottom: 8px;
+            background: #fff;
+        }
+
+        /* --- レイヤー3: キャラクター立ち絵 (最前面) --- */
+        .char-figure-wrapper {
             position: absolute; bottom: 0; left: 50%;
-            width: 140px; height: 140px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.01) 50%, transparent 70%);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            transform: translateX(-50%) rotateX(70deg) translateZ(40px); /* 床のように倒して手前に配置 */
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
-            transition: 0.3s;
+            width: 140%; height: 105%; /* 枠からはみ出させる */
+            transform: translateX(-50%) translateZ(40px); /* さらに手前に */
+            pointer-events: none;
+            display: flex; align-items: flex-end; justify-content: center;
             z-index: 10;
         }
-        /* 台座の中心光 */
-        .figure-base::after {
-            content: ''; position: absolute; top: 50%; left: 50%;
-            width: 80%; height: 80%;
-            border-radius: 50%;
-            border: 1px dashed rgba(255,255,255,0.3);
-            transform: translate(-50%, -50%);
-            animation: spin 10s linear infinite;
-        }
-        @keyframes spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-
-        /* 接地影 (Contact Shadow) */
-        .figure-shadow {
-            position: absolute; bottom: 40px; left: 50%;
-            width: 100px; height: 20px;
-            background: rgba(0,0,0,0.8);
-            border-radius: 50%;
-            transform: translateX(-50%) translateZ(41px); /* 台座のすぐ上 */
-            filter: blur(8px);
-            z-index: 11;
-        }
-
-        /* 立ち絵フィギュア本体 (Figure) */
+        
         .char-figure {
-            position: absolute; bottom: 25px; left: 50%;
-            height: 280px; /* 全身が見えるサイズ感 */
-            width: auto; max-width: none;
-            transform: translateX(-50%) translateZ(60px); /* スクリーンよりかなり手前、台座の上に配置 */
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-            z-index: 20;
+            max-height: 100%; max-width: 100%;
+            width: auto; height: auto;
             object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            transition: transform 0.3s;
+            /* 画像ロード前の崩れ防止 */
+            opacity: 0; animation: fadeIn 0.5s forwards;
         }
+        @keyframes fadeIn { to { opacity: 1; } }
 
-        /* ホバー時の全体連動 */
-        .char-card:hover .figure-base {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
-            background: radial-gradient(circle, rgba(0, 243, 255, 0.2) 0%, transparent 70%);
-        }
         .char-card:hover .char-figure {
-            transform: translateX(-50%) translateZ(80px) scale(1.05); /* さらに前に出る */
+            transform: scale(1.05) translateY(-5px);
         }
 
-        /* --- UI Controls --- */
-        .nav-arrow {
+        /* --- レイヤー0: 足元の影 --- */
+        .char-shadow {
+            position: absolute; bottom: 10px; left: 50%;
+            width: 160px; height: 30px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, transparent 70%);
+            transform: translateX(-50%) translateZ(10px) rotateX(10deg); /* 床面に配置 */
+            z-index: 1; pointer-events: none;
+            filter: blur(5px);
+        }
+        
+        /* 床面の反射のような演出 */
+        .char-reflection {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: linear-gradient(to top, rgba(255,255,255,0.05), transparent);
+            transform: translateZ(1px);
+            z-index: 2; pointer-events: none;
+        }
+
+        /* --- UIパーツ --- */
+        .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 80px; height: 120px;
+            width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff; font-size: 1.5rem;
             display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; color: rgba(255,255,255,0.2);
-            cursor: pointer; z-index: 200; transition: 0.3s;
+            cursor: pointer; z-index: 200;
+            transition: all 0.3s;
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
         }
-        .nav-arrow:hover { color: #fff; text-shadow: 0 0 20px var(--neon-blue); }
-        .nav-arrow.prev { left: 20px; }
-        .nav-arrow.next { right: 20px; }
-
-        .click-area { position: absolute; inset: 0; z-index: 100; transform: translateZ(100px); cursor: pointer; }
-
-        .edit-btn {
-            position: absolute; top: 10px; right: 10px;
-            font-family: var(--ui-font); letter-spacing: 0.1em; font-size: 0.8rem;
-            color: #666; background: #000; padding: 2px 8px; border: 1px solid #333;
-            transform: translateZ(5px); z-index: 110; cursor: pointer; opacity: 0; transition: 0.3s;
+        .nav-btn:hover {
+            background: #fff; color: #000;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
         }
-        .char-card:hover .edit-btn { opacity: 1; }
-        .edit-btn:hover { color: var(--neon-blue); border-color: var(--neon-blue); }
+        .nav-btn.prev { left: 40px; }
+        .nav-btn.next { right: 40px; }
 
-        /* カラーバリエーション */
-        .tag-blue { background: var(--neon-blue); color: #000; }
-        .tag-yellow { background: var(--neon-yellow); color: #000; }
-        .tag-red { background: var(--neon-red); color: #fff; }
-        .tag-gray { background: var(--neon-gray); color: #000; }
+        .edit-img-btn {
+            position: absolute; bottom: -40px; right: 0;
+            width: 100%; height: 30px;
+            background: rgba(0,0,0,0.7);
+            color: #aaa; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s;
+            font-family: var(--ui-font); letter-spacing: 0.1em;
+            transform: translateZ(50px);
+            opacity: 0;
+        }
+        .char-card:hover .edit-img-btn { opacity: 1; bottom: 10px; }
+        .edit-img-btn:hover { color: #fff; background: var(--accent-blue); }
 
-        .empty-msg { font-family: var(--ui-font); font-size: 2rem; color: #555; letter-spacing: 0.2em; text-align: center; }
+        .click-overlay {
+            position: absolute; inset: 0; z-index: 100; cursor: pointer;
+            transform: translateZ(60px); /* 最前面に配置してクリックを受け付ける */
+        }
+
+        /* --- 色定義クラス --- */
+        .color-blue .banner-line, .color-blue.banner-name { background-color: var(--accent-blue); color: var(--accent-blue); }
+        .color-blue .card-banner { border-top: 3px solid var(--accent-blue); }
+
+        .color-yellow .banner-line, .color-yellow.banner-name { background-color: var(--accent-yellow); color: var(--accent-yellow); }
+        .color-yellow .card-banner { border-top: 3px solid var(--accent-yellow); }
+
+        .color-red .banner-line, .color-red.banner-name { background-color: var(--accent-red); color: var(--accent-red); }
+        .color-red .card-banner { border-top: 3px solid var(--accent-red); }
+
+        .color-gray .banner-line, .color-gray.banner-name { background-color: var(--accent-gray); color: var(--accent-gray); }
+        .color-gray .card-banner { border-top: 3px solid var(--accent-gray); }
+
+        /* パーティクル */
+        #particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .particle {
+            position: absolute; background: rgba(255,255,255,0.5);
+            border-radius: 50%; animation: float 10s linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-20vh) scale(1.5); opacity: 0; }
+        }
+
+        .empty-msg { font-family: var(--ui-font); font-size: 2rem; color: #555; letter-spacing: 0.2em; text-align: center;}
     </style>
 </head>
 <body>
 
+    <!-- ヘッダーなどの依存ファイル読み込み -->
     <script type="module">
         import { initHeader } from "./header.js"; 
         initHeader();
     </script>
 
     <div class="sub-header">
-        <div class="sh-title">CHARACTER SELECT // SQUAD</div>
-        <div style="font-family:'Teko'; color:var(--neon-blue);">● LIVE</div>
+        <span class="sub-header-text">SQUAD SELECTION // DATABASE</span>
+        <span class="sub-header-text" style="font-size: 0.8rem;">ONLINE</span>
     </div>
     
+    <div id="particles"></div>
+
     <div class="stage-wrapper">
-        <div class="nav-arrow prev" id="btnPrev">‹</div>
+        <div class="nav-btn prev" id="btnPrev">❮</div>
         
         <div class="stage-container" id="stage">
-            <div class="empty-msg">SYSTEM INITIALIZING...</div>
+            <div class="empty-msg">INITIALIZING SYSTEM...</div>
         </div>
         
-        <div class="nav-arrow next" id="btnNext">›</div>
+        <div class="nav-btn next" id="btnNext">❯</div>
+    </div>
+
+    <div class="sub-header" style="height: 30px; border-top: 1px solid #333; border-bottom: none; justify-content: center;">
+        <span class="sub-header-text" style="font-size: 0.7rem;">SELECT CHARACTER TO VIEW DETAILS</span>
     </div>
 
     <script type="module">
+        // Firebase関連のモジュール読み込み
+        // ※ファイル構成に合わせてパスは適宜調整してください
         import { loadFromCloud, saveToCloud } from "./firestore.js";
 
         const stage = document.getElementById('stage');
 
-        function getTagColor(job) {
-            if(!job) return 'tag-gray';
+        // 職業に応じた色クラスを返す
+        function getColorByJob(job) {
+            if(!job) return 'color-gray';
             const j = job.toLowerCase();
-            if(j.includes('探偵') || j.includes('警官')) return 'tag-blue';
-            if(j.includes('医') || j.includes('学者')) return 'tag-yellow';
-            if(j.includes('戦') || j.includes('自衛')) return 'tag-red';
-            return 'tag-gray';
+            if(j.includes('探偵') || j.includes('警官') || j.includes('police')) return 'color-blue';
+            if(j.includes('医') || j.includes('学者') || j.includes('doctor')) return 'color-yellow';
+            if(j.includes('戦') || j.includes('自衛') || j.includes('soldier')) return 'color-red';
+            return 'color-gray';
         }
 
+        // キャラクター描画関数
         window.renderCharacterList = function(data) {
             stage.innerHTML = ''; 
 
             if (!data || Object.keys(data).length === 0) {
-                stage.innerHTML = '<div class="empty-msg">NO DATA FOUND</div>';
+                stage.innerHTML = '<div class="empty-msg">NO DATA FOUND<br><span style="font-size:1rem">SYSTEM STANDBY</span></div>';
                 return;
             }
 
@@ -282,50 +329,61 @@
                 const card = document.createElement('div');
                 card.className = 'char-card';
                 
-                const imgSource = char.image || 'https://placehold.co/400x800/111/333?text=NO+IMG';
-                const tagColor = getTagColor(char.job);
-                const roleText = char.job || 'CLASS';
+                // 画像がない場合のプレースホルダー
+                const imgSource = char.image || 'https://placehold.co/400x800/222/555?text=NO+IMAGE';
+                const colorClass = getColorByJob(char.job);
+                const roleText = char.job || 'UNKNOWN';
 
+                // HTML構造: 3Dレイヤーを意識した構成
+                // 1. 背景パネル (奥)
+                // 2. 影と反射
+                // 3. バナー (中)
+                // 4. キャラクター (手前)
+                // 5. 操作オーバーレイ
                 card.innerHTML = `
-                    <!-- 1. 背景モニター (顔周辺拡大) -->
-                    <div class="monitor-screen">
-                        <div class="monitor-bg-img" style="background-image: url('${imgSource}');"></div>
-                        <div class="monitor-overlay"></div>
+                    <div class="card-bg-panel">
+                        <div class="card-bg-image" style="background-image: url('${imgSource}');"></div>
+                        <div class="char-reflection"></div>
                     </div>
 
-                    <!-- 2. タグ (左上) -->
-                    <div class="name-tag ${tagColor}">
-                        <div class="tag-line"></div>
-                        <span class="tag-job">${roleText}</span>
-                        <span class="tag-name">${char.name}</span>
+                    <div class="char-shadow"></div>
+
+                    <div class="card-banner ${colorClass}">
+                        <div class="banner-line" style="background-color: inherit;"></div>
+                        <span class="banner-role">${roleText}</span>
+                        <span class="banner-name" style="writing-mode: vertical-rl;">${char.name}</span>
                     </div>
-
-                    <!-- 3. 台座と影 (接地感) -->
-                    <div class="figure-base"></div>
-                    <div class="figure-shadow"></div>
-
-                    <!-- 4. フィギュア本体 (手前・小さく全身) -->
-                    <img src="${imgSource}" class="char-figure" alt="${char.name}" onerror="this.style.opacity='0'">
                     
-                    <!-- 5. 操作オーバーレイ -->
-                    <div class="edit-btn">IMG EDIT</div>
-                    <div class="click-area"></div>
+                    <div class="char-figure-wrapper">
+                        <img src="${imgSource}" class="char-figure" alt="${char.name}" onerror="this.style.display='none'">
+                    </div>
+                    
+                    <div class="edit-img-btn">EDIT IMAGE</div>
+                    <div class="click-overlay"></div>
                 `;
 
-                // 画像編集機能
-                const editBtn = card.querySelector('.edit-btn');
+                // --- イベント設定 ---
+
+                // 画像編集ボタン
+                const editBtn = card.querySelector('.edit-img-btn');
+                const overlay = card.querySelector('.click-overlay');
+
                 editBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    const newUrl = prompt("【画像URL変更】\n新しい立ち絵のURLを入力:", char.image || "");
+                    e.stopPropagation(); // 親へのバブリング防止
+                    const newUrl = prompt("【IMAGE UPDATE】\nEnter new image URL:", char.image || "");
+                    
                     if(newUrl) {
                         char.image = newUrl;
-                        saveToCloud(char).then(() => location.reload());
+                        saveToCloud(char).then(() => {
+                            // 再描画（簡易的にリロードまたは再レンダリング）
+                            // window.renderCharacterList(data); // リアルタイム反映する場合はここで再取得が必要
+                            location.reload(); 
+                        });
                     }
                 };
 
-                // 詳細画面へ
-                const clickArea = card.querySelector('.click-area');
-                clickArea.onclick = () => {
+                // カードクリック（詳細へ）
+                overlay.onclick = () => {
                     window.location.href = `character/detail/detail.html?id=${char.id}`;
                 };
 
@@ -333,12 +391,38 @@
             });
         };
 
+        // --- ナビゲーション制御 ---
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
-        const SCROLL_STEP = 300; 
+        
+        // カード幅 + ギャップ分スクロール
+        const SCROLL_AMOUNT = 250; 
 
-        btnNext.onclick = () => stage.scrollBy({ left: SCROLL_STEP, behavior: 'smooth' });
-        btnPrev.onclick = () => stage.scrollBy({ left: -SCROLL_STEP, behavior: 'smooth' });
+        btnNext.onclick = () => {
+            stage.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+        };
+        btnPrev.onclick = () => {
+            stage.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+        };
+
+        // --- 背景パーティクル演出 ---
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 3 + 1;
+            p.style.width = size + 'px'; 
+            p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (Math.random() * 10 + 5) + 's';
+            p.style.opacity = Math.random() * 0.5 + 0.1;
+            document.getElementById('particles').appendChild(p);
+            
+            setTimeout(() => p.remove(), 15000);
+        }
+        
+        // 初期パーティクル生成
+        for(let i=0; i<20; i++) setTimeout(createParticle, Math.random() * 2000);
+        setInterval(createParticle, 500);
 
     </script>
 </body>
