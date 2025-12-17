@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD SELECT - ELITE</title>
+    <title>SQUAD SELECT - FINAL TUNING</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Teko:wght@300;500&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -14,34 +14,34 @@
     <style>
         /* --- CORE VARIABLES --- */
         :root {
-            --bg-color: #f0f4f8;
-            --card-w: 320px; /* 少し幅を広げてステータスを見やすく */
+            --bg-color: #f0f2f5;
+            --card-w: 320px;
             --card-h: 75vh;
             --gap: 60px;
             
             /* Dynamic Accent Color */
             --accent: #00d2ff;
             
-            /* Glassmorphism Settings */
-            --glass-bg: rgba(255, 255, 255, 0.75);
+            /* Glassmorphism */
+            --glass-bg: rgba(255, 255, 255, 0.85);
             --glass-border: rgba(255, 255, 255, 0.9);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --glass-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
             
-            /* 3D Depth */
-            --z-screen: -120px;
-            --z-shadow: -40px; /* 影の位置 */
-            --z-ui: 40px;
-            --z-fig: 80px;
+            /* 3D Depth Config */
+            --z-screen: -150px; /* スクリーンは奥へ */
+            --z-shadow: -50px;  /* 影は床レベル */
+            --z-ui: 40px;       /* UIは手前 */
+            --z-fig: 80px;      /* 立ち絵は一番手前 */
         }
 
         body {
             margin: 0; padding: 0;
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(circle at 50% 0%, #fff 0%, #dde4ea 100%),
-                linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
+                radial-gradient(circle at 50% 30%, #fff 0%, #dde4ea 80%),
+                linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
             font-family: 'Rajdhani', sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -49,20 +49,21 @@
             user-select: none;
         }
 
-        /* --- STAGE AREA --- */
+        /* --- STAGE --- */
         .stage-wrapper {
             flex: 1; position: relative; width: 100%;
             display: flex; align-items: center; justify-content: center;
-            perspective: 2000px; /* パースを深めに */
+            perspective: 1800px;
             overflow: hidden;
         }
 
-        /* 背景演出：回転するサークル */
-        .bg-circle-anim {
-            position: absolute; width: 80vh; height: 80vh;
-            border: 1px dashed rgba(0,0,0,0.1); border-radius: 50%;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            animation: rotateBg 120s linear infinite; pointer-events: none;
+        /* 背景：回転するテックリング */
+        .bg-tech-ring {
+            position: absolute; top: 50%; left: 50%;
+            width: 85vh; height: 85vh;
+            border: 1px dashed rgba(0,0,0,0.08); border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: rotateBg 180s linear infinite; pointer-events: none;
         }
         @keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
@@ -91,150 +92,175 @@
         }
 
         /* === 1. SCREEN (Back Layer) === */
-        /* 画質改善のため、極端な拡大をやめ、位置調整とクリアな表示に注力 */
+        /* スクリーンを上に配置し、立ち絵と分離 */
         .unit-screen {
             position: absolute;
-            top: 5%; height: 70%; left: 0; right: 0;
+            top: 0; height: 60%; /* 上部60% */
+            left: 0; right: 0;
             background: #fff;
             transform: translateZ(var(--z-screen));
             overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.6);
             transition: all 0.5s ease;
         }
-        /* テクニカルな枠線 */
-        .unit-screen::after {
-            content: ''; position: absolute; inset: 10px;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 4px; pointer-events: none;
-            z-index: 5;
+        .unit-screen::after { /* 枠線デコレーション */
+            content: ''; position: absolute; inset: 6px;
+            border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; pointer-events: none; z-index: 5;
         }
 
+        /* スクリーン内画像コンテナ（斜め配置用） */
+        .screen-img-container {
+            width: 120%; height: 120%; /* 斜めにするので少し大きく */
+            position: absolute; top: -10%; left: -10%;
+            transform: rotate(-5deg); /* ★斜めにする */
+            transition: transform 0.5s ease;
+        }
+
+        /* 画像本体（デュオトーン風加工） */
         .screen-img {
             width: 100%; height: 100%;
-            /* coverにして画質を保ちつつ、顔付近(top center)を表示 */
-            background-size: cover; 
-            background-position: top center;
-            filter: grayscale(0.8) contrast(1.1) brightness(1.05); /* 少しシャープに */
-            opacity: 0.9;
+            background-size: cover; background-position: top center;
+            /* テーマカラーを乗算して色を変える */
+            background-color: var(--accent); 
+            background-blend-mode: multiply;
+            filter: grayscale(1) contrast(1.2) brightness(1.3);
+            opacity: 0.8;
             transition: all 0.5s ease;
         }
         
-        /* 画面上のハイテク演出（画質粗さを隠すオーバーレイ） */
-        .screen-overlay {
+        /* スクリーン上のテクスチャ（ドット） */
+        .screen-texture {
             position: absolute; inset: 0; pointer-events: none; z-index: 2;
-            background: 
-                linear-gradient(rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 50%),
-                linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.03), rgba(0,0,255,0.03));
-            background-size: 100% 4px, 6px 100%; /* 走査線とRGBノイズ */
-            opacity: 0.6; mix-blend-mode: overlay;
-        }
-        .screen-tint {
-            position: absolute; inset: 0; background: var(--accent);
-            opacity: 0.1; mix-blend-mode: color; pointer-events: none;
+            background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 1px);
+            background-size: 4px 4px;
+            opacity: 0.4;
         }
 
-        /* === 2. UI (Floating Glass) === */
+        /* === 2. UI ELEMENTS (Glass HUD) === */
         
-        /* Job Tag (Left Top) */
-        .ui-job {
-            position: absolute; top: 12%; left: -25px;
+        /* 職業タグ + アイコン (左上へ移動) */
+        .ui-job-group {
+            position: absolute; 
+            top: 5%; left: -40px; /* ★立ち絵と被らないよう左上へ */
+            display: flex; align-items: center; gap: 10px;
+            transform: translateZ(var(--z-ui)); z-index: 10;
+        }
+        .ui-icon {
+            width: 50px; height: 50px;
+            background: #fff; border: 2px solid var(--accent);
+            border-radius: 50%;
+            background-size: cover; background-position: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .ui-job-tag {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
             padding: 8px 16px;
-            box-shadow: var(--glass-shadow);
-            transform: translateZ(var(--z-ui)); z-index: 10;
             border-left: 4px solid var(--accent);
+            box-shadow: var(--glass-shadow);
             display: flex; flex-direction: column;
             clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
         }
-        .job-label { font-size: 0.6rem; color: #888; font-family: 'Share Tech Mono'; letter-spacing: 0.1em; }
-        .job-val { font-family: 'Teko', sans-serif; font-size: 1.4rem; color: #333; line-height: 1; margin-top: -2px; }
+        .job-label { font-size: 0.6rem; color: #777; font-family: 'Share Tech Mono'; letter-spacing: 0.1em; }
+        .job-val { font-family: 'Noto Sans JP', sans-serif; font-weight: 700; font-size: 1.2rem; color: #333; line-height: 1; }
 
-        /* Name (Vertical Left) */
+        /* 名前 (左サイド縦書き) */
         .ui-name-box {
-            position: absolute; top: 25%; bottom: 38%; left: -25px;
+            position: absolute; top: 20%; bottom: 40%; left: -30px;
             width: 50px;
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
             box-shadow: var(--glass-shadow);
             transform: translateZ(var(--z-ui)); z-index: 9;
             display: flex; justify-content: center; align-items: center;
         }
         .name-vertical {
             writing-mode: vertical-rl; text-orientation: upright;
-            font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 1.4rem;
+            font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 1.5rem;
             letter-spacing: 0.3em; color: #222;
         }
 
-        /* 右サイドステータス群 (HUD) */
+        /* 右サイドステータス (8項目グリッド) */
         .ui-stats-container {
-            position: absolute; bottom: 35%; right: -40px;
-            width: 140px;
-            display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+            position: absolute; bottom: 30%; right: -50px;
+            width: 150px;
+            display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
             transform: translateZ(var(--z-ui)); z-index: 11;
         }
-
-        /* SAN値 (円形ゲージ) */
-        .san-gauge {
-            position: relative; width: 60px; height: 60px;
+        /* SAN値ゲージ */
+        .san-gauge-wrap {
+            position: relative; width: 56px; height: 56px;
             background: #fff; border-radius: 50%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             display: flex; justify-content: center; align-items: center;
-            margin-bottom: 5px; margin-right: 10px;
+            margin-bottom: 5px; margin-right: 5px;
+            border: 2px solid rgba(0,0,0,0.05);
         }
-        .san-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-        .san-bg { fill: none; stroke: #eee; stroke-width: 5; }
+        .san-gauge-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .san-bg { fill: none; stroke: #eee; stroke-width: 4; }
         .san-fill { 
-            fill: none; stroke: var(--accent); stroke-width: 5; 
-            stroke-dasharray: 157; stroke-dashoffset: 157; /* 2*PI*25 */
-            transition: stroke-dashoffset 1s ease;
+            fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round;
+            stroke-dasharray: 145; stroke-dashoffset: 145; transition: stroke-dashoffset 1s ease;
         }
-        .san-val {
-            position: absolute; font-family: 'Share Tech Mono'; font-size: 1rem; font-weight: bold; color: #333;
-        }
-        .san-label {
-            position: absolute; bottom: 12px; font-size: 0.55rem; color: #888; font-family: 'Share Tech Mono';
-        }
+        .san-val { position: absolute; font-family: 'Share Tech Mono'; font-size: 1rem; font-weight: bold; color: #333; top: 16px;}
+        .san-label { position: absolute; bottom: 10px; font-size: 0.5rem; color: #999; font-family: 'Share Tech Mono'; }
 
-        /* 8つのステータス (2列表示) */
+        /* ステータス表 */
         .stats-grid {
             background: var(--glass-bg); backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
-            padding: 8px; border-radius: 4px;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px;
+            padding: 10px; border-radius: 6px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px;
             width: 100%; box-sizing: border-box;
             box-shadow: var(--glass-shadow);
         }
         .stat-item {
             display: flex; justify-content: space-between; align-items: center;
-            font-family: 'Share Tech Mono'; font-size: 0.75rem;
-            color: #555;
+            font-family: 'Share Tech Mono'; font-size: 0.75rem; color: #444;
         }
         .stat-val { font-weight: bold; color: var(--accent); }
 
-        /* 左下バイタル (HP/MP) */
+        /* 左下バイタル (HP/MP) - 視認性向上 */
         .ui-vitals {
-            position: absolute; bottom: 32%; left: 30px;
-            width: 130px; transform: translateZ(var(--z-ui)); z-index: 11;
+            position: absolute; bottom: 28%; left: 30px;
+            width: 140px; transform: translateZ(var(--z-ui)); z-index: 11;
+            /* 背景を追加して読みやすく */
+            background: rgba(255,255,255,0.8);
+            padding: 8px; border-radius: 4px;
+            border: 1px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .vital-row { margin-bottom: 5px; }
-        .vital-info { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; font-family: 'Share Tech Mono'; margin-bottom: 2px; }
-        .vital-bar { height: 5px; background: rgba(0,0,0,0.1); border-radius: 2px; overflow: hidden; }
-        .vital-progress { height: 100%; background: var(--accent); width: 0%; box-shadow: 0 0 5px var(--accent); transition: width 1s ease; }
+        .vital-row { margin-bottom: 6px; }
+        .vital-row:last-child { margin-bottom: 0; }
+        .vital-header { 
+            display: flex; justify-content: space-between; 
+            font-size: 0.65rem; color: #333; /* 文字色濃く */
+            font-family: 'Share Tech Mono'; margin-bottom: 3px; font-weight: bold;
+        }
+        .vital-bar { 
+            height: 6px; background: #e0e0e0; /* 背景グレー */
+            border-radius: 3px; overflow: hidden; 
+        }
+        .vital-progress { 
+            height: 100%; width: 0%; 
+            transition: width 1s ease; 
+        }
 
         /* === 3. FIGURE (Front Layer) === */
         .unit-figure-group {
-            position: absolute; bottom: 0; left: 50%;
-            width: 100%; height: 60%; /* 下部60%に配置 */
+            position: absolute; 
+            bottom: 0; left: 50%;
+            /* 立ち絵の配置を下げる */
+            width: 100%; height: 55%; 
             transform: translateX(-50%) translateZ(var(--z-fig));
             display: flex; align-items: flex-end; justify-content: center;
             z-index: 20; pointer-events: none;
             /* 浮遊アニメーション */
-            animation: floatChar 5s ease-in-out infinite;
+            animation: floatChar 6s ease-in-out infinite;
         }
         @keyframes floatChar {
             0%, 100% { transform: translateX(-50%) translateZ(var(--z-fig)) translateY(0); }
@@ -245,94 +271,79 @@
             max-height: 100%; max-width: 180%;
             object-fit: contain;
             filter: drop-shadow(0 15px 30px rgba(0,0,0,0.25));
-            transition: transform 0.3s;
+            transition: transform 0.4s;
         }
 
-        /* === 4. SHADOW (Correct Position) === */
-        /* フィギュアの下に正確に影を落とすコンテナ */
+        /* === 4. SHADOW (Floor) === */
+        /* 影の位置修正: コンテナを使い床面に固定 */
         .unit-shadow-container {
-            position: absolute; 
-            bottom: 30px; /* フィギュアの足元付近の高さ */
+            position: absolute;
+            bottom: 20px; /* 立ち絵の足元（unit-figure-groupの底辺付近）に合わせる */
             left: 50%;
-            /* Z位置を調整して床面に貼り付ける */
-            transform: translateX(-50%) translateZ(var(--z-shadow)) rotateX(70deg);
-            width: 120px; height: 120px;
+            width: 140px; height: 40px;
+            transform: translateX(-50%) translateZ(var(--z-shadow)); /* 床レベル */
             z-index: 5; pointer-events: none;
             display: flex; justify-content: center; align-items: center;
         }
-
-        /* 影本体 */
         .real-shadow {
-            width: 80px; height: 30px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50%;
-            filter: blur(10px);
+            width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 70%);
             opacity: 0.6;
-            /* 浮遊に合わせて影が伸縮するアニメーション */
-            animation: shadowPulse 5s ease-in-out infinite;
+            transform-origin: center;
+            animation: shadowBreath 6s ease-in-out infinite;
         }
-        @keyframes shadowPulse {
+        @keyframes shadowBreath {
             0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(0.8); opacity: 0.4; }
+            50% { transform: scale(0.85); opacity: 0.4; }
         }
 
-        /* 床のリング演出 */
-        .floor-ring {
-            position: absolute; width: 140px; height: 140px;
-            border: 2px dashed var(--accent); border-radius: 50%;
-            opacity: 0.2; animation: spinRing 20s linear infinite;
-        }
-        @keyframes spinRing { to { transform: rotate(360deg); } }
-
-
-        /* --- HOVER EFFECTS --- */
+        /* === HOVER EFFECTS === */
         .char-unit:hover .unit-screen {
-            transform: translateZ(calc(var(--z-screen) - 30px)) scale(1.05); /* 奥へ */
+            transform: translateZ(calc(var(--z-screen) - 30px));
             border-color: var(--accent);
-            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .char-unit:hover .screen-img-container {
+            transform: rotate(0deg) scale(1.1); /* ホバーで真っ直ぐに戻る */
         }
         .char-unit:hover .screen-img {
-            filter: grayscale(0) contrast(1.05); opacity: 1; /* カラー化 */
+            filter: grayscale(0) contrast(1.05); /* カラー復帰 */
+            background-color: transparent; /* ブレンドモード解除 */
+            opacity: 1;
         }
         
-        .char-unit:hover .ui-job {
-            background: #222; 
-        }
-        .char-unit:hover .job-val { color: var(--accent); }
-        
-        /* ホバー時は浮遊を止めて少し手前に来る */
+        /* 立ち絵強調 */
         .char-unit:hover .unit-figure-group {
-            animation: none;
+            animation: none; /* 浮遊停止 */
             transform: translateX(-50%) translateZ(calc(var(--z-fig) + 40px)) scale(1.05);
         }
         .char-unit:hover .real-shadow {
-            animation: none; transform: scale(1.1); opacity: 0.3;
+            animation: none; transform: scale(1.2); opacity: 0.3;
         }
-        
-        .char-unit:hover .floor-ring {
-            opacity: 0.5; border-style: solid; box-shadow: 0 0 15px var(--accent);
-            animation-duration: 5s;
-        }
+
+        .char-unit:hover .ui-job-tag { background: #fff; }
+        .char-unit:hover .job-val { color: var(--accent); }
 
         /* --- CONTROLS --- */
         .sub-header {
             flex-shrink: 0; height: 60px; padding: 0 40px;
             display: flex; align-items: center; justify-content: space-between;
             background: rgba(255,255,255,0.9); z-index: 100;
+            border-bottom: 1px solid #eee;
         }
         .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
             width: 50px; height: 50px; border-radius: 50%;
-            background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; z-index: 200; font-size: 1.2rem; color: #555;
-            border: 1px solid #eee; transition: 0.3s;
+            transition: 0.3s;
         }
         .nav-btn:hover { background: var(--accent); color: #fff; transform: translateY(-50%) scale(1.1); }
         .prev { left: 40px; } .next { right: 40px; }
 
         .btn-edit {
-            position: absolute; top: 10px; right: 10px; width: 30px; height: 30px;
+            position: absolute; top: 10px; right: 10px; width: 32px; height: 32px;
             background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             opacity: 0; z-index: 300; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
@@ -351,22 +362,21 @@
 </script>
 
     <div class="sub-header">
-        <div style="font-family:'Teko'; font-size:1.8rem; letter-spacing:0.05em; color:#333;">
-            AGENT <span style="color:var(--accent);">//</span> SELECT
+        <div style="font-family:'Teko'; font-size:1.8rem; letter-spacing:0.05em; color:#2d3436;">
+            SQUAD <span style="color:var(--accent);">//</span> SELECT
         </div>
-        <div style="font-family:'Share Tech Mono'; color:#888; font-size:0.8rem;">
-            SYSTEM STATUS: <span style="color:var(--accent);">OPTIMAL</span>
+        <div style="font-family:'Share Tech Mono'; color:#b2bec3; font-size:0.8rem;">
+            DATABASE: <span style="color:var(--accent);">CONNECTED</span>
         </div>
     </div>
     
     <div class="stage-wrapper">
-        <div class="bg-circle-anim"></div>
-
+        <div class="bg-tech-ring"></div>
         <div class="nav-btn prev" id="btnPrev">◀</div>
         <div class="nav-btn next" id="btnNext">▶</div>
         
         <div class="stage-container" id="stage">
-            <div class="loading">CONNECTING...</div>
+            <div class="loading">LOADING ARCHIVE...</div>
         </div>
     </div>
 
@@ -384,10 +394,8 @@
             return '#00d2ff';
         }
 
-        // 数値アニメーション
         function animateValue(obj, end) {
-            let start = 0; const duration = 800;
-            let startTimestamp = null;
+            let start = 0; const duration = 800; let startTimestamp = null;
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
@@ -411,49 +419,51 @@
             Object.values(data).forEach((char, idx) => {
                 const unit = document.createElement('div');
                 unit.className = 'char-unit';
-                
-                // 登場アニメ
                 unit.style.opacity = '0';
-                unit.style.animation = `slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${idx * 0.15}s`;
+                unit.style.animation = `fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${idx * 0.15}s`;
 
                 const img = char.image || 'https://placehold.co/400x800/ccc/fff?text=NO+IMG';
+                const icon = char.icon || img; // アイコンがなければ立ち絵を使用
                 const accent = (char.color && char.color.length > 1) ? char.color : getDefaultColor(char.job);
                 unit.style.setProperty('--accent', accent);
                 
-                // ステータス展開
+                // Stats
                 const s = char.stats || {};
-                const stats = {
-                    STR: s.STR || 0, CON: s.CON || 0,
-                    POW: s.POW || 0, DEX: s.DEX || 0,
-                    APP: s.APP || 0, SIZ: s.SIZ || 0,
-                    INT: s.INT || 0, EDU: s.EDU || 0
+                const statsMap = {
+                    STR: s.STR||0, CON: s.CON||0, POW: s.POW||0, DEX: s.DEX||0,
+                    APP: s.APP||0, SIZ: s.SIZ||0, INT: s.INT||0, EDU: s.EDU||0
                 };
                 
-                // バイタル & SAN
+                // Vitals & SAN
                 const v = char.vitals || {};
                 const hpPct = Math.min(((v.hp||10)/20)*100, 100);
                 const mpPct = Math.min(((v.mp||10)/20)*100, 100);
                 const sanVal = v.san || 50;
                 
-                // SAN値円形ゲージ計算 (r=25, circ=157)
-                const maxDash = 157;
+                // SAN Gauge (r=22, circ=138 approx)
+                const maxDash = 145;
                 const sanPct = Math.min(sanVal, 99) / 99;
                 const sanOffset = maxDash - (sanPct * maxDash);
 
                 unit.innerHTML = `
-                    <!-- 1. SCREEN (Back) -->
+                    <!-- 1. SCREEN (Back, Tilted Image) -->
                     <div class="unit-screen">
-                        <div class="screen-tint"></div>
-                        <div class="screen-overlay"></div>
-                        <div class="screen-img" style="background-image: url('${img}');"></div>
+                        <div class="screen-img-container">
+                            <div class="screen-img" style="background-image: url('${img}');"></div>
+                        </div>
+                        <div class="screen-texture"></div>
                     </div>
 
-                    <!-- 2. UI (Glass HUD) -->
-                    <div class="ui-job">
-                        <span class="job-label">CLASS</span>
-                        <span class="job-val">${char.job || 'UNKNOWN'}</span>
+                    <!-- 2. UI (Job & Icon) -->
+                    <div class="ui-job-group">
+                        <div class="ui-icon" style="background-image: url('${icon}');"></div>
+                        <div class="ui-job-tag">
+                            <span class="job-label">CLASS</span>
+                            <span class="job-val">${char.job || 'UNKNOWN'}</span>
+                        </div>
                     </div>
                     
+                    <!-- Name Vertical -->
                     <div class="ui-name-box">
                         <div class="name-vertical">${char.name}</div>
                     </div>
@@ -461,10 +471,10 @@
                     <!-- Right Stats HUD -->
                     <div class="ui-stats-container">
                         <!-- SAN Gauge -->
-                        <div class="san-gauge">
-                            <svg viewBox="0 0 60 60">
-                                <circle class="san-bg" cx="30" cy="30" r="25"></circle>
-                                <circle class="san-fill" cx="30" cy="30" r="25" style="stroke-dashoffset:${sanOffset}"></circle>
+                        <div class="san-gauge-wrap">
+                            <svg viewBox="0 0 50 50">
+                                <circle class="san-bg" cx="25" cy="25" r="23"></circle>
+                                <circle class="san-fill" cx="25" cy="25" r="23" style="stroke-dashoffset:${sanOffset}"></circle>
                             </svg>
                             <span class="san-val">${sanVal}</span>
                             <span class="san-label">SAN</span>
@@ -472,7 +482,7 @@
                         
                         <!-- 8 Stats Grid -->
                         <div class="stats-grid">
-                            ${Object.entries(stats).map(([k, val]) => `
+                            ${Object.entries(statsMap).map(([k, val]) => `
                                 <div class="stat-item">
                                     <span>${k}</span>
                                     <span class="stat-val count-up" data-target="${val}">0</span>
@@ -481,15 +491,19 @@
                         </div>
                     </div>
 
-                    <!-- Left Vitals -->
+                    <!-- Left Vitals (Visibility Improved) -->
                     <div class="ui-vitals">
                         <div class="vital-row">
-                            <div class="vital-info"><span>HP</span><span>${v.hp||0}</span></div>
-                            <div class="vital-bar"><div class="vital-progress" style="width:${hpPct}%"></div></div>
+                            <div class="vital-header"><span>HP</span><span>${v.hp||0}</span></div>
+                            <div class="vital-bar">
+                                <div class="vital-progress" style="width:${hpPct}%; background:#ff7675;"></div>
+                            </div>
                         </div>
                         <div class="vital-row">
-                            <div class="vital-info"><span>MP</span><span>${v.mp||0}</span></div>
-                            <div class="vital-bar"><div class="vital-progress" style="width:${mpPct}%; background:#a29bfe; box-shadow:0 0 5px #a29bfe;"></div></div>
+                            <div class="vital-header"><span>MP</span><span>${v.mp||0}</span></div>
+                            <div class="vital-bar">
+                                <div class="vital-progress" style="width:${mpPct}%; background:#74b9ff;"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -498,10 +512,9 @@
                         <img src="${img}" class="char-figure" alt="${char.name}">
                     </div>
 
-                    <!-- 4. SHADOW & FLOOR -->
+                    <!-- 4. SHADOW (Floor) -->
                     <div class="unit-shadow-container">
                         <div class="real-shadow"></div>
-                        <div class="floor-ring"></div>
                     </div>
 
                     <!-- CONTROLS -->
@@ -509,7 +522,7 @@
                     <div class="click-layer"></div>
                 `;
 
-                // Logic
+                // Events
                 const edit = unit.querySelector('.btn-edit');
                 edit.onclick = (e) => {
                     e.stopPropagation();
@@ -521,7 +534,7 @@
                     window.location.href = `character/detail/detail.html?id=${char.id}`;
                 };
 
-                // Animation Trigger
+                // Animation
                 unit.addEventListener('mouseenter', () => {
                     unit.querySelectorAll('.count-up').forEach(el => animateValue(el, parseInt(el.dataset.target)));
                 });
@@ -548,7 +561,7 @@
         };
 
         const st = document.createElement('style');
-        st.innerText = `@keyframes slideUpFade { from{opacity:0; transform:translateY(50px) scale(0.9);} to{opacity:1; transform:translateY(0) scale(1);} }`;
+        st.innerText = `@keyframes fadeInUp { from{opacity:0; transform:translateY(50px) scale(0.9);} to{opacity:1; transform:translateY(0) scale(1);} }`;
         document.head.appendChild(st);
 
         // loadFromCloud().then(renderCharacterList);
