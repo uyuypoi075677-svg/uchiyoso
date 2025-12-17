@@ -23,14 +23,18 @@ function init() {
     updateTime();
     updateTabUI(); 
     setInterval(updateTime, 1000);
-    document.getElementById('header-name-input').value = document.getElementById('header-name').innerText;
+    // 初期ヘッダー名同期
+    const headerNameEl = document.getElementById('header-name');
+    if(headerNameEl) {
+        document.getElementById('header-name-input').value = headerNameEl.innerText;
+    }
 }
 
 function updateTime() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
     const el = document.getElementById('sb-time');
-    if (document.activeElement !== el) {
+    if (document.activeElement !== el && el) {
         el.innerText = timeStr;
     }
 }
@@ -38,6 +42,7 @@ function updateTime() {
 // --- Character Logic ---
 function renderCharList() {
     const container = document.getElementById('char-list');
+    if(!container) return;
     container.innerHTML = '';
     characters.forEach(char => {
         const isSelected = char.id === state.selectedCharId;
@@ -49,7 +54,8 @@ function renderCharList() {
             renderCharList(); 
             if(char.type === 'other' && !state.isHeaderLocked) {
                 const newName = state.isGroupMode ? `${char.name} (2)` : char.name;
-                document.getElementById('header-name').innerText = newName;
+                const headerNameEl = document.getElementById('header-name');
+                if(headerNameEl) headerNameEl.innerText = newName;
                 document.getElementById('header-name-input').value = newName;
             }
         };
@@ -69,12 +75,16 @@ function renderCharList() {
     });
 
     const curChar = characters.find(c => c.id === state.selectedCharId);
-    document.getElementById('editing-char-name').innerText = `設定中: ${curChar.name}`;
+    const charNameEl = document.getElementById('editing-char-name');
+    if(charNameEl) charNameEl.innerText = `設定中: ${curChar.name}`;
+    
     const editPanel = document.getElementById('char-edit-panel');
-    if(curChar.type === 'me') {
-        editPanel.classList.add('opacity-50', 'pointer-events-none');
-    } else {
-        editPanel.classList.remove('opacity-50', 'pointer-events-none');
+    if(editPanel) {
+        if(curChar.type === 'me') {
+            editPanel.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            editPanel.classList.remove('opacity-50', 'pointer-events-none');
+        }
     }
 }
 
@@ -86,13 +96,16 @@ function addNewCharacter() {
     renderCharList();
 }
 
-document.getElementById('char-icon-upload').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) { updateCharIcon(e.target.result); }
-        reader.readAsDataURL(e.target.files[0]);
-    }
-});
+const charIconUpload = document.getElementById('char-icon-upload');
+if(charIconUpload) {
+    charIconUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { updateCharIcon(e.target.result); }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
 
 function updateCharIcon(newIcon) {
     const index = characters.findIndex(c => c.id === state.selectedCharId);
@@ -103,8 +116,8 @@ function updateCharIcon(newIcon) {
 }
 
 function resetCharIcon() {
-        const index = characters.findIndex(c => c.id === state.selectedCharId);
-        if(index > -1 && characters[index].type !== 'me') {
+    const index = characters.findIndex(c => c.id === state.selectedCharId);
+    if(index > -1 && characters[index].type !== 'me') {
         const char = characters[index];
         if (char.defaultIcon && char.defaultIcon !== '') {
             char.icon = char.defaultIcon;
@@ -112,7 +125,7 @@ function resetCharIcon() {
             char.icon = `https://placehold.co/100x100/gray/white?text=${char.name.charAt(0)}`;
         }
         renderCharList();
-        }
+    }
 }
 
 // --- Settings Logic ---
@@ -129,7 +142,10 @@ function toggleHeaderLock() {
     }
 }
 
-function syncHeaderName(val) { document.getElementById('header-name').innerText = val; }
+function syncHeaderName(val) { 
+    const el = document.getElementById('header-name');
+    if(el) el.innerText = val; 
+}
 
 function toggleGroupMode() {
     const checkbox = document.getElementById('group-mode-toggle');
@@ -165,18 +181,20 @@ function updateTabUI() {
         const area = document.getElementById(`input-${m}-area`);
         
         if (m === state.mode) {
-            btn.classList.remove('tab-inactive');
-            btn.classList.add('tab-active');
+            btn?.classList.remove('tab-inactive');
+            btn?.classList.add('tab-active');
             if(area) area.style.display = 'block';
         } else {
-            btn.classList.remove('tab-active');
-            btn.classList.add('tab-inactive');
+            btn?.classList.remove('tab-active');
+            btn?.classList.add('tab-inactive');
             if(area) area.style.display = 'none';
         }
     });
 
     // Update Main Button Text based on Tab
     const btn = document.getElementById('send-btn');
+    if(!btn) return;
+
     if (state.mode === 'sticker') {
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> スタンプ送信';
         btn.className = "w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 flex items-center justify-center gap-2";
@@ -201,24 +219,30 @@ function selectSticker(imgEl) {
     state.selectedStickerSrc = imgEl.src;
 }
 
-document.getElementById('sticker-upload').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            state.selectedStickerSrc = e.target.result;
-            alert("スタンプ画像を読み込みました");
+const stickerUpload = document.getElementById('sticker-upload');
+if(stickerUpload) {
+    stickerUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.selectedStickerSrc = e.target.result;
+                alert("スタンプ画像を読み込みました");
+            }
+            reader.readAsDataURL(e.target.files[0]);
         }
-        reader.readAsDataURL(e.target.files[0]);
-    }
-});
+    });
+}
 
-document.getElementById('photo-upload').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) { state.uploadedPhotoSrc = e.target.result; }
-        reader.readAsDataURL(e.target.files[0]);
-    }
-});
+const photoUpload = document.getElementById('photo-upload');
+if(photoUpload) {
+    photoUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { state.uploadedPhotoSrc = e.target.result; }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
 
 function addDate(label) {
     if(!label) return;
@@ -247,15 +271,17 @@ function sendTextMsg() {
     const isMe = char.type === 'me';
     const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
-    const text = document.getElementById('message-input').value.trim().replace(/\n/g, '<br>');
+    const msgInput = document.getElementById('message-input');
+    const text = msgInput.value.trim().replace(/\n/g, '<br>');
     if (!text) return;
 
     // Reply Check
-    const isReply = document.getElementById('reply-check').checked;
+    const replyCheck = document.getElementById('reply-check');
+    const isReply = replyCheck ? replyCheck.checked : false;
     let finalHtml = text;
     if(isReply) {
         finalHtml = `<span class="reply-block" contenteditable="false">Reply to...</span>${text}`;
-        document.getElementById('reply-check').checked = false; 
+        if(replyCheck) replyCheck.checked = false; 
     }
     
     // Logic for continuous messages
@@ -268,7 +294,7 @@ function sendTextMsg() {
     }
 
     const contentHtml = `<div class="bubble ${bubbleClass}" contenteditable="true">${finalHtml}</div>`;
-    document.getElementById('message-input').value = '';
+    msgInput.value = '';
 
     appendMessage(isMe, contentHtml, char, timeStr);
 }
@@ -409,16 +435,24 @@ function undoLast() {
 }
 
 // --- Background & Save ---
-document.getElementById('bg-upload').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) { document.getElementById('capture-area').style.backgroundImage = `url(${e.target.result})`; }
-        reader.readAsDataURL(e.target.files[0]);
-    }
-});
-document.getElementById('bg-opacity').addEventListener('input', function(e) {
-    document.getElementById('bg-overlay-layer').style.backgroundColor = `rgba(0,0,0,${e.target.value})`;
-});
+const bgUpload = document.getElementById('bg-upload');
+if(bgUpload) {
+    bgUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { document.getElementById('capture-area').style.backgroundImage = `url(${e.target.result})`; }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
+
+const bgOpacity = document.getElementById('bg-opacity');
+if(bgOpacity) {
+    bgOpacity.addEventListener('input', function(e) {
+        document.getElementById('bg-overlay-layer').style.backgroundColor = `rgba(0,0,0,${e.target.value})`;
+    });
+}
+
 function resetBg() { document.getElementById('capture-area').style.backgroundImage = 'none'; }
 
 function saveProjectData() {
@@ -438,82 +472,95 @@ function saveProjectData() {
     link.remove();
 }
 
-document.getElementById('json-upload').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                if(data.characters) { characters = data.characters; renderCharList(); }
-                if(data.htmlContent) { document.getElementById('capture-area').innerHTML = data.htmlContent; }
-                if(data.backgroundStyle) { document.getElementById('capture-area').style.backgroundImage = data.backgroundStyle; }
-                if(data.overlayColor) { document.getElementById('bg-overlay-layer').style.backgroundColor = data.overlayColor; }
-                alert("データ読込完了");
-            } catch(err) { alert("読込エラー"); }
+const jsonUpload = document.getElementById('json-upload');
+if(jsonUpload) {
+    jsonUpload.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.characters) { characters = data.characters; renderCharList(); }
+                    if(data.htmlContent) { document.getElementById('capture-area').innerHTML = data.htmlContent; }
+                    if(data.backgroundStyle) { document.getElementById('capture-area').style.backgroundImage = data.backgroundStyle; }
+                    if(data.overlayColor) { document.getElementById('bg-overlay-layer').style.backgroundColor = data.overlayColor; }
+                    alert("データ読込完了");
+                } catch(err) { alert("読込エラー"); }
+            }
+            reader.readAsText(e.target.files[0]);
         }
-        reader.readAsText(e.target.files[0]);
-    }
-});
+    });
+}
 
-// --- CAPTURE ALIGNMENT FIX (Classic Style) ---
+// --- CAPTURE ALIGNMENT FIX (Classic Style + Text Shift) ---
 function adjustTextPosition(clonedDoc) {
-        // 1. TEXT BUBBLES
-        const bubbles = clonedDoc.querySelectorAll('.bubble');
-        bubbles.forEach(b => {
-            b.style.alignItems = 'flex-start';
-            b.style.paddingTop = '1px';
-            b.style.paddingBottom = '15px';
-            b.style.lineHeight = '1.2';
-            b.style.transform = 'none';
-        });
+    // 1. TEXT BUBBLES
+    const bubbles = clonedDoc.querySelectorAll('.bubble');
+    bubbles.forEach(b => {
+        b.style.alignItems = 'flex-start';
+        b.style.paddingTop = '1px';
+        b.style.paddingBottom = '15px';
+        b.style.lineHeight = '1.2';
+        b.style.transform = 'none';
+    });
 
-        // 2. DATE LABELS
-        const dateLabels = clonedDoc.querySelectorAll('.date-label');
-        dateLabels.forEach(l => {
-            l.style.display = 'inline-flex';
-            l.style.alignItems = 'center'; 
-            l.style.paddingTop = '0px';
-            l.style.paddingBottom = '6px'; 
-            l.style.transform = 'translateY(-6px)'; 
-        });
+    // 2. DATE LABELS (Fixed Position)
+    const dateLabels = clonedDoc.querySelectorAll('.date-label');
+    dateLabels.forEach(l => {
+        l.style.display = 'inline-flex';
+        l.style.alignItems = 'center'; 
+        l.style.justifyContent = 'center';
+        // テキストを上に押し上げるため下パディングを増加
+        l.style.paddingTop = '0px';
+        l.style.paddingBottom = '10px'; 
+        l.style.transform = 'translateY(-6px)'; 
+    });
 
-        // 3. ICONS
-        const icons = clonedDoc.querySelectorAll('.chat-area-container img.w-12');
-        icons.forEach(icon => {
-            icon.style.transform = 'translateY(-5px)';
-        });
-        
-        // 4. CALL ICONS
-        const callIcons = clonedDoc.querySelectorAll('.call-icon-circle i, .call-active-widget i');
-        callIcons.forEach(icon => {
-            icon.style.transform = 'translateY(-8px)'; 
-        });
+    // 3. ICONS
+    const icons = clonedDoc.querySelectorAll('.chat-area-container img.w-12');
+    icons.forEach(icon => {
+        icon.style.transform = 'translateY(-5px)';
+    });
+    
+    // 4. CALL ICONS
+    const callIcons = clonedDoc.querySelectorAll('.call-icon-circle i, .call-active-widget i');
+    callIcons.forEach(icon => {
+        icon.style.transform = 'translateY(-8px)'; 
+    });
 
-        // 5. CALL TEXT
-        const callTexts = clonedDoc.querySelectorAll(
-            '.call-history-bubble .font-bold, ' + 
-            '.call-history-bubble .opacity-70, ' +
-            '.call-active-widget .font-bold'
-        );
-        callTexts.forEach(el => {
+    // 5. CALL TEXT
+    const callTexts = clonedDoc.querySelectorAll(
+        '.call-history-bubble .font-bold, ' + 
+        '.call-history-bubble .opacity-70, ' +
+        '.call-active-widget .font-bold'
+    );
+    callTexts.forEach(el => {
+        el.style.position = 'relative';
+        el.style.top = '-6px'; 
+    });
+    
+    try {
+        const durationTexts = clonedDoc.querySelectorAll('.call-active-widget .text-\\[10px\\]');
+        durationTexts.forEach(el => {
             el.style.position = 'relative';
-            el.style.top = '-6px'; 
+            el.style.top = '-6px';
         });
-        
-        try {
-            const durationTexts = clonedDoc.querySelectorAll('.call-active-widget .text-\\[10px\\]');
-            durationTexts.forEach(el => {
-                el.style.position = 'relative';
-                el.style.top = '-6px';
-            });
-        } catch(e) { console.log('Duration selector error', e); }
+    } catch(e) { console.log('Duration selector error', e); }
 
-        // 6. FOOTER
-        const footerIcons = clonedDoc.querySelectorAll('.footer-icon, .fa-face-smile');
-        footerIcons.forEach(el => {
-            el.style.position = 'relative';
-            el.style.top = '-8px'; 
-        });
+    // 6. META TEXT (READ/TIME) - NEW ADJUSTMENT
+    const metaTexts = clonedDoc.querySelectorAll('.meta-text');
+    metaTexts.forEach(m => {
+        m.style.position = 'relative';
+        m.style.top = '-6px'; // 既読と時間を上に移動
+        m.style.display = 'inline-block';
+    });
+
+    // 7. FOOTER
+    const footerIcons = clonedDoc.querySelectorAll('.footer-icon, .fa-face-smile');
+    footerIcons.forEach(el => {
+        el.style.position = 'relative';
+        el.style.top = '-8px'; 
+    });
 }
 
 function downloadPhoneView() {
