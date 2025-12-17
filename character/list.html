@@ -3,38 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD SELECT</title>
+    <title>SQUAD SELECT - DATABASE</title>
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Teko:wght@300;500&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Teko:wght@400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <link href="list/header.css" rel="stylesheet">
 
     <style>
         /* --- CORE VARIABLES --- */
         :root {
-            --bg-color: #050505;
-            --card-w: 220px; 
-            --card-h: 60vh; /* 画面高さを基準に調整 */
-            --gap: 60px; /* カード間の空間を広めに */
+            --bg-color: #0b0c10;
+            --card-width: 260px; /* カード幅を少し広げて空間を作る */
+            --card-height: 65vh;
+            --gap: 40px; /* カード間の余白を広げる */
             
-            --depth-screen: -100px; /* スクリーンの奥行き */
-            --depth-figure: 50px;   /* フィギュアの手前出し */
-
-            --c-blue: #00f3ff;
-            --c-yellow: #ffc400;
-            --c-red: #ff2a2a;
-            --c-purple: #bd00ff;
-            --c-white: #e0e0e0;
+            --neon-blue: #00f3ff;
+            --neon-yellow: #ffd700;
+            --neon-red: #ff2a2a;
+            --glass-bg: rgba(20, 30, 40, 0.7);
+            
+            --depth-monitor: -60px;
+            --depth-figure: 20px;
         }
 
         body {
             margin: 0; padding: 0;
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(circle at 50% -20%, #1f2833 0%, #000 80%),
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 60px 60px, 60px 60px;
+                radial-gradient(circle at 50% 0%, #1f2833 0%, #0b0c10 80%),
+                linear-gradient(0deg, rgba(0,243,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
+            background-position: center top, center center, center center;
             font-family: 'Rajdhani', 'Noto Sans JP', sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -42,230 +43,238 @@
             color: #fff;
         }
 
-        /* --- UI OVERLAY --- */
-        .ui-header {
-            position: absolute; top: 0; left: 0; width: 100%; height: 60px;
+        /* --- UI ELEMENTS --- */
+        .sub-header {
+            width: 100%; height: 50px;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 40px; box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-            z-index: 100; pointer-events: none;
-        }
-        .ui-title {
-            font-family: 'Teko', sans-serif; font-size: 1.8rem; letter-spacing: 0.2em;
-            color: rgba(255,255,255,0.8);
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,243,255,0.1) 50%, rgba(0,0,0,0) 100%);
+            border-bottom: 1px solid rgba(0,243,255,0.2);
+            font-family: 'Teko', sans-serif; letter-spacing: 0.2em; font-size: 1.2rem;
+            text-shadow: 0 0 10px var(--neon-blue);
+            z-index: 100;
         }
 
-        /* --- STAGE (3D SPACE) --- */
+        /* --- 3D STAGE AREA --- */
         .stage-wrapper {
             flex: 1; position: relative; width: 100%;
             display: flex; align-items: center; justify-content: center;
-            perspective: 1500px; /* 奥行き感の強さ */
+            perspective: 1200px; /* 3D深度の強化 */
             overflow: hidden;
-            z-index: 10;
         }
 
-        /* 床の反射・発光演出 */
-        .stage-floor-glow {
-            position: absolute; bottom: -10%; left: -50%; width: 200%; height: 50%;
-            background: radial-gradient(ellipse at center top, rgba(0, 243, 255, 0.15), transparent 70%);
-            transform: rotateX(60deg);
-            filter: blur(20px);
+        /* 床のグリッド演出 */
+        .floor-grid {
+            position: absolute; bottom: -20%; left: -50%; width: 200%; height: 100%;
+            background: 
+                linear-gradient(rgba(0,243,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.1) 1px, transparent 1px);
+            background-size: 80px 80px;
+            transform: rotateX(70deg);
+            mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 60%);
+            -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 60%);
             pointer-events: none; z-index: 0;
+            animation: gridScroll 20s linear infinite;
         }
+        @keyframes gridScroll { from { transform: rotateX(70deg) translateY(0); } to { transform: rotateX(70deg) translateY(80px); } }
 
         .stage-container {
             display: flex; align-items: center;
-            padding: 0 15vw; /* 左右の余白 */
-            height: 100%;
+            padding: 0 10vw; /* 横スクロールの余白 */
             overflow-x: auto; 
+            overflow-y: visible;
             scroll-behavior: smooth;
+            height: 100%; width: 100%;
             transform-style: preserve-3d;
             scrollbar-width: none;
-            align-items: center; /* 垂直方向中央揃え */
         }
         .stage-container::-webkit-scrollbar { display: none; }
 
-        /* --- UNIT CARD --- */
+        /* --- CHARACTER UNIT (THE SCENE) --- */
         .char-unit {
-            flex: 0 0 var(--card-w);
-            height: var(--card-h);
+            flex: 0 0 var(--card-width);
+            height: var(--card-height);
             margin: 0 var(--gap);
             position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-style: preserve-3d; /* 重要: 子要素を3D配置 */
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             cursor: pointer;
-            /* カード自体の基準位置を下揃え気味にする */
-            display: flex; flex-direction: column; justify-content: flex-end;
-            padding-bottom: 20px;
         }
 
-        /* 1. BACK SCREEN (背景モニター) */
-        .layer-screen {
+        /* 1. BACK MONITOR (Screen) */
+        .unit-monitor {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 85%; /* 下部を空ける */
-            background: #111;
-            transform: translateZ(var(--depth-screen)); /* 奥に配置 */
-            border-radius: 4px;
+            top: 0; left: 0; right: 0; height: 75%; /* モニターは上部3/4を占める */
+            background-color: #111;
+            transform: translateZ(var(--depth-monitor)); /* 奥に配置 */
+            border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
             transition: all 0.4s ease;
         }
-        /* スクリーンの画像（顔アップ用） */
-        .screen-img {
-            width: 100%; height: 100%;
-            background-size: cover; 
-            background-position: center 15%; /* 顔付近（上から15%）を表示 */
-            opacity: 0.6; filter: grayscale(0.8) contrast(1.1);
-            transition: transform 0.5s ease, filter 0.5s;
-        }
-        /* スクリーンの装飾（走査線・グラデ） */
-        .screen-overlay {
+        .monitor-frame {
             position: absolute; inset: 0;
-            background: 
-                linear-gradient(to bottom, transparent 50%, #050505 100%), /* 下部を暗くフェード */
-                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 3px);
-            z-index: 2; pointer-events: none;
+            border: 1px solid var(--neon-blue);
+            opacity: 0.3; pointer-events: none; z-index: 5;
+            box-shadow: inset 0 0 30px rgba(0, 243, 255, 0.05);
         }
-        /* 縦書きネームタグ */
-        .screen-tag {
-            position: absolute; top: 20px; left: 10px; width: 32px; height: auto;
-            padding: 10px 0;
-            display: flex; flex-direction: column; align-items: center;
-            font-family: 'Teko', sans-serif; letter-spacing: 0.1em;
-            color: #111; font-weight: 600;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-            z-index: 5;
-            writing-mode: vertical-rl; text-orientation: upright;
+        .monitor-corner {
+            position: absolute; width: 10px; height: 10px;
+            border-color: var(--neon-blue); border-style: solid;
+            transition: all 0.3s;
         }
-        .tag-job { font-size: 0.7rem; margin-bottom: 5px; opacity: 0.8; }
-        .tag-name { font-size: 1.1rem; text-transform: uppercase; }
-
-
-        /* 2. BASE & SHADOW (台座・影) */
-        .layer-base {
-            position: absolute; bottom: -10px; left: 50%;
-            transform: translateX(-50%) translateZ(-20px) rotateX(70deg);
-            width: 180px; height: 180px;
-            z-index: 5; pointer-events: none;
-            transition: all 0.4s ease;
-        }
-        /* 発光するリング */
-        .base-ring {
-            position: absolute; inset: 0; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.1);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1), inset 0 0 15px rgba(0, 243, 255, 0.1);
-        }
-        /* リアルな接地影 */
-        .base-shadow {
-            position: absolute; top: 50%; left: 50%;
-            width: 80%; height: 80%;
-            background: radial-gradient(rgba(0,0,0,0.9) 0%, transparent 70%);
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-        }
-
-
-        /* 3. FIGURE (手前の立ち絵) */
-        .layer-figure {
-            position: absolute; bottom: 10px; left: 50%;
-            transform: translateX(-50%) translateZ(var(--depth-figure)); /* 手前に配置 */
-            width: 280px; /* カード幅より少し大きく */
-            height: auto; max-height: 65%; /* 全身が入るように調整 */
-            z-index: 20; pointer-events: none;
-            display: flex; align-items: flex-end; justify-content: center;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            /* 重要: フィギュア感を出すフィルタ */
-            filter: drop-shadow(0 5px 8px rgba(0,0,0,0.6));
-        }
-        .char-img-full {
+        .mc-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .mc-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+        
+        .monitor-img {
             width: 100%; height: 100%;
-            object-fit: contain;
-            object-position: bottom center;
-            /* 下部を少しマスクして台座に馴染ませる */
-            -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+            background-size: cover; background-position: center top;
+            opacity: 0.4; filter: grayscale(1) contrast(1.2) blur(1px);
+            transition: all 0.5s ease;
+        }
+        /* 走査線エフェクト */
+        .scanlines {
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 3px
+            );
+            pointer-events: none; z-index: 2; opacity: 0.7;
         }
 
-        /* --- HOVER & ACTIVE EFFECTS --- */
-        .char-unit:hover { z-index: 50; }
-
-        /* スクリーンが少し明るく、近づく */
-        .char-unit:hover .layer-screen {
-            border-color: rgba(255,255,255,0.4);
-            transform: translateZ(-60px) scale(1.02);
-            box-shadow: 0 0 50px rgba(0, 243, 255, 0.2);
-        }
-        .char-unit:hover .screen-img {
-            opacity: 1; filter: grayscale(0);
-            transform: scale(1.1); /* ズーム効果 */
+        /* 2. FLOOR & LIGHTING (Bottom) */
+        .unit-floor {
+            position: absolute; bottom: -20px; left: 50%;
+            transform: translateX(-50%) rotateX(70deg) translateZ(-30px);
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(0,243,255,0.2) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(5px);
+            transition: all 0.5s ease;
+            z-index: 1; pointer-events: none;
         }
         
-        /* 台座が強く光る */
-        .char-unit:hover .base-ring {
-            border-color: var(--c-blue);
-            box-shadow: 0 0 30px var(--c-blue), inset 0 0 20px var(--c-blue);
-            background: rgba(0, 243, 255, 0.1);
+        /* 3. FIGURE (Front) */
+        .unit-figure-wrapper {
+            position: absolute; 
+            bottom: 0; left: 50%;
+            transform: translateX(-50%) translateZ(var(--depth-figure));
+            height: 60%; /* 身長設定：画面下部から立ち上がる */
+            width: 100%;
+            display: flex; justify-content: center; align-items: flex-end;
+            z-index: 10; pointer-events: none;
+            transition: transform 0.4s ease;
+        }
+        
+        .char-img {
+            max-height: 100%; width: auto; max-width: 200%;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+            mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+            object-fit: contain;
+            transition: transform 0.3s;
         }
 
-        /* フィギュアが手前に出る */
-        .char-unit:hover .layer-figure {
-            transform: translateX(-50%) translateZ(80px) scale(1.05) translateY(-10px);
-            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.8));
+        /* リアルな影 */
+        .char-shadow-real {
+            position: absolute; bottom: 0; left: 50%;
+            width: 120px; height: 30px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 50%;
+            transform: translateX(-50%) translateY(-50%) scaleY(0.5);
+            filter: blur(6px);
+            z-index: 9;
         }
 
+        /* 4. INFO UI (Floating) */
+        .unit-info {
+            position: absolute; top: 20px; left: -10px;
+            transform: translateZ(10px); /* 少しだけ浮かす */
+            z-index: 12;
+            text-align: left;
+        }
+        .info-job {
+            font-family: 'Teko', sans-serif; font-size: 0.9rem;
+            background: var(--neon-blue); color: #000;
+            padding: 2px 8px; display: inline-block;
+            margin-bottom: 5px; clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%);
+        }
+        .info-name {
+            font-family: 'Noto Sans JP', sans-serif; font-weight: 700;
+            font-size: 1.4rem; color: #fff;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.6);
+            padding: 0 10px; border-left: 3px solid var(--neon-blue);
+        }
 
-        /* --- CONTROLS & UTILS --- */
+        /* --- HOVER EFFECTS --- */
+        .char-unit:hover {
+            z-index: 50;
+        }
+        /* モニターがアクティブに */
+        .char-unit:hover .unit-monitor {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
+            transform: translateZ(-50px) scale(1.02); /* 少し近づく */
+        }
+        .char-unit:hover .monitor-img {
+            opacity: 0.8; filter: grayscale(0) blur(0);
+            transform: scale(1.05);
+        }
+        .char-unit:hover .monitor-frame { opacity: 0.8; }
+        
+        /* 床が明るく */
+        .char-unit:hover .unit-floor {
+            background: radial-gradient(circle, rgba(0,243,255,0.5) 0%, transparent 70%);
+            transform: translateX(-50%) rotateX(70deg) translateZ(-30px) scale(1.2);
+        }
+
+        /* フィギュアが強調 */
+        .char-unit:hover .unit-figure-wrapper {
+            transform: translateX(-50%) translateZ(40px) scale(1.05);
+        }
+
+        /* --- CONTROLS --- */
         .nav-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            width: 60px; height: 100px;
-            background: rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.5); font-size: 2rem;
+            position: absolute; top: 50%; width: 60px; height: 60px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+            color: var(--neon-blue); font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
             cursor: pointer; z-index: 100; transition: all 0.3s;
-            clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 80%);
-            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px); clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
         }
-        .nav-btn:hover {
-            background: rgba(0, 243, 255, 0.1);
-            color: #fff;
-            border-color: var(--c-blue);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-        }
-        .nav-btn.prev { left: 0; clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%); }
-        .nav-btn.next { right: 0; }
+        .nav-btn:hover { background: rgba(0, 243, 255, 0.2); text-shadow: 0 0 10px var(--neon-blue); border-color: var(--neon-blue); }
+        .nav-btn.prev { left: 30px; }
+        .nav-btn.next { right: 30px; }
 
-        .edit-btn {
+        .edit-img-btn {
             position: absolute; top: 10px; right: 10px;
             width: 30px; height: 30px; border-radius: 50%;
-            background: rgba(0,0,0,0.8); border: 1px solid #555;
-            color: #fff; display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: 0.3s; z-index: 60; cursor: pointer;
+            background: #222; border: 1px solid #555; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.2s; z-index: 200; cursor: pointer;
         }
-        .char-unit:hover .edit-btn { opacity: 1; }
-        .edit-btn:hover { background: var(--c-blue); color: #000; border-color: var(--c-blue); }
+        .edit-img-btn:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .char-unit:hover .edit-img-btn { opacity: 1; }
 
-        .click-area { position: absolute; inset: 0; z-index: 55; cursor: pointer; }
+        .click-overlay { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
 
-        /* --- PARTICLES (Floating Motes) --- */
-        #particle-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 15; /* フィギュアの手前にも少し飛ばす */
+        /* PARTICLES */
+        #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .particle {
+            position: absolute; background: white; border-radius: 50%;
+            opacity: 0; animation: rise 8s infinite ease-in;
         }
-        .mote {
-            position: absolute; background: #fff; border-radius: 50%;
-            filter: blur(1px); opacity: 0;
-            animation: floatUp linear forwards;
-        }
-        @keyframes floatUp {
+        @keyframes rise {
             0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            20% { opacity: 0.6; }
-            80% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
         }
 
-        .loading-msg { font-family: 'Teko', sans-serif; font-size: 1.5rem; color: #666; letter-spacing: 0.2em; }
+        .loading-text {
+            font-family: 'Teko', sans-serif; font-size: 2rem; color: #555; letter-spacing: 0.5em;
+            text-align: center; animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+
     </style>
 </head>
 <body>
@@ -276,46 +285,52 @@
 </script>
 
     <!-- Header UI -->
-    <div class="ui-header">
-        <div class="ui-title">CHARACTER SELECT</div>
-        <div style="font-family:'Rajdhani'; font-size:0.8rem; color:#666;">// SYSTEM: ONLINE</div>
+    <div class="sub-header">
+        <span>SQUAD SELECTION</span>
+        <span style="font-size: 0.9rem; opacity: 0.7;">// DATABASE ACCESS: AUTHORIZED</span>
     </div>
     
-    <!-- Floating Particles -->
-    <div id="particle-layer"></div>
+    <div id="particles"></div>
 
     <div class="stage-wrapper">
-        <div class="stage-floor-glow"></div>
-        
-        <div class="nav-btn prev" id="btnPrev">❮</div>
+        <!-- 床のグリッド（背景演出） -->
+        <div class="floor-grid"></div>
+
+        <div class="nav-btn prev" id="btnPrev">◀</div>
         
         <div class="stage-container" id="stage">
-            <div class="loading-msg">CONNECTING TO DATABASE...</div>
+            <div class="loading-text">INITIALIZING...</div>
         </div>
         
-        <div class="nav-btn next" id="btnNext">❯</div>
+        <div class="nav-btn next" id="btnNext">▶</div>
+    </div>
+
+    <!-- Footer UI -->
+    <div class="sub-header" style="height: 40px; border-top: 1px solid #333; border-bottom: none; background: #000; justify-content: center;">
+        <span style="font-size: 0.8rem; color: #666; letter-spacing: 0.2em;">SELECT CHARACTER TO VIEW DETAILS</span>
     </div>
 
     <script type="module">
+        // firestore.jsのパスは環境に合わせて調整してください
         import { loadFromCloud, saveToCloud } from "./firestore.js";
 
         const stage = document.getElementById('stage');
 
-        // ジョブに応じたカラー定義
-        function getJobColor(job) {
-            if(!job) return '#e0e0e0';
-            if(job.includes('医') || job.includes('学者') || job.includes('研究')) return '#ffc400'; // Yellow
+        // 職業ごとのカラー定義
+        function getAccentColor(job) {
+            if(!job) return '#555555'; // Gray
             if(job.includes('探偵') || job.includes('警官') || job.includes('捜査')) return '#00f3ff'; // Cyan
-            if(job.includes('戦') || job.includes('騎士') || job.includes('狩')) return '#ff2a2a'; // Red
-            if(job.includes('魔') || job.includes('霊') || job.includes('占')) return '#bd00ff'; // Purple
-            return '#00f3ff'; // Default
+            if(job.includes('医') || job.includes('学者') || job.includes('研究')) return '#ffd700'; // Yellow
+            if(job.includes('戦') || job.includes('自衛') || job.includes('狩')) return '#ff2a2a'; // Red
+            if(job.includes('アイドル') || job.includes('学生')) return '#ff00ff'; // Magenta
+            return '#00f3ff'; // Default Cyan
         }
 
         window.renderCharacterList = function(data) {
             stage.innerHTML = ''; 
 
             if (!data || Object.keys(data).length === 0) {
-                stage.innerHTML = '<div class="loading-msg">NO DATA AVAILABLE</div>';
+                stage.innerHTML = '<div class="loading-text">NO DATA FOUND</div>';
                 return;
             }
 
@@ -323,96 +338,103 @@
                 const unit = document.createElement('div');
                 unit.className = 'char-unit';
                 
-                const imgSource = char.image || 'https://placehold.co/400x800/222/555?text=No+Image';
-                const accent = getJobColor(char.job);
+                const imgSource = char.image || 'https://placehold.co/300x600/111/444?text=NO+IMG';
+                const accentColor = getAccentColor(char.job);
                 
-                // HTML構造: 
-                // 1. Screen (奥・顔アップ)
-                // 2. Base (中・台座と影)
-                // 3. Figure (手前・全身)
+                // HTML構造: 3Dレイヤー（モニター・床・フィギュア）
                 unit.innerHTML = `
-                    <div class="layer-screen" style="border-bottom: 2px solid ${accent};">
-                        <div class="screen-img" style="background-image: url('${imgSource}');"></div>
-                        <div class="screen-overlay"></div>
-                        <div class="screen-tag" style="background: ${accent};">
-                            <span class="tag-job">${char.job || '---'}</span>
-                            <span class="tag-name">${char.name}</span>
-                        </div>
+                    <!-- 1. BACK SCREEN (Monitor) -->
+                    <div class="unit-monitor" style="border-color: ${accentColor}44;">
+                        <div class="monitor-frame" style="border-color: ${accentColor};"></div>
+                        <div class="monitor-corner mc-tl" style="border-color: ${accentColor};"></div>
+                        <div class="monitor-corner mc-br" style="border-color: ${accentColor};"></div>
+                        <div class="scanlines"></div>
+                        <!-- 背景画像として顔周辺を拡大表示 -->
+                        <div class="monitor-img" style="background-image: url('${imgSource}');"></div>
                     </div>
 
-                    <div class="layer-base">
-                        <div class="base-shadow"></div>
-                        <div class="base-ring" style="border-color: ${accent}; box-shadow: 0 0 10px ${accent};"></div>
+                    <!-- 2. FLOOR GLOW -->
+                    <div class="unit-floor" style="background: radial-gradient(circle, ${accentColor}44 0%, transparent 70%);"></div>
+
+                    <!-- 3. FIGURE & SHADOW -->
+                    <div class="char-shadow-real"></div>
+                    <div class="unit-figure-wrapper">
+                        <img src="${imgSource}" class="char-img" alt="${char.name}" onerror="this.style.opacity='0'">
                     </div>
 
-                    <div class="layer-figure">
-                        <img src="${imgSource}" class="char-img-full" alt="${char.name}" onerror="this.style.opacity='0'">
+                    <!-- 4. FLOATING UI -->
+                    <div class="unit-info">
+                        <div class="info-job" style="background: ${accentColor};">${char.job || 'UNKNOWN'}</div>
+                        <div class="info-name" style="border-left-color: ${accentColor};">${char.name}</div>
                     </div>
 
-                    <div class="edit-btn" title="画像を登録">📷</div>
-                    <div class="click-area"></div>
+                    <!-- CONTROLS -->
+                    <div class="edit-img-btn" title="Edit Image">📷</div>
+                    <div class="click-overlay"></div>
                 `;
 
                 // --- Events ---
-                
-                // 編集ボタン
-                const editBtn = unit.querySelector('.edit-btn');
+
+                // 画像編集
+                const editBtn = unit.querySelector('.edit-img-btn');
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
-                    const newUrl = prompt(`【画像URL更新】\n${char.name} の立ち絵URLを入力:`, char.image || "");
-                    if(newUrl) {
+                    const newUrl = prompt(`【画像URL設定】\n${char.name} の立ち絵URLを入力:`, char.image || "");
+                    if(newUrl !== null) {
                         char.image = newUrl;
                         saveToCloud(char).then(() => {
+                            // 簡易リロード（本来は差分更新が望ましい）
                             window.renderCharacterList(data);
                         });
                     }
                 };
 
-                // クリックで詳細へ
-                const clickArea = unit.querySelector('.click-area');
+                // 詳細ページへ遷移
+                const clickArea = unit.querySelector('.click-overlay');
                 clickArea.onclick = () => {
+                    // IDをクエリパラメータとして渡す
                     window.location.href = `character/detail/detail.html?id=${char.id}`;
                 };
 
                 stage.appendChild(unit);
             });
+            
+            // 描画後に少しアニメーションさせる
+            setTimeout(() => {
+                const figures = document.querySelectorAll('.char-img');
+                figures.forEach(img => img.style.opacity = '1');
+            }, 100);
         };
 
         // Scroll Logic
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
-        const SCROLL_AMT = 300; 
+        const SCROLL_AMOUNT = 300; // カード幅 + gap
         
-        btnNext.onclick = () => stage.scrollBy({ left: SCROLL_AMT, behavior: 'smooth' });
-        btnPrev.onclick = () => stage.scrollBy({ left: -SCROLL_AMT, behavior: 'smooth' });
+        btnNext.onclick = () => {
+            stage.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+        };
+        btnPrev.onclick = () => {
+            stage.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+        };
 
-        // Particle System (Rising "Mana" or Dust)
-        function spawnParticle() {
+        // Particle System
+        function createParticle() {
             const p = document.createElement('div');
-            p.className = 'mote';
-            
-            // ランダムなサイズと位置
-            const size = Math.random() * 3 + 1;
+            p.className = 'particle';
+            const size = Math.random() * 2 + 1;
             p.style.width = size + 'px'; p.style.height = size + 'px';
             p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (Math.random() * 5 + 4) + 's';
+            p.style.boxShadow = `0 0 ${Math.random()*5}px rgba(0, 243, 255, 0.5)`;
+            document.getElementById('particles').appendChild(p);
             
-            // ランダムなアニメーション速度
-            const duration = Math.random() * 5 + 5;
-            p.style.animationDuration = duration + 's';
-            
-            // 色味（少し青みがかった白）
-            p.style.background = `rgba(${200 + Math.random()*55}, ${240 + Math.random()*15}, 255, ${Math.random()*0.5 + 0.2})`;
-            
-            document.getElementById('particle-layer').appendChild(p);
-            
-            // アニメーション終了後に削除
-            setTimeout(() => p.remove(), duration * 1000);
+            setTimeout(() => p.remove(), 8000);
         }
-        // パーティクル生成頻度
-        setInterval(spawnParticle, 150);
+        setInterval(createParticle, 300);
 
-        // Firestoreからデータ取得 (実装済みと仮定)
-        // loadFromCloud().then(data => renderCharacterList(data));
+        // Debug/Initial Load (実際のデータ取得ロジックに合わせてください)
+        // loadFromCloud().then(data => renderCharacterList(data)); 
     </script>
 </body>
 </html>
