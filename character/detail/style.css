@@ -30,7 +30,7 @@ body {
     background: var(--bg-dark);
     color: var(--text-main);
     font-family: var(--font-body);
-    /* ★スクロール可能に変更 (min-heightで高さを保証しつつ、overflow-y: auto) */
+    /* スクロール有効化 */
     min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
@@ -48,16 +48,11 @@ body {
 .scroller::-webkit-scrollbar-thumb { background: var(--secondary); }
 .scroller::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
 
-/* --- THEME SWITCHER (Restore & Fix) --- */
+/* --- THEME SWITCHER (Fixed) --- */
 #themeSwitcher {
     position: fixed;
-    /* ヘッダー(50px)の下に来るように調整 */
     top: 60px; 
     right: 20px;
-    /* ヘッダー(9999)やBootScreen(2000)との兼ね合い調整。
-       ヘッダーより上にしたい場合は10000以上にするが、
-       デザイン的にはヘッダーの下に浮いている方が自然なので1000でOK。
-       ただしheader.cssのheaderがfixedなので重ならないようtopを調整 */
     z-index: 1000;
     
     background: rgba(0, 0, 0, 0.8);
@@ -109,9 +104,7 @@ input[type="file"] { display: none; }
     display: grid;
     grid-template-columns: 300px 1fr 350px; 
     gap: 15px;
-    /* ★高さ固定をやめ、コンテンツに合わせて伸びるように修正 */
     width: 98vw;
-    /* margin: 2vh auto; を修正してHeader(50px)分の余白を確保 */
     margin: 60px auto 20px auto; 
     min-height: calc(100vh - 80px);
     height: auto;
@@ -132,9 +125,8 @@ input[type="file"] { display: none; }
     background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px;
     display: flex; flex-direction: column; backdrop-filter: blur(5px);
     position: relative; overflow: hidden;
-    /* パネルの高さも自然に任せる */
     height: auto; 
-    max-height: 100%; /* scrollerが効くように */
+    max-height: 100%; 
 }
 .panel::before {
     content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
@@ -147,7 +139,6 @@ h3 {
 }
 
 /* --- COLUMN 1: LEFT (Identity) --- */
-/* height: 100% を削除またはautoに変更 */
 .col-left { display: flex; flex-direction: column; gap: 15px; height: auto; padding-right: 2px;}
 
 .profile-card { padding: 15px; text-align: center; flex-shrink: 0; }
@@ -207,7 +198,6 @@ h3 {
 .sticky-header, .deck-header {
     background: rgba(12, 14, 18, 0.98); padding: 15px; z-index: 10;
     border-bottom: 1px solid var(--border);
-    /* Stickyを機能させるため */
     position: sticky; top: 0;
 }
 
@@ -287,7 +277,6 @@ input:checked + .slider::before { transform: translateX(18px); background: var(-
 .table-wrapper { flex: 1; padding: 0 15px; }
 .skill-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 
-/* ★ UPDATE: ADJUST COLUMN WIDTHS (40% : 10% : 50%) */
 .skill-table th {
     text-align: left; color: #666; font-size: 0.7rem; padding: 8px 5px;
     border-bottom: 1px solid #444; position: sticky; top: 0; background: #0c0e12; z-index: 5;
@@ -296,7 +285,12 @@ input:checked + .slider::before { transform: translateX(18px); background: var(-
 .skill-table th:nth-child(2) { width: 10%; }
 .skill-table th:nth-child(3) { width: 50%; }
 
-.skill-table td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+/* ★修正: vertical-align: top にしてレイアウト崩れを防ぐ */
+.skill-table td { 
+    padding: 8px 5px; 
+    border-bottom: 1px solid rgba(255,255,255,0.05); 
+    vertical-align: top; 
+}
 
 /* Row Colors & Hover Animation */
 tr.cat-combat { border-left: 3px solid var(--c-combat); background: linear-gradient(90deg, rgba(255,68,68,0.05), transparent); }
@@ -319,10 +313,13 @@ tr.cat-knowledge { border-left: 3px solid var(--c-knowledge); background: linear
 .badge-legend { background: var(--primary); color: #fff; box-shadow: 0 0 5px var(--primary); }
 @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
 
+/* ★修正: textareaの余計な余白を消す */
 .skill-desc-inp {
     background: transparent; border: none; color: #888; font-size: 0.8rem; width: 100%;
     margin-top: 2px; border-bottom: 1px dashed transparent; resize: none; overflow: hidden;
-    line-height: 1.4; padding: 2px 0; transition: 0.3s;
+    line-height: 1.4; padding: 0; transition: 0.3s;
+    display: block; box-sizing: border-box;
+    min-height: 1.4em; /* 最低でも1行分確保 */
 }
 .skill-desc-inp:focus { 
     border-bottom-color: var(--secondary); color: #fff; 
@@ -332,7 +329,7 @@ tr.cat-knowledge { border-left: 3px solid var(--c-knowledge); background: linear
 
 /* ★ SHORT DESC MODE */
 .short-view .skill-desc-inp {
-    height: 1.5em !important; /* Force single line height */
+    height: 1.5em !important; 
     overflow-y: hidden !important;
     white-space: nowrap;
     text-overflow: ellipsis;

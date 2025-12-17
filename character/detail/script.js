@@ -26,8 +26,7 @@ const els = {
     dashboard: document.getElementById('dashboard'),
     themeSwitcher: document.getElementById('themeSwitcher'),
     mainStyle: document.getElementById('mainStyle'),
-    // 追加: ステータス評価表示用
-    flavorList: document.getElementById('statusFlavorList') 
+    flavorList: document.getElementById('statusFlavorList')
 };
 
 const CAT_COLORS = {
@@ -39,9 +38,15 @@ const CAT_COLORS = {
     summary: '#00f3ff'
 };
 
+// ★修正: テキストエリアの高さを調整する関数（バグ修正版）
 function adjustHeight(el) {
-    if(document.querySelector('.short-view') && !el.matches(':focus') && !el.matches(':hover')) return;
+    if(document.querySelector('.short-view') && !el.matches(':focus') && !el.matches(':hover')) {
+        el.style.height = ''; // short-view時はCSSに任せる
+        return;
+    }
+    // 一度高さをリセットして正しいscrollHeightを取得する
     el.style.height = 'auto';
+    // 最小高さを確保しつつ内容に合わせてリサイズ
     el.style.height = (el.scrollHeight) + 'px';
 }
 
@@ -97,9 +102,13 @@ els.file.addEventListener('change', handleFile);
 els.hideToggle.addEventListener('change', () => renderCurrentTab());
 
 els.shortDescToggle.addEventListener('change', (e) => {
-    if(e.target.checked) els.listBody.classList.add('short-view');
-    else {
+    if(e.target.checked) {
+        els.listBody.classList.add('short-view');
+        // short-view有効時はスタイルをリセット
+        document.querySelectorAll('.skill-desc-inp').forEach(tx => tx.style.height = '');
+    } else {
         els.listBody.classList.remove('short-view');
+        // 解除時は再度高さを計算
         document.querySelectorAll('.skill-desc-inp').forEach(tx => adjustHeight(tx));
     }
 });
@@ -153,7 +162,6 @@ function handleFile(e) {
     const r = new FileReader();
     r.onload = (ev) => {
         try {
-            // ★ schema.js の共通解析ロジックを使用
             const d = parseIaChara(ev.target.result);
             launchDashboard(d);
         } catch(err) { console.error(err); alert('Parse Error: ' + err.message); }
@@ -191,10 +199,6 @@ function launchDashboard(data) {
     const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || 'No records.'; };
     setTxt('spellsList', data.spells);
     setTxt('entitiesList', data.encountered);
-    
-    // Data not explicitly in DOM for these IDs but kept for safety
-    // setTxt('growthList', data.growth);
-    // setTxt('weaponList', data.weapons);
 
     els.boot.classList.add('hidden');
     document.body.classList.add('loaded');
@@ -217,9 +221,29 @@ function renderProfile(d) {
     const tags = document.getElementById('charTags'); tags.innerHTML='';
     if(d.tags) d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
 
-    setBar('HP', d.vitals.hp, 15); // ※最大値は概算またはデータにあればそちらを使用
-    setBar('MP', d.vitals.mp, 18);
-    setBar('SAN', d.vitals.san, 99);
+    // ★ ステータスから最大値を計算 (6版ルール)
+    const stats = d.stats || {};
+    // CONとSIZがあれば (CON+SIZ)/2、なければ現在のHPを分母とする等のフォールバック
+    const maxHP = (stats.CON && stats.SIZ) ? Math.ceil((parseInt(stats.CON) + parseInt(stats.SIZ)) / 2) : (d.vitals.hp || 1);
+    // MPはPOWと同値
+    const maxMP = stats.POW ? parseInt(stats.POW) : (d.vitals.mp || 1);
+    
+    // SAN最大値: 99 - クトゥルフ神話技能
+    let mythosVal = 0;
+    // 全技能から検索
+    if(d.skills) {
+        Object.values(d.skills).flat().forEach(s => {
+            if(s.name && s.name.includes('クトゥルフ神話')) {
+                mythosVal = s.total;
+            }
+        });
+    }
+    const maxSAN = 99 - mythosVal;
+
+    // バーの更新
+    setBar('HP', d.vitals.hp, maxHP);
+    setBar('MP', d.vitals.mp, maxMP);
+    setBar('SAN', d.vitals.san, maxSAN);
 
     // Stats Grid & Chart
     const sGrid = document.getElementById('rawStatsGrid'); sGrid.innerHTML='';
@@ -239,24 +263,29 @@ function renderProfile(d) {
         options: chartOpts(18)
     });
 
-    // ★ ステータス評価（フレーバーテキスト）の復元
+    // ★ ステータス評価の表示（修正版）
     renderStatusFlavor(d.stats);
 }
 
-// ★ 新規追加: data.jsのSTATUS_FLAVORを使って評価を表示
+// ★ 修正: data.jsのSTATUS_FLAVORをwindowから取得
 function renderStatusFlavor(stats) {
     const list = els.flavorList;
     list.innerHTML = '';
 
-    // data.jsが読み込まれていれば window.STATUS_FLAVOR があるはず
-    if (typeof STATUS_FLAVOR === 'undefined') {
-        console.warn('STATUS_FLAVOR is not defined in data.js');
+    // data.jsはmoduleではないscriptタグで読み込まれているため、global(window)にあるはず
+    const flavorDB = window.STATUS_FLAVOR;
+
+    if (!flavorDB) {
+        console.warn('STATUS_FLAVOR not found. Make sure data.js is loaded.');
+        const li = document.createElement('li');
+        li.textContent = "Data definition not loaded.";
+        list.appendChild(li);
         return;
     }
 
     Object.keys(stats).forEach(key => {
         const val = parseInt(stats[key], 10);
-        const flavorObj = STATUS_FLAVOR[key];
+        const flavorObj = flavorDB[key];
         
         if (flavorObj && flavorObj[val]) {
             const li = document.createElement('li');
@@ -287,10 +316,10 @@ function renderSimpleList(id, text, tagClass) {
 function setBar(id, v, m) {
     const elVal = document.getElementById(`val${id}`);
     const elBar = document.getElementById(`bar${id}`);
-    // ※ ここでは暫定的にm(最大値)を固定値や引数で渡しているが、
-    // 将来的にはschemaからmaxHPなどを取得して渡すのが望ましい
     if(elVal) elVal.textContent = `${v}/${m}`;
-    if(elBar) elBar.style.width = Math.min(100, (v/m)*100) + '%';
+    // バーの長さ計算（最大値を超えないように）
+    const pct = Math.min(100, Math.max(0, (v/m)*100));
+    if(elBar) elBar.style.width = pct + '%';
 }
 
 function renderSkillSection(cat) {
@@ -349,11 +378,16 @@ function renderSkillSection(cat) {
 
         const tx = row.querySelector('textarea');
         tx.addEventListener('input', (e) => { s.desc = e.target.value; adjustHeight(e.target); });
-        setTimeout(() => adjustHeight(tx), 0);
+        // ★修正: レイアウト描画後に確実に高さを調整
+        requestAnimationFrame(() => adjustHeight(tx));
         els.listBody.appendChild(row);
     });
     
-    if(els.shortDescToggle.checked) els.listBody.classList.add('short-view');
+    if(els.shortDescToggle.checked) {
+        els.listBody.classList.add('short-view');
+        // short-viewの場合、高さリセット
+        els.listBody.querySelectorAll('textarea').forEach(t => t.style.height = '');
+    }
     renderTabChart(cat, skillsToRender);
 }
 
@@ -414,7 +448,7 @@ function renderItems(items) {
         d.innerHTML = `<span class="item-name">${i.name}</span><textarea class="item-desc-inp" rows="1">${i.desc || ''}</textarea>`;
         const tx = d.querySelector('textarea');
         tx.addEventListener('input', (e)=>{ i.desc=e.target.value; adjustHeight(e.target); });
-        setTimeout(() => adjustHeight(tx), 0);
+        requestAnimationFrame(() => adjustHeight(tx));
         list.appendChild(d);
     });
 }
