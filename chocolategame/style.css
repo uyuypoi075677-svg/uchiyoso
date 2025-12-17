@@ -14,29 +14,31 @@ body {
     background-color: var(--bg-color);
     font-family: var(--font-main);
     width: 100vw; height: 100vh;
+    overflow: hidden;
     display: flex; justify-content: center; align-items: center;
-    overflow: auto; /* 小さい画面ではスクロール可能に */
     user-select: none;
 }
 
-/* ゲーム画面を中央に固定配置 */
-#game-wrapper {
+/* 画面サイズに合わせて拡大縮小するためのラッパー */
+#wrapper {
+    width: 100%; height: 100%;
     display: flex; justify-content: center; align-items: center;
-    padding: 20px;
 }
 
+/* ゲーム画面の基本サイズ (16:9) */
 #game-container {
     position: relative;
-    width: 960px; height: 540px; /* 固定サイズ */
+    width: 960px; height: 540px;
     background: #000;
     box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    /* JSでtransform: scale()される */
+    transform-origin: center center; 
     border: 4px solid #3e2723;
     border-radius: 4px;
 }
 
 #game-stage {
     width: 100%; height: 100%;
-    /* 確定した背景画像パス */
     background-image: url('../images/background/gamebg-shop.png');
     background-size: cover;
     background-position: center;
@@ -61,11 +63,11 @@ body {
 }
 .hotspot:hover::after { opacity: 1; top: -35px; }
 
-/* 家具エリア配置 (背景画像に合わせて調整) */
-#zone-shelf { top: 12%; left: 6%; width: 22%; height: 26%; }
-#zone-display { top: 32%; left: 16%; width: 28%; height: 22%; }
-#zone-kitchen { top: 12%; left: 54%; width: 35%; height: 22%; }
-#zone-register { top: 62%; left: 58%; width: 12%; height: 22%; }
+/* 家具エリア配置 (少し下にずらしました) */
+#zone-shelf { top: 15%; left: 6%; width: 22%; height: 26%; }
+#zone-display { top: 35%; left: 16%; width: 28%; height: 22%; }
+#zone-kitchen { top: 15%; left: 54%; width: 35%; height: 22%; }
+#zone-register { top: 65%; left: 58%; width: 12%; height: 22%; }
 
 /* キャラクター等 */
 .entity {
