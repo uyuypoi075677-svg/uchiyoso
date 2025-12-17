@@ -248,11 +248,10 @@ function renderProfile(d, extras = {}) {
     document.getElementById('charImage').src = d.image || 'https://placehold.co/400x600/000/333?text=NO+IMAGE';
     document.getElementById('valDB').textContent = d.db; 
 
-    // ★ メタ情報エリア (IDカード風)
+    // ★ メタ情報エリア
     const metaInfo = document.querySelector('.meta-info');
     metaInfo.innerHTML = ''; 
 
-    // 定義データ (未入力でも表示)
     const infoItems = [
         { label: "JOB", val: d.job },
         { label: "AGE", val: d.age },
@@ -269,7 +268,7 @@ function renderProfile(d, extras = {}) {
         metaInfo.appendChild(div);
     });
 
-    // ★ COLOR MODULE (テーマカラー含む)
+    // ★ COLOR MODULE
     const existingColorMod = document.querySelector('.color-module');
     if(existingColorMod) existingColorMod.remove();
 
@@ -327,19 +326,22 @@ function renderProfile(d, extras = {}) {
     const sGrid = document.getElementById('rawStatsGrid'); sGrid.innerHTML='';
     Object.keys(d.stats).forEach(k => sGrid.innerHTML+=`<div class="stat-box"><small>${k}</small><span>${d.stats[k]}</span></div>`);
 
-    const ctx = document.getElementById('mainStatsChart').getContext('2d');
-    if(charts.main) charts.main.destroy();
-    charts.main = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: Object.keys(d.stats),
-            datasets: [{
-                label: 'BASE', data: Object.values(d.stats),
-                backgroundColor: 'rgba(255,0,85,0.2)', borderColor: '#ff0055', borderWidth: 1, pointRadius: 0
-            }]
-        },
-        options: chartOpts(18)
-    });
+    // ★ チャート描画遅延（ズレ対策）
+    setTimeout(() => {
+        const ctx = document.getElementById('mainStatsChart').getContext('2d');
+        if(charts.main) charts.main.destroy();
+        charts.main = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: Object.keys(d.stats),
+                datasets: [{
+                    label: 'BASE', data: Object.values(d.stats),
+                    backgroundColor: 'rgba(255,0,85,0.2)', borderColor: '#ff0055', borderWidth: 1, pointRadius: 0
+                }]
+            },
+            options: chartOpts(18)
+        });
+    }, 100);
 
     renderStatusFlavor(d.stats);
 }
@@ -435,7 +437,8 @@ function renderSkillSection(cat) {
                 <div class="skill-name-row">${s.name}${badge}</div>
                 <textarea class="skill-desc-inp" placeholder="..." rows="1">${s.desc || ''}</textarea>
             </td>
-            <td style="font-family:var(--font-head); font-size:1.2rem; text-align:center; color:#fff" class="skill-val-cell">${s.total}</td>
+            <!-- ★ 文字色指定を削除しクラスで管理 -->
+            <td class="skill-val-cell">${s.total}</td>
             <td>
                 <div class="val-row">
                     <span>Init:${s.init}</span>
@@ -502,17 +505,20 @@ function renderTabChart(cat, skills) {
     els.chartTitle.textContent = labelText;
     els.chartDesc.textContent = descText;
 
-    charts.category = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'VAL', data: data,
-                backgroundColor: chartColor + '33', borderColor: chartColor, borderWidth: 2, pointBackgroundColor: '#fff', pointRadius: 3
-            }]
-        },
-        options: chartOpts(99) 
-    });
+    // ★ チャート描画遅延（ズレ対策）
+    setTimeout(() => {
+        charts.category = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'VAL', data: data,
+                    backgroundColor: chartColor + '33', borderColor: chartColor, borderWidth: 2, pointBackgroundColor: '#fff', pointRadius: 3
+                }]
+            },
+            options: chartOpts(99) 
+        });
+    }, 100);
 }
 
 function renderItems(items) {
