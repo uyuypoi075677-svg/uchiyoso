@@ -1,10 +1,10 @@
 // detail/script.js
 import { login, logout, monitorAuth, saveToCloud, loadFromCloud } from "../firestore.js";
-// ★共通の解析ロジック
 import { parseIaChara } from "../data/schema.js";
 
 // --- GLOBAL STATE ---
 let charData = null;
+let rawTextData = ""; // 元テキスト保持用
 let charts = { main: null, category: null };
 
 // DOM Elements
@@ -27,7 +27,6 @@ const els = {
     themeSwitcher: document.getElementById('themeSwitcher'),
     mainStyle: document.getElementById('mainStyle'),
     flavorList: document.getElementById('statusFlavorList'),
-    // メモエリア取得用
     memoArea: document.getElementById('memoArea')
 };
 
@@ -40,18 +39,16 @@ const CAT_COLORS = {
     summary: '#00f3ff'
 };
 
-// textareaの高さ自動調整
 function adjustHeight(el) {
     if(document.querySelector('.short-view') && !el.matches(':focus') && !el.matches(':hover')) {
         el.style.height = ''; 
         return;
     }
     el.style.height = 'auto';
-    el.style.height = (el.scrollHeight + 5) + 'px'; // +5pxで微調整
+    el.style.height = (el.scrollHeight + 5) + 'px';
 }
 
 // --- EVENTS ---
-// (既存のイベントリスナーコードはそのまま維持...)
 const btnLogin = document.getElementById('btnLogin');
 const btnLogout = document.getElementById('btnLogout');
 const btnCloudSave = document.getElementById('btnLocalSave');
@@ -139,7 +136,6 @@ els.infoTabs.addEventListener('click', (e) => {
         document.querySelectorAll('.deck-pane').forEach(p => p.classList.remove('active'));
         const targetPane = document.getElementById(targetId);
         targetPane.classList.add('active');
-        // ★修正: タブ切り替え時にメモの高さも再調整
         targetPane.querySelectorAll('textarea').forEach(tx => adjustHeight(tx));
     }
 });
@@ -163,29 +159,66 @@ function handleFile(e) {
     const r = new FileReader();
     r.onload = (ev) => {
         try {
-            const d = parseIaChara(ev.target.result);
+            rawTextData = ev.target.result; // 元テキストを保存
+            const d = parseIaChara(rawTextData);
             launchDashboard(d);
         } catch(err) { console.error(err); alert('Parse Error: ' + err.message); }
     };
     r.readAsText(f);
 }
 
+// テキストから詳細プロフィールを抽出する関数
+function extractProfileData(text) {
+    const getMatch = (regex) => {
+        const match = text.match(regex);
+        return match ? match[1].trim() : "??";
+    };
+    return {
+        hair: getMatch(/髪の色[:：]\s*(.*?)(?:\s*\/|$)/),
+        eye: getMatch(/瞳の色[:：]\s*(.*?)(?:\s*\/|$)/),
+        skin: getMatch(/肌の色[:：]\s*(.*?)(?:\s*\/|$)/),
+        gender: getMatch(/性別[:：]\s*(.*?)(?:\s*\/|$)/),
+        height: getMatch(/身長[:：]\s*(.*?)(?:\s*\/|$)/),
+        weight: getMatch(/体重[:：]\s*(.*?)(?:\s*\/|$)/),
+        birth: getMatch(/誕生日[:：]\s*(.*?)(?:\s*\/|$)/),
+        origin: getMatch(/出身[:：]\s*(.*?)(?:\s*\/|$)/)
+    };
+}
+
 function launchDashboard(data) {
     charData = data;
     
+    // プロフィール詳細抽出
+    const profileExtras = extractProfileData(rawTextData || "");
+    
     // 描画処理
-    renderProfile(data);
+    renderProfile(data, profileExtras);
     renderSkillSection('summary'); 
     renderItems(data.items);
     
-    // テキスト反映
+    // メモ欄の処理: parseIaCharaで取りきれなかった情報を追記
     const memoEl = document.getElementById('memoArea');
-    memoEl.value = data.memo || '';
+    let memoContent = data.memo || "";
     
-    // ★修正: 初期ロード時にメモ欄の高さを調整 (少し遅らせて描画完了を待つ)
-    requestAnimationFrame(() => {
-        adjustHeight(memoEl);
-    });
+    // 元テキストから【メモ】以降や主要なセクションを取得して結合（重複しないように簡易チェック）
+    if(rawTextData && !memoContent.includes("【性格】")) {
+        // 簡易的に後半部分を取得してみる
+        const sections = ["【性格】", "【人間関係】", "【外見】", "【経歴】"];
+        sections.forEach(sec => {
+            const idx = rawTextData.indexOf(sec);
+            if(idx !== -1 && !memoContent.includes(sec)) {
+                // セクションの終わり（次の【まで）を探す
+                const nextSecIdx = rawTextData.indexOf("【", idx + 1);
+                const content = nextSecIdx !== -1 
+                    ? rawTextData.substring(idx, nextSecIdx) 
+                    : rawTextData.substring(idx);
+                memoContent += "\n\n" + content.trim();
+            }
+        });
+    }
+    
+    memoEl.value = memoContent;
+    requestAnimationFrame(() => adjustHeight(memoEl));
     
     const histBox = document.getElementById('scenarioList');
     if(histBox) {
@@ -216,45 +249,79 @@ function renderCurrentTab() {
     renderSkillSection(activeCat);
 }
 
-// プロフィールとステータスの描画
-function renderProfile(d) {
+// プロフィールとステータスの描画（改修）
+function renderProfile(d, extras = {}) {
     document.getElementById('charName').textContent = d.name;
     document.getElementById('charKana').textContent = d.kana;
-    document.getElementById('charJob').textContent = d.job;
-    document.getElementById('charAge').textContent = `AGE: ${d.age}`;
+    
+    // 画像
     document.getElementById('charImage').src = d.image || 'https://placehold.co/400x600/000/333?text=NO+IMAGE';
     document.getElementById('valDB').textContent = d.db; 
 
-    // ★追加: カラーピッカーの設置と反映
+    // ★ メタ情報エリアの書き換え（四角い枠に集約）
     const metaInfo = document.querySelector('.meta-info');
-    // 既存のカラーピッカーがあれば削除（再描画時用）
-    const existingPicker = document.getElementById('colorPickerBtn');
-    if(existingPicker) existingPicker.remove();
+    metaInfo.innerHTML = ''; // 一旦クリア
 
-    const colorLabel = document.createElement('label');
-    colorLabel.id = 'colorPickerBtn';
-    colorLabel.className = 'color-picker-label';
-    colorLabel.innerHTML = `THEME <input type="color" id="themeColorInput" value="${d.color || '#d9333f'}">`;
-    metaInfo.appendChild(colorLabel);
+    // 定義データ
+    const infoItems = [
+        { label: "JOB", val: d.job },
+        { label: "AGE", val: d.age },
+        { label: "GENDER", val: extras.gender },
+        { label: "BIRTH", val: extras.birth },
+        { label: "HEIGHT", val: extras.height },
+        { label: "WEIGHT", val: extras.weight }
+    ];
 
-    const picker = document.getElementById('themeColorInput');
+    infoItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'meta-item';
+        div.innerHTML = `<span class="meta-label">${item.label}</span><span class="meta-val">${item.val || '??'}</span>`;
+        metaInfo.appendChild(div);
+    });
+
+    // カラーピッカー
+    const colorDiv = document.createElement('div');
+    colorDiv.className = 'color-picker-container';
+    colorDiv.style.gridColumn = "1 / -1"; // 横幅いっぱい
+    colorDiv.innerHTML = `<label class="color-picker-label">THEME <input type="color" id="themeColorInput" value="${d.color || '#d9333f'}"></label>`;
+    metaInfo.appendChild(colorDiv);
     
-    // 既に色が設定されていれば適用
-    if(d.color) {
+    // カラー変更イベント
+    const picker = colorDiv.querySelector('#themeColorInput');
+    if(d.color) applyThemeColor(d.color);
+    picker.addEventListener('input', (e) => {
+        d.color = e.target.value;
         applyThemeColor(d.color);
+    });
+
+
+    // ★ 新設: COLOR MODULEの生成と挿入
+    const existingColorMod = document.querySelector('.color-module');
+    if(existingColorMod) existingColorMod.remove();
+
+    const colorMod = document.createElement('div');
+    colorMod.className = 'panel color-module';
+    colorMod.innerHTML = `
+        <h3>COLOR DATA</h3>
+        <div class="color-grid">
+            <div class="color-row"><span class="color-name">HAIR</span><span class="color-sample">${extras.hair || '??'}</span></div>
+            <div class="color-row"><span class="color-name">EYES</span><span class="color-sample">${extras.eye || '??'}</span></div>
+            <div class="color-row"><span class="color-name">SKIN</span><span class="color-sample">${extras.skin || '??'}</span></div>
+        </div>
+    `;
+    // VITAL MONITORの下あたりに挿入（DOM構造依存）
+    const vitalsMod = document.querySelector('.vitals-module');
+    if(vitalsMod) {
+        vitalsMod.after(colorMod);
+    } else {
+        document.querySelector('.profile-card').after(colorMod);
     }
 
-    // 色変更時のイベント
-    picker.addEventListener('input', (e) => {
-        const newColor = e.target.value;
-        d.color = newColor; // データの保存用プロパティを更新
-        applyThemeColor(newColor);
-    });
 
     const tags = document.getElementById('charTags'); tags.innerHTML='';
     if(d.tags) d.tags.split(' ').forEach(t=>{if(t.trim()) tags.innerHTML+=`<span class="tag">${t}</span>`});
 
-    // ステータス計算 (6版)
+    // ステータス計算
     const stats = d.stats || {};
     const maxHP = (stats.CON && stats.SIZ) ? Math.ceil((parseInt(stats.CON) + parseInt(stats.SIZ)) / 2) : (d.vitals.hp || 1);
     const maxMP = stats.POW ? parseInt(stats.POW) : (d.vitals.mp || 1);
@@ -294,18 +361,11 @@ function renderProfile(d) {
     renderStatusFlavor(d.stats);
 }
 
-// ★テーマカラーをCSS変数に適用する関数
 function applyThemeColor(color) {
     const root = document.documentElement;
-    // Corkテーマ用の赤インク色を上書き
     root.style.setProperty('--ink-red', color);
     root.style.setProperty('--primary', color);
-    
-    // スキルバッジやボーダーの色なども必要に応じて調整
-    // ここではメインのアクセントカラーとして適用
 }
-
-// ... (renderStatusFlavor, renderSimpleList, setBar は変更なし) ...
 
 function renderStatusFlavor(stats) {
     const list = els.flavorList;
@@ -412,7 +472,6 @@ function renderSkillSection(cat) {
         const tx = row.querySelector('textarea');
         tx.addEventListener('input', (e) => { s.desc = e.target.value; adjustHeight(e.target); });
         
-        // ★修正: 確実に描画後に高さを合わせる
         setTimeout(() => adjustHeight(tx), 0);
         
         els.listBody.appendChild(row);
