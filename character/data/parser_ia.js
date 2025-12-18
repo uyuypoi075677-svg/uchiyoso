@@ -12,22 +12,30 @@ export function parseIaChara(text) {
         color: '#d9333f', colorHair: '', colorEye: '', colorSkin: ''
     };
 
-    // 正規表現ヘルパー
+    // ■ ヘルパー関数
     const m = (regex) => {
         const match = text.match(regex);
         return match && match[1] ? match[1].trim() : '';
     };
 
-    // 行末までの値を取得 (改行は含まない)
     const getLineVal = (label) => {
         const regex = new RegExp(`^.*${label}[:：][ \\t]*([^\\n]*)`, 'm');
         return m(regex);
     };
 
-    // プロフィール値を取得 (スラッシュ / または 改行 \n まで)
     const getProfileVal = (label) => {
         const regex = new RegExp(`${label}[:：][ \\t]*([^/\\n]*)`);
         return m(regex);
+    };
+
+    // 全角数字を半角に変換する関数
+    const toHalfWidth = (str) => {
+        return str.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+    };
+
+    // 数値かどうか判定する関数 (全角対応)
+    const isNum = (str) => {
+        return /^\d+$/.test(toHalfWidth(str));
     };
 
     // ■ 基本情報のパース
@@ -42,7 +50,6 @@ export function parseIaChara(text) {
 
     d.tags = getLineVal('タグ');
     d.job = getProfileVal('職業');
-
     d.age = getProfileVal('年齢'); 
     d.gender = getProfileVal('性別');
     d.height = parseInt(getProfileVal('身長')) || '';
@@ -58,7 +65,6 @@ export function parseIaChara(text) {
 
     d.origin = getProfileVal('出身'); 
     d.birthplace = d.origin; 
-
     d.colorHair = getProfileVal('髪の色');
     d.colorEye = getProfileVal('瞳の色');
     d.colorSkin = getProfileVal('肌の色');
@@ -71,8 +77,9 @@ export function parseIaChara(text) {
 
     // ■ ステータス
     const getStat = (name) => {
-        const reg = new RegExp(`${name}[\\s　:：]+(\\d+)`);
-        const val = parseInt(m(reg));
+        const reg = new RegExp(`${name}[\\s　:：]+([0-9０-９]+)`);
+        const valStr = m(reg);
+        const val = parseInt(toHalfWidth(valStr));
         return isNaN(val) ? 0 : val;
     };
     d.stats.STR = getStat('STR'); d.stats.CON = getStat('CON');
@@ -80,7 +87,7 @@ export function parseIaChara(text) {
     d.stats.APP = getStat('APP'); d.stats.SIZ = getStat('SIZ');
     d.stats.INT = getStat('INT'); d.stats.EDU = getStat('EDU');
     d.vitals.hp = getStat('HP'); d.vitals.mp = getStat('MP');
-    d.vitals.san = parseInt(m(/SAN[:：\s]+(\d+)/)) || getStat('SAN');
+    d.vitals.san = parseInt(toHalfWidth(m(/SAN[:：\s]+([0-9０-９]+)/))) || getStat('SAN');
     d.db = m(/DB[:：\s]+([+-]\S+)/);
 
     // ■ 技能解析
@@ -124,14 +131,14 @@ export function parseIaChara(text) {
             return;
         }
 
-        // ★修正: 技能行の解析ロジック（空白区切りで後ろから数字をカウントする方式）
-        // これにより正規表現の不一致による取りこぼしを防ぎます
-        const parts = line.split(/[ \t　]+/); // スペース、タブ、全角スペースで分割
+        // ★最強の技能行解析ロジック
+        // あらゆる空白文字(半角/全角/タブ/NBSP等)で分割する
+        const parts = line.split(/\s+/);
         
-        // 後ろから連続する数字の数を数える
+        // 後ろから数字の数を数える (全角数字もOK)
         let numCount = 0;
         for (let i = parts.length - 1; i >= 0; i--) {
-            if (/^\d+$/.test(parts[i])) {
+            if (isNum(parts[i])) {
                 numCount++;
             } else {
                 break; // 数字以外が来たらストップ
@@ -142,12 +149,14 @@ export function parseIaChara(text) {
         // (合計, 初期, 職業, 興味, 成長) + (その他)
         if (numCount >= 5) {
             // 数字部分と名前部分を分離
-            const nums = parts.slice(parts.length - numCount).map(n => parseInt(n));
+            const numsStr = parts.slice(parts.length - numCount);
+            const nums = numsStr.map(n => parseInt(toHalfWidth(n)));
+            
             const nameParts = parts.slice(0, parts.length - numCount);
             const name = nameParts.join(' ').trim();
 
             // ヘッダー行や区切り線を除外
-            if (name === '技能名' || name.match(/^-+$/) || !name) return;
+            if (name === '技能名' || name.match(/^[-―]+$/) || !name) return;
 
             // 数字の割り当て (標準形式: Total, Init, Job, Interest, Growth, Other)
             let total = nums[0];
