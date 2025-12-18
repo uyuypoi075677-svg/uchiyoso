@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         walker.setAttribute('data-facing', fromRight ? 'left' : 'right');
         void walker.offsetWidth;
         
-        // CSS側でtransition: bottomを設定しているため、transformのみのtransitionをJSで上書き指定
+        // CSS側で設定したbottomのtransitionも含める
         walker.style.transition = `transform ${walkSpeed}ms linear, bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1)`;
         
         walker.style.transform = `translate3d(${targetX}px, 0, 0)`;
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(err => console.error('Report Error:', err));
 
-    // 5. ▼▼▼ リボン収納機能 ▼▼▼
+    // 5. リボン収納機能
     const ribbonToggle = document.getElementById('ribbon-toggle');
     const bottomRibbon = document.getElementById('bottom-ribbon');
     
@@ -131,16 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
         bottomRibbon.classList.toggle('hidden');
         document.body.classList.toggle('ribbon-hidden');
         
-        // キャラクターも一緒に下げる/戻す
+        // 収納時はキャラを地面（画面下端）へ、表示時はリボンの上へ
         const isHidden = bottomRibbon.classList.contains('hidden');
-        const ribbonHeight = 40; // CSSと合わせる
         
         if (isHidden) {
-            // 隠すとき：リボンの高さ分だけ下げる（画面外へ）
-            walker.style.bottom = '5px'; // 地面付近へ
+            walker.style.bottom = '5px'; 
         } else {
-            // 戻すとき：リボンの上へ
-            walker.style.bottom = '35px'; // 元の位置
+            walker.style.bottom = '35px';
         }
     });
 });

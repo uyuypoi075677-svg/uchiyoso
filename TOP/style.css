@@ -11,11 +11,17 @@
     --glass-shine: rgba(255, 255, 255, 0.6);
     --glass-shadow: 0 8px 32px 0 rgba(90, 61, 53, 0.1);
     --walker-size: 64px;
-    --top-bar-height: 50px; /* 上部バーの高さ */
-    --bottom-ribbon-height: 40px; /* 下部リボンの高さ */
+    --top-bar-height: 50px;
+    --bottom-ribbon-height: 40px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+    width: 100%;
+    /* 横スクロール防止 */
+    overflow-x: hidden; 
+}
 
 body {
     font-family: "Zen Maru Gothic", sans-serif;
@@ -23,16 +29,17 @@ body {
     background-image: url('../images/background/fur-texture-pink.jpg');
     background-size: cover;
     background-position: center;
+    /* 画面いっぱいに広げる */
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     color: var(--text-main);
     perspective: 1500px;
     /* 上下のバーの分、パディングを確保 */
     padding-top: var(--top-bar-height);
-    padding-bottom: var(--bottom-ribbon-height);
+    /* 下部は余裕を持たせる */
+    padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
 }
 
 .ambient-light {
@@ -78,7 +85,6 @@ body {
     transform-style: preserve-3d;
 }
 
-/* 光沢エフェクト */
 .glass-card::before {
     content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
@@ -145,19 +151,16 @@ body {
     transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
     transform: translateZ(20px);
     flex-shrink: 0;
-    
-    /* 【重要】チカチカ不具合の修正：マウスイベントを無視させて、親要素(aタグ)のみで判定する */
-    pointer-events: none;
+    pointer-events: none; /* チカチカ修正 */
 }
 .area-tool:hover .icon-circle { background: var(--accent-pink); color: white; transform: translateZ(40px) scale(1.15) rotate(-10deg); box-shadow: 0 15px 30px rgba(255, 158, 187, 0.5); }
-.tool-info { transform: translateZ(10px); pointer-events: none; /* こちらも念のため */ }
+.tool-info { transform: translateZ(10px); pointer-events: none; }
 .tool-label { font-weight: 800; font-size: 1.1rem; color: var(--text-main); }
 .tool-sub { font-size: 0.8rem; color: var(--text-sub); margin-top: 4px; }
 .badge {
     position: absolute; top: 20px; right: 20px; background: var(--accent-gradient); color: white;
     font-size: 0.75rem; padding: 6px 14px; border-radius: 50px; font-weight: bold;
-    box-shadow: 0 5px 15px rgba(255, 158, 187, 0.5); animation: bounce 2s infinite; transform: translateZ(30px); border: 2px solid #fff;
-    pointer-events: none;
+    box-shadow: 0 5px 15px rgba(255, 158, 187, 0.5); animation: bounce 2s infinite; transform: translateZ(30px); border: 2px solid #fff; pointer-events: none;
 }
 
 /* シェアボタン */
@@ -196,9 +199,11 @@ body {
 }
 @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } }
 
-/* マスコット */
+/* マスコット (位置を大幅に上に修正) */
 .floating-mascot {
-    position: fixed; bottom: 50px; right: 20px; width: 140px; height: auto; z-index: 95; cursor: pointer;
+    position: fixed; 
+    bottom: 120px; /* リボンや収納ボタンと被らない高さへ */
+    right: 20px; width: 140px; height: auto; z-index: 95; cursor: pointer;
     animation: playful-float 7s ease-in-out infinite; transition: 0.3s;
     will-change: transform;
 }
@@ -206,16 +211,15 @@ body {
 .floating-mascot:hover { transform: scale(1.15) rotate(10deg); }
 @keyframes playful-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px) rotate(3deg); } }
 
-/* Pixel Walker */
+/* Pixel Walker (リボンの上を歩く) */
 .pixel-walker {
     position: fixed;
-    bottom: 35px; 
+    bottom: 35px; /* リボン(40px)の上に乗る高さ */
     z-index: 90;
     width: var(--walker-size);
     height: var(--walker-size);
     left: 0; pointer-events: none;
     will-change: transform;
-    /* 収納時に一緒に隠れるようにトランジション設定 */
     transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .pixel-walker .sprite {
@@ -229,7 +233,7 @@ body {
 .pixel-walker[data-facing="right"] .sprite { background-position-y: 66.66%; }
 @keyframes walk-cycle { 0% { background-position-x: 0%; } 33% { background-position-x: 50%; } 66% { background-position-x: 100%; } }
 
-/* === ▼▼▼ 新設：上部ニュース＆レポートバー ▼▼▼ === */
+/* === 上部ニュース＆レポートバー === */
 .top-news-bar {
     position: fixed; top: 0; left: 0;
     width: 100%; height: var(--top-bar-height);
@@ -240,6 +244,7 @@ body {
     box-shadow: 0 4px 15px rgba(255, 158, 187, 0.2);
     font-size: 0.95rem; font-weight: 700; color: var(--text-main);
     padding-left: 15px; padding-right: 20px;
+    box-sizing: border-box; /* はみ出し防止 */
 }
 .news-label-badge {
     background: var(--accent-gradient);
@@ -274,9 +279,7 @@ body {
 .honobono-report {
     font-size: 0.85rem; color: var(--text-main);
     white-space: nowrap;
-    
-    /* 文字数制限撤廃：全文表示ではみ出すように */
-    width: auto; max-width: none; overflow: visible;
+    width: auto; max-width: none; overflow: visible; /* 全文表示用 */
     
     background: #fff; padding: 6px 14px;
     border-radius: 12px; border: 1px solid #ffe4ea;
@@ -284,7 +287,7 @@ body {
     position: relative;
     animation: fadeReport 12s infinite;
 }
-/* 吹き出しのしっぽ（右側につける） */
+/* 吹き出しのしっぽ */
 .honobono-report::after {
     content: ''; position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
     border-left: 6px solid #ffe4ea;
@@ -299,18 +302,17 @@ body {
     box-shadow: 2px 2px 0 rgba(255, 158, 187, 0.3);
 }
 
-/* === ▼▼▼ 改修：下部リボン（収納機能付き） ▼▼▼ === */
+/* === 下部リボン（隙間修正 & 収納機能） === */
 .bottom-ribbon-container {
-    position: fixed; bottom: 0; left: 0;
+    position: fixed; 
+    bottom: 0; left: 0; /* 強制的に下端へ */
     width: 100%; 
     height: var(--bottom-ribbon-height);
-    z-index: 80; /* キャラの下 */
+    z-index: 80; 
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0; padding: 0; /* 余計な空白排除 */
 }
-/* 収納時の状態クラス（JSで付与） */
-.bottom-ribbon-container.hidden {
-    transform: translateY(100%);
-}
+.bottom-ribbon-container.hidden { transform: translateY(100%); }
 
 .ribbon-bar {
     width: 100%; height: 100%;
@@ -325,28 +327,22 @@ body {
     border-bottom: 2px dotted rgba(255, 158, 187, 0.5);
     pointer-events: none;
 }
-/* 収納ボタン */
 .ribbon-toggle-btn {
     position: absolute;
     top: -24px; right: 20px;
     width: 40px; height: 24px;
     background: var(--accent-pink);
-    border: none;
-    border-radius: 8px 8px 0 0;
-    cursor: pointer;
-    color: #fff;
+    border: none; border-radius: 8px 8px 0 0;
+    cursor: pointer; color: #fff;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     transition: 0.3s;
 }
 .ribbon-toggle-btn:hover { padding-bottom: 5px; }
 .ribbon-toggle-btn span { font-size: 20px; transition: 0.5s; }
-/* 隠れているときは矢印を反転 */
-.bottom-ribbon-container.hidden .ribbon-toggle-btn span {
-    transform: rotate(180deg);
-}
+.bottom-ribbon-container.hidden .ribbon-toggle-btn span { transform: rotate(180deg); }
 
-/* アニメーション定義 */
+/* アニメーション */
 @keyframes news-scroll { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
 @keyframes fadeReport {
     0% { opacity: 0; transform: translateY(4px); }
@@ -360,8 +356,9 @@ body {
     body {
         display: block; overflow-y: auto; overflow-x: hidden;
         height: auto; perspective: none;
+        /* スマホはスクロールできるようパディング調整 */
         padding-top: calc(var(--top-bar-height) + 20px);
-        padding-bottom: calc(var(--bottom-ribbon-height) + 80px);
+        padding-bottom: 120px; 
     }
     
     .bento-container {
@@ -391,20 +388,16 @@ body {
     .badge { top: 10px; right: 10px; padding: 4px 10px; font-size: 0.65rem; animation: none; }
     .area-share { grid-column: span 2; padding: 0; margin-top: 10px; }
 
-    /* 上部バーの調整：スマホではレポートを隠すか、あるいは小さく表示 */
+    /* 上部バー：スマホは時計のみ、レポート非表示（画面幅的に無理なため） */
     .header-right-area { gap: 8px; margin-left: 10px; }
-    .honobono-report { display: none; /* スマホでは狭すぎるので非表示推奨だが、出したい場合は font-sizeを小さくして絶対配置など */ }
+    .honobono-report { display: none; }
     
-    /* マスコット位置 */
-    .floating-mascot { width: 85px; bottom: calc(var(--bottom-ribbon-height) + 15px); right: 10px; }
-    .pixel-walker { bottom: calc(var(--bottom-ribbon-height) + 5px); }
+    /* マスコット位置 (収納ボタンよりさらに上へ) */
+    .floating-mascot { width: 85px; bottom: 100px; right: 10px; }
+    .pixel-walker { bottom: 35px; } /* リボンと同じ高さ */
     :root { --walker-size: 42px; }
 
-    /* 隠れたときのマスコット位置調整用クラス */
-    body.ribbon-hidden .floating-mascot {
-        transform: translateY(30px); /* 少し下げる */
-    }
-    body.ribbon-hidden .pixel-walker {
-        bottom: 5px; /* 地面（画面下端）に合わせる */
-    }
+    /* 隠れたときの調整 */
+    body.ribbon-hidden .floating-mascot { transform: translateY(30px); }
+    body.ribbon-hidden .pixel-walker { bottom: 5px; }
 }
