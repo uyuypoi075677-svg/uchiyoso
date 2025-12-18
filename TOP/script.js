@@ -34,18 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const fromRight = Math.random() > 0.5;
         const startX = fromRight ? w + walkerWidth : -walkerWidth * 2;
         const isMobile = w < 768;
-        const targetX = fromRight 
-            ? (w - (isMobile ? 60 : 120)) 
-            : (isMobile ? 20 : 80);
+        const targetX = fromRight ? (w - (isMobile ? 60 : 120)) : (isMobile ? 20 : 80);
 
         walker.style.transition = 'none';
         walker.style.transform = `translate3d(${startX}px, 0, 0)`;
         walker.setAttribute('data-facing', fromRight ? 'left' : 'right');
         void walker.offsetWidth;
         
-        // CSS側で設定したbottomのtransitionも含める
         walker.style.transition = `transform ${walkSpeed}ms linear, bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1)`;
-        
         walker.style.transform = `translate3d(${targetX}px, 0, 0)`;
 
         setTimeout(() => {
@@ -75,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 3. ニュースJSONの読み込み
+    // 3. ニュースJSON
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -83,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return array;
     }
-
     fetch('TOP/news.json')
         .then(res => res.json())
         .then(data => {
@@ -103,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(err => console.error('News Error:', err));
 
-    // 4. キャラクターレポートの読み込み
+    // 4. キャラクターレポート（スクロール機能付き）
     fetch('TOP/report.json')
         .then(res => res.json())
         .then(data => {
@@ -112,18 +107,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const updateReport = () => {
                 const text = data[Math.floor(Math.random() * data.length)];
+                
+                // アニメーションをリセットするためにclassを一旦外すテクニック
+                // ここでは親要素のアニメーション(fade)と、子要素のアニメーション(scroll)がある
+                
                 reportEl.style.animation = 'none';
-                reportEl.offsetHeight; 
-                reportEl.style.animation = 'fadeReport 12s infinite';
-                reportEl.textContent = text;
+                reportEl.offsetHeight; /* Reflow */
+                reportEl.style.animation = 'fadeReport 15s infinite';
+                
+                // 文字を流すためのラッパーを作成して挿入
+                reportEl.innerHTML = `<div class="report-scroll-content">${text}</div>`;
             };
 
             updateReport();
-            setInterval(updateReport, 12000);
+            setInterval(updateReport, 15000); // 15秒ごとに更新
         })
         .catch(err => console.error('Report Error:', err));
 
-    // 5. リボン収納機能
+    // 5. リボン収納
     const ribbonToggle = document.getElementById('ribbon-toggle');
     const bottomRibbon = document.getElementById('bottom-ribbon');
     
@@ -131,9 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bottomRibbon.classList.toggle('hidden');
         document.body.classList.toggle('ribbon-hidden');
         
-        // 収納時はキャラを地面（画面下端）へ、表示時はリボンの上へ
         const isHidden = bottomRibbon.classList.contains('hidden');
-        
         if (isHidden) {
             walker.style.bottom = '5px'; 
         } else {
