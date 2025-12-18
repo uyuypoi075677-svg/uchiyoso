@@ -7,18 +7,12 @@ export function parseIaChara(text) {
     const d = { 
         id: crypto.randomUUID(), 
         stats:{}, vitals:{}, memo:{}, 
-        // original カテゴリを追加
         skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[], original:[]},
         items: [], scenarioList: [],
         color: '#d9333f', colorHair: '', colorEye: '', colorSkin: ''
     };
 
-    // ■ ヘルパー関数群
-    
-    // 改行を含まない空白文字 (スペース、タブ)
-    const sp = '[ \\t]*';
-    
-    // 正規表現でマッチした最初のグループを返す (安全策付き)
+    // 正規表現ヘルパー
     const m = (regex) => {
         const match = text.match(regex);
         return match && match[1] ? match[1].trim() : '';
@@ -26,22 +20,19 @@ export function parseIaChara(text) {
 
     // 行末までの値を取得 (改行は含まない)
     const getLineVal = (label) => {
-        // ラベルの後ろ、改行が来るまでの文字列を取得
-        // mフラグで ^ と $ を行頭・行末にマッチさせる
-        const regex = new RegExp(`^.*${label}[:：]${sp}([^\\n]*)`, 'm');
+        // [ :：] の後の空白を飛ばして行末まで取得
+        const regex = new RegExp(`^.*${label}[:：][ \\t]*([^\\n]*)`, 'm');
         return m(regex);
     };
 
     // プロフィール値を取得 (スラッシュ / または 改行 \n まで)
-    // ※タグや出身などで次の行を吸い込まないよう [^/\n] を使用
     const getProfileVal = (label) => {
-        const regex = new RegExp(`${label}[:：]${sp}([^/\\n]*)`);
+        // [^/\n]* : スラッシュも改行も含まない文字列
+        const regex = new RegExp(`${label}[:：][ \\t]*([^/\\n]*)`);
         return m(regex);
     };
 
     // ■ 基本情報のパース
-
-    // 名前
     const nameLine = getLineVal('名前');
     const nameMatch = nameLine.match(/^(.+?)[\s　]*[(（](.+?)[)）]/);
     if(nameMatch) { 
@@ -51,24 +42,16 @@ export function parseIaChara(text) {
         d.name = nameLine; 
     }
 
-    // タグ: 行末まで取得
     d.tags = getLineVal('タグ');
-
-    // 職業
     d.job = getProfileVal('職業');
 
-    // 年齢: 数値変換せず文字列として取得 (不詳対応)
     d.age = getProfileVal('年齢'); 
-    
     d.gender = getProfileVal('性別');
     d.height = parseInt(getProfileVal('身長')) || '';
     d.weight = parseInt(getProfileVal('体重')) || '';
     
-    // 誕生日: スラッシュを含む日付(6/19)に対応するため、getProfileValではなく行末までの取得で処理
-    // ただし、同じ行に別の項目がある場合は誤爆する可能性があるが、
-    // いあキャラの標準フォーマットでは誕生日は独立しているか行末にあることが多い
+    // 誕生日の処理 ('/' を含む可能性があるため特別扱い)
     const rawBirthday = getLineVal('誕生日');
-    // もし同じ行に「/」で区切られた他項目があれば除去する簡易ロジック
     if(rawBirthday.includes(' / ')) {
         d.birthday = rawBirthday.split(' / ')[0].trim();
     } else {
@@ -82,17 +65,14 @@ export function parseIaChara(text) {
     d.colorEye = getProfileVal('瞳の色');
     d.colorSkin = getProfileVal('肌の色');
     
-    // 画像URL
     d.image = m(/画像URL[:：]\s*(\S+)/) || m(/【画像】\n:(\S+)/) || m(/【立ち絵】\n:(\S+)/);
     d.icon = m(/アイコンURL[:：]\s*(\S+)/) || m(/【アイコン】\n:(\S+)/);
     
-    // 所持金と借金: 行末まで取得 (空欄の場合に次の行を吸い込まないように getLineVal を使用)
     d.money = getLineVal('所持金');
     d.debt = getLineVal('借金');
 
-    // ■ ステータス取得
+    // ■ ステータス
     const getStat = (name) => {
-        // "STR 13" のような形式。全角スペース対応。
         const reg = new RegExp(`${name}[\\s　:：]+(\\d+)`);
         const val = parseInt(m(reg));
         return isNaN(val) ? 0 : val;
@@ -115,11 +95,9 @@ export function parseIaChara(text) {
         });
     }
 
-    // 行ごとの解析
     const lines = text.split('\n');
-    let currentCat = null; // 現在のカテゴリ
+    let currentCat = null;
 
-    // カテゴリのマッピング
     const catMap = {
         '戦闘技能': 'combat',
         '探索技能': 'explore',
@@ -132,33 +110,35 @@ export function parseIaChara(text) {
         l = l.trim();
         if(!l) return;
 
-        // カテゴリヘッダーの検出 (『』で囲まれた部分)
-        const catMatch = l.match(/『(.*?)』/);
+        // カテゴリヘッダー検出 (『』 [] 【】 などに対応)
+        const catMatch = l.match(/[『\[【](.*?)[』\]】]/);
         if(catMatch) {
             const catName = catMatch[1];
-            // 既知のカテゴリならIDをセット、未知なら null (後で original に振る)
-            currentCat = catMap[catName] || null; 
-            return;
+            // 既知のカテゴリならセット、そうでなければnull（後でoriginalに）
+            if(catMap[catName]) {
+                currentCat = catMap[catName];
+                return;
+            }
         }
         
-        // セクション区切り（【】）が来たら技能エリア終了とみなす
-        if(l.startsWith('【')) {
+        // セクション区切りが来たら技能エリア終了
+        if(l.startsWith('【') && !l.includes('技能')) {
             currentCat = null;
             return;
         }
 
-        // 技能行のパターンマッチ
-        // 形式: 技能名 合計 初期 職業 興味 成長 その他
-        // 例: 回避 67 34 0 30 3 0
-        // 技能名にスペースが含まれる場合(運転(自動車))を考慮し、行末から数値6つを探す
-        // 正規表現: ^(名前) (数値) (数値) (数値) (数値) (数値) (数値) ...$
-        const skillMatch = l.match(/^(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*$/);
+        // 技能行のパターン (行末から数字を探す)
+        // 対応形式: 名前 [SP] 合計 [SP] 初期 [SP] 職業 [SP] 興味 [SP] 成長 [SP] その他(任意)
+        // ※空白は [ \t　] (全角スペース含む)
+        const sp = '[ \\t　]+';
+        // 少なくとも5つの数字が並んでいる行を探す
+        const skillRegex = new RegExp(`^(.*?)${sp}(\\d+)${sp}(\\d+)${sp}(\\d+)${sp}(\\d+)${sp}(\\d+)(?:${sp}(\\d+))?.*$`);
+        const skillMatch = l.match(skillRegex);
         
         if(skillMatch) {
             const name = skillMatch[1].trim();
-            if(name === '技能名') return; // ヘッダー行は無視
+            if(name === '技能名' || name.includes('------')) return;
 
-            // 数値取得
             const sData = {
                 name: name,
                 total: parseInt(skillMatch[2]),
@@ -167,16 +147,14 @@ export function parseIaChara(text) {
                 interest: parseInt(skillMatch[5]),
                 growth: parseInt(skillMatch[6]),
                 desc: descMap[name] || '',
-                // カテゴリが決まっていない場合は 'original' に入れる
+                // カテゴリ未定なら 'original' に入れる
                 category: currentCat || 'original'
             };
-
-            // 該当カテゴリ配列に追加
             d.skills[sData.category].push(sData);
         }
     });
 
-    // ■ メモ・リスト系取得
+    // ■ メモ・リスト系
     const getSec = (tag) => {
         const regex = new RegExp(`(?:\\[|【|〈)${tag}(?:\\]|】|〉)([\\s\\S]*?)(?=(?:\\[|【|〈)|$)`);
         const match = text.match(regex);
