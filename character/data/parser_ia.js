@@ -33,12 +33,9 @@ export function parseIaChara(text) {
         return str.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     };
 
-    // 数値として扱えるか判定 (整数、+付き、%付きなど許容)
-    const isLikeNumber = (str) => {
-        // 半角にしてから判定
-        const s = toHalfWidth(str);
-        // 数字を含み、かつ数字と記号だけで構成されているか、あるいは parseInt できるか
-        return /^[\d+\-%]+$/.test(s) && !isNaN(parseInt(s));
+    // 数値として扱えるか判定 (整数のみ)
+    const isNumber = (str) => {
+        return /^-?\d+$/.test(toHalfWidth(str));
     };
 
     // 安全に数値化
@@ -120,7 +117,8 @@ export function parseIaChara(text) {
     };
 
     lines.forEach(l => {
-        const line = l.trim();
+        // 全角スペースを半角スペースに置換し、前後の空白を削除
+        const line = l.replace(/　/g, ' ').trim();
         if(!line) return;
 
         // カテゴリヘッダー検出
@@ -139,46 +137,38 @@ export function parseIaChara(text) {
             return;
         }
 
-        // ★技能行解析ロジック (改訂版)
-        // あらゆる空白文字(半角/全角/タブ/NBSP等)で分割する
-        // \s は全角スペースやNBSPも含む
-        const parts = line.split(/[\s　]+/);
+        // ★最強の技能解析ロジック
+        // 空白で区切る (連続する空白は1つとみなす)
+        const parts = line.split(/\s+/);
         
-        // 後ろから「数値っぽいもの」をカウント
+        // 後ろから数字の数を数える
         let numCount = 0;
         for (let i = parts.length - 1; i >= 0; i--) {
-            // 空文字はスキップ
-            if (!parts[i]) continue;
-
-            if (isLikeNumber(parts[i])) {
+            // カンマなどが含まれていても数値として処理できるようにクリーニング
+            if (isNumber(parts[i])) {
                 numCount++;
             } else {
-                // 数字以外が来たら、それが技能名の一部かもしれないのでストップ
-                break; 
+                break; // 数字以外が来たらストップ
             }
         }
 
-        // 数値カラムが5個以上あれば技能とみなす
-        // (合計, 初期, 職業, 興味, 成長) + (その他)
+        // 数字が5個以上並んでいれば技能行とみなす
         if (numCount >= 5) {
-            // 末尾から numCount 個分を数値データとして取得
-            // ただし最大6個まで（それ以上ある場合は技能名に数字が含まれている可能性考慮）
-            // いあキャラは通常6列（その他含む）か5列（その他なし）
+            // いあキャラの技能列は通常最大6列 (その他含む)
+            // 数字として認識された部分を取得
             const takeCols = numCount > 6 ? 6 : numCount;
             
-            // 数値部分の切り出し
             const numsStr = parts.slice(parts.length - takeCols);
             const nums = numsStr.map(n => safeParseInt(n));
             
-            // 名前部分の切り出し
+            // 残りを名前として結合
             const nameParts = parts.slice(0, parts.length - takeCols);
             const name = nameParts.join(' ').trim();
 
-            // 除外判定
+            // ヘッダー行や区切り線、空の名前を除外
             if (name === '技能名' || name.match(/^[-―=]+$/) || !name) return;
 
-            // データマッピング
-            // nums[0]=合計, [1]=初期, [2]=職業, [3]=興味, [4]=成長, [5]=その他
+            // データ割り当て
             let total = nums[0];
             let init = nums[1];
             let job = nums[2];
@@ -194,6 +184,7 @@ export function parseIaChara(text) {
                 interest: interest,
                 growth: growth,
                 desc: descMap[name] || '',
+                // カテゴリ不明なら 'original' に入れる
                 category: currentCat || 'original'
             };
             d.skills[sData.category].push(sData);
