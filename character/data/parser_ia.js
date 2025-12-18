@@ -7,22 +7,42 @@ export function parseIaChara(text) {
     const d = { 
         id: crypto.randomUUID(), 
         stats:{}, vitals:{}, memo:{}, 
-        skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[]},
+        // original カテゴリを追加
+        skills: {combat:[], explore:[], action:[], negotiate:[], knowledge:[], original:[]},
         items: [], scenarioList: [],
         color: '#d9333f', colorHair: '', colorEye: '', colorSkin: ''
     };
 
-    // ヘルパー: 正規表現でマッチした最初のグループを返す
-    // ★修正: 正規表現がnullの場合の処理を安全に
+    // ■ ヘルパー関数群
+    
+    // 改行を含まない空白文字 (スペース、タブ)
+    const sp = '[ \\t]*';
+    
+    // 正規表現でマッチした最初のグループを返す (安全策付き)
     const m = (regex) => {
         const match = text.match(regex);
         return match && match[1] ? match[1].trim() : '';
     };
 
-    // 基本情報のパース (行単位で処理を強化)
-    
-    // 名前: カッコ内のカナを取得する正規表現
-    const nameLine = m(/名前[:：]\s*([^\n]+)/) || '';
+    // 行末までの値を取得 (改行は含まない)
+    const getLineVal = (label) => {
+        // ラベルの後ろ、改行が来るまでの文字列を取得
+        // mフラグで ^ と $ を行頭・行末にマッチさせる
+        const regex = new RegExp(`^.*${label}[:：]${sp}([^\\n]*)`, 'm');
+        return m(regex);
+    };
+
+    // プロフィール値を取得 (スラッシュ / または 改行 \n まで)
+    // ※タグや出身などで次の行を吸い込まないよう [^/\n] を使用
+    const getProfileVal = (label) => {
+        const regex = new RegExp(`${label}[:：]${sp}([^/\\n]*)`);
+        return m(regex);
+    };
+
+    // ■ 基本情報のパース
+
+    // 名前
+    const nameLine = getLineVal('名前');
     const nameMatch = nameLine.match(/^(.+?)[\s　]*[(（](.+?)[)）]/);
     if(nameMatch) { 
         d.name = nameMatch[1].trim(); 
@@ -31,26 +51,30 @@ export function parseIaChara(text) {
         d.name = nameLine; 
     }
 
-    // ★修正: タグの取得。改行を含まない [ \t]* を使用し、行末までを取得する
-    // これにより次の行の「職業:」などを吸い込むのを防ぎます
-    d.tags = m(/タグ[:：][ \t]*([^\n]*)/);
+    // タグ: 行末まで取得
+    d.tags = getLineVal('タグ');
 
-    // プロフィール項目の取得ヘルパー (スラッシュ区切りや行末を意識)
-    const getProfileVal = (label) => {
-        // ラベルの後ろ、スラッシュか改行が来るまでの文字列を取得
-        const regex = new RegExp(`${label}[:：]\\s*([^/\\n]*)`);
-        return m(regex);
-    };
-
+    // 職業
     d.job = getProfileVal('職業');
+
+    // 年齢: 数値変換せず文字列として取得 (不詳対応)
+    d.age = getProfileVal('年齢'); 
     
-    // 数値項目
-    d.age = parseInt(getProfileVal('年齢')) || '';
     d.gender = getProfileVal('性別');
     d.height = parseInt(getProfileVal('身長')) || '';
     d.weight = parseInt(getProfileVal('体重')) || '';
     
-    d.birthday = getProfileVal('誕生日');
+    // 誕生日: スラッシュを含む日付(6/19)に対応するため、getProfileValではなく行末までの取得で処理
+    // ただし、同じ行に別の項目がある場合は誤爆する可能性があるが、
+    // いあキャラの標準フォーマットでは誕生日は独立しているか行末にあることが多い
+    const rawBirthday = getLineVal('誕生日');
+    // もし同じ行に「/」で区切られた他項目があれば除去する簡易ロジック
+    if(rawBirthday.includes(' / ')) {
+        d.birthday = rawBirthday.split(' / ')[0].trim();
+    } else {
+        d.birthday = rawBirthday;
+    }
+
     d.origin = getProfileVal('出身'); 
     d.birthplace = d.origin; 
 
@@ -62,13 +86,13 @@ export function parseIaChara(text) {
     d.image = m(/画像URL[:：]\s*(\S+)/) || m(/【画像】\n:(\S+)/) || m(/【立ち絵】\n:(\S+)/);
     d.icon = m(/アイコンURL[:：]\s*(\S+)/) || m(/【アイコン】\n:(\S+)/);
     
-    // 所持金と借金
-    d.money = m(/(?:現在の)?所持金[:：]\s*([^()\n]*)/);
-    d.debt = m(/^.*借金[:：]\s*([^()\n]*)$/m);
+    // 所持金と借金: 行末まで取得 (空欄の場合に次の行を吸い込まないように getLineVal を使用)
+    d.money = getLineVal('所持金');
+    d.debt = getLineVal('借金');
 
-    // ステータス取得
+    // ■ ステータス取得
     const getStat = (name) => {
-        // STR 13 のような形式。全角スペースなどにも対応
+        // "STR 13" のような形式。全角スペース対応。
         const reg = new RegExp(`${name}[\\s　:：]+(\\d+)`);
         const val = parseInt(m(reg));
         return isNaN(val) ? 0 : val;
@@ -81,7 +105,7 @@ export function parseIaChara(text) {
     d.vitals.san = parseInt(m(/SAN[:：\s]+(\d+)/)) || getStat('SAN');
     d.db = m(/DB[:：\s]+([+-]\S+)/);
 
-    // 技能詳細のマップ作成
+    // ■ 技能解析
     const descMap = {};
     const detailSec = text.split('[技能詳細]')[1];
     if(detailSec) {
@@ -91,43 +115,68 @@ export function parseIaChara(text) {
         });
     }
 
-    // 技能リストの解析
+    // 行ごとの解析
     const lines = text.split('\n');
-    let cat = null;
+    let currentCat = null; // 現在のカテゴリ
+
+    // カテゴリのマッピング
+    const catMap = {
+        '戦闘技能': 'combat',
+        '探索技能': 'explore',
+        '行動技能': 'action',
+        '交渉技能': 'negotiate',
+        '知識技能': 'knowledge'
+    };
+
     lines.forEach(l => {
         l = l.trim();
-        // カテゴリ判定
-        if(l.includes('『戦闘技能』')) cat='combat';
-        else if(l.includes('『探索技能』')) cat='explore';
-        else if(l.includes('『行動技能』')) cat='action';
-        else if(l.includes('『交渉技能』')) cat='negotiate';
-        else if(l.includes('『知識技能』')) cat='knowledge';
-        else if(l.startsWith('【')) cat=null;
+        if(!l) return;
 
-        if(cat) {
-            // ★修正: 技能のパース正規表現
-            // 技能名にはスペースが含まれる可能性があるため(例: 運転(自動車))、
-            // 行末から数字をマッチさせる方式に変更して精度を向上
-            // 構成: [技能名] [合計] [初期] [職業] [興味] [成長] [その他]
-            const match = l.match(/^(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*$/);
-            
-            if(match && match[1].trim() !== '技能名') {
-                const n = match[1].trim();
-                d.skills[cat].push({
-                    name: n, 
-                    total: parseInt(match[2]), 
-                    init: parseInt(match[3]), 
-                    job: parseInt(match[4]), 
-                    interest: parseInt(match[5]), 
-                    growth: parseInt(match[6]),
-                    desc: descMap[n]||'',
-                    category: cat
-                });
-            }
+        // カテゴリヘッダーの検出 (『』で囲まれた部分)
+        const catMatch = l.match(/『(.*?)』/);
+        if(catMatch) {
+            const catName = catMatch[1];
+            // 既知のカテゴリならIDをセット、未知なら null (後で original に振る)
+            currentCat = catMap[catName] || null; 
+            return;
+        }
+        
+        // セクション区切り（【】）が来たら技能エリア終了とみなす
+        if(l.startsWith('【')) {
+            currentCat = null;
+            return;
+        }
+
+        // 技能行のパターンマッチ
+        // 形式: 技能名 合計 初期 職業 興味 成長 その他
+        // 例: 回避 67 34 0 30 3 0
+        // 技能名にスペースが含まれる場合(運転(自動車))を考慮し、行末から数値6つを探す
+        // 正規表現: ^(名前) (数値) (数値) (数値) (数値) (数値) (数値) ...$
+        const skillMatch = l.match(/^(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*$/);
+        
+        if(skillMatch) {
+            const name = skillMatch[1].trim();
+            if(name === '技能名') return; // ヘッダー行は無視
+
+            // 数値取得
+            const sData = {
+                name: name,
+                total: parseInt(skillMatch[2]),
+                init: parseInt(skillMatch[3]),
+                job: parseInt(skillMatch[4]),
+                interest: parseInt(skillMatch[5]),
+                growth: parseInt(skillMatch[6]),
+                desc: descMap[name] || '',
+                // カテゴリが決まっていない場合は 'original' に入れる
+                category: currentCat || 'original'
+            };
+
+            // 該当カテゴリ配列に追加
+            d.skills[sData.category].push(sData);
         }
     });
 
-    // セクション取得ヘルパー
+    // ■ メモ・リスト系取得
     const getSec = (tag) => {
         const regex = new RegExp(`(?:\\[|【|〈)${tag}(?:\\]|】|〉)([\\s\\S]*?)(?=(?:\\[|【|〈)|$)`);
         const match = text.match(regex);
