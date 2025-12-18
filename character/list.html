@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQUAD SELECT - 5 COLUMNS</title>
+    <title>SQUAD SELECT - FINAL ADJUST</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Teko:wght@300;500&family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
     <style>
         /* --- CORE VARIABLES --- */
         :root {
-            /* ★変更点: 一画面に5人入るようサイズを縮小 */
+            /* 5人表示レイアウト維持 */
             --card-w: 250px; 
             --card-h: 75vh;
             --gap: 30px;
@@ -110,11 +110,12 @@
             transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        /* === 1. SCREEN === */
+        /* === 1. SCREEN (Modified) === */
         .unit-screen {
             position: absolute;
-            top: 0; height: 65%;
-            left: -5px; right: -5px; /* カード幅縮小に合わせて微調整 */
+            top: 0; 
+            height: 58%; /* ★変更点: 縦幅を小さく（下を削る 65%->58%） */
+            left: -5px; right: -5px;
             background: var(--screen-bg);
             transform: translateZ(var(--z-screen));
             clip-path: polygon(
@@ -133,9 +134,12 @@
         }
 
         .screen-img-container {
-            width: 120%; height: 120%;
-            position: absolute; top: -10%; left: -10%;
-            transform: rotate(-5deg);
+            /* ★変更点: サイズ拡大・位置下げ・傾き調整 */
+            width: 135%; height: 135%; /* 少し大きく */
+            position: absolute; 
+            top: 0%; /* -10% -> 0% 画像を下にずらす */
+            left: -17%;
+            transform: rotate(-8deg); /* 傾きを少し強調 */
             transition: transform 0.5s ease;
         }
 
@@ -163,7 +167,7 @@
             display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
             transform: translateZ(var(--z-ui)); z-index: 100;
             pointer-events: none;
-            width: 150%; /* 名前が長くても折り返さないよう幅広に */
+            width: 150%;
         }
         .ui-job-tag {
             background: var(--glass-bg); border: 1px solid var(--glass-border);
@@ -177,7 +181,7 @@
         }
         .job-val { font-family: 'Share Tech Mono'; font-weight: 700; color: var(--accent); }
         .ui-name-box {
-            font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 1.8rem; /* 少し小さく */
+            font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 1.8rem;
             color: var(--text-main); text-transform: uppercase; line-height: 1;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5); padding-left: 5px;
             border-bottom: 4px solid var(--accent);
@@ -192,20 +196,20 @@
         }
         .draggable-ui:active { cursor: grabbing; transform: scale(1.05); }
 
-        /* 右サイド ステータス表 (SAN値を分離) */
+        /* 右サイド ステータス表 */
         .ui-stats-container {
             position: absolute; 
-            top: 20%; right: -60px; /* 外側に配置 */
+            top: 20%; right: -60px;
             width: 140px;
             display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
             transform: translateZ(var(--z-ui)); z-index: 120;
         }
 
-        /* ★変更点: SAN値コンテナ (独立・サイズ大・内側配置) */
+        /* SAN値コンテナ */
         .ui-san-container {
             position: absolute;
-            top: 55%; right: 20px; /* ★内側配置 */
-            width: 75px; height: 75px; /* ★サイズ大 */
+            top: 55%; right: 20px;
+            width: 75px; height: 75px;
             transform: translateZ(var(--z-ui)); z-index: 125;
             background: rgba(0,0,0,0.6); border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.2);
@@ -214,7 +218,7 @@
             backdrop-filter: blur(4px);
         }
         .ui-san-container svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-        .san-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 5; } /* 線も太く */
+        .san-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 5; }
         .san-fill { 
             fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round;
             stroke-dasharray: 220; stroke-dashoffset: 220; transition: stroke-dashoffset 1s ease;
@@ -236,7 +240,7 @@
         .ui-vitals {
             position: absolute; 
             top: 40%; 
-            left: -60px; /* ★変更点: より外側へ */
+            left: -60px;
             width: 140px; transform: translateZ(var(--z-ui)); z-index: 120;
             background: var(--glass-bg); border: 1px solid var(--glass-border);
             backdrop-filter: blur(8px); padding: 10px;
@@ -264,7 +268,7 @@
             50% { transform: translateX(-50%) translateZ(var(--z-fig)) translateY(-15px); }
         }
         .char-figure {
-            max-height: 100%; max-width: 180%; /* 幅が狭まったので少し相対的にはみ出すが許容 */
+            max-height: 100%; max-width: 180%;
             object-fit: contain;
             filter: drop-shadow(0 20px 40px rgba(0,0,0,0.4));
             transition: transform 0.4s;
@@ -274,7 +278,7 @@
         .unit-shadow-container {
             position: absolute;
             bottom: -20px; left: 50%;
-            width: 160px; height: 50px; /* カードサイズに合わせて少し縮小 */
+            width: 160px; height: 50px;
             transform: translateX(-50%) translateZ(var(--z-shadow)) rotateX(60deg);
             z-index: 1; pointer-events: none;
             display: flex; justify-content: center; align-items: center;
@@ -331,7 +335,7 @@
         
         .btn-edit { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 400; cursor: pointer; color:#000; }
         .char-unit:hover .btn-edit { opacity: 1; }
-        .click-layer { position: absolute; inset: 0; z-index: 40; }
+        .click-layer { position: absolute; inset: 0; z-index: 40; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -339,10 +343,10 @@
 
     <div class="sub-header">
         <div style="font-family:'Teko'; font-size:1.8rem; letter-spacing:0.05em; color:var(--text-main);">
-            SQUAD <span style="color:var(--accent);">//</span> LIST
+            SQUAD <span style="color:var(--accent);">//</span> SELECT
         </div>
         <div style="font-family:'Share Tech Mono'; color:var(--text-sub); font-size:0.8rem;">
-            LAYOUT: <span style="color:var(--accent);">5 COLUMNS</span>
+            SYSTEM: <span style="color:var(--accent);">READY</span>
         </div>
     </div>
     
@@ -352,7 +356,7 @@
         <div class="nav-btn prev" id="btnPrev">◀</div>
         <div class="nav-btn next" id="btnNext">▶</div>
         <div class="stage-container" id="stage">
-            <div class="loading">SYNCING...</div>
+            <div class="loading">CONNECTING...</div>
         </div>
     </div>
 
@@ -361,7 +365,6 @@
 
         const stage = document.getElementById('stage');
 
-        /* パーティクル */
         function initParticles() {
             const container = document.getElementById('particleContainer');
             for(let i=0; i<20; i++) {
@@ -377,7 +380,6 @@
         }
         initParticles();
 
-        /* ドラッグ機能 */
         function enableDrag(el) {
             let isDragging = false;
             let startX, startY, startLeft, startTop;
@@ -388,10 +390,8 @@
                 isDragging = true;
                 startX = e.clientX;
                 startY = e.clientY;
-                
                 startLeft = el.offsetLeft;
                 startTop = el.offsetTop;
-
                 el.style.cursor = 'grabbing';
                 el.style.transition = 'none';
             };
@@ -401,7 +401,6 @@
                 e.preventDefault();
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                
                 el.style.left = (startLeft + dx) + 'px';
                 el.style.top = (startTop + dy) + 'px';
                 el.style.bottom = 'auto';
@@ -466,16 +465,19 @@
                     APP: s.APP||0, SIZ: s.SIZ||0, INT: s.INT||0, EDU: s.EDU||0
                 };
                 const v = char.vitals || {};
-                const hpPct = Math.min(((v.hp||10)/20)*100, 100);
-                const mpPct = Math.min(((v.mp||10)/20)*100, 100);
-                const sanVal = v.san || 50;
                 
-                const maxDash = 220; // 75px用に調整 (r=35, 2*pi*35 ≈ 220)
+                // ★変更点: バーの見た目は常に100%にする
+                // const hpPct = Math.min(((v.hp||10)/20)*100, 100); 
+                const hpPct = 100; // 常にMAX表示
+                const mpPct = 100; // 常にMAX表示
+                
+                const sanVal = v.san || 50;
+                const maxDash = 220; 
                 const sanPct = Math.min(sanVal, 99) / 99;
                 const sanOffset = maxDash - (sanPct * maxDash);
 
                 unit.innerHTML = `
-                    <!-- 1. SCREEN -->
+                    <!-- 1. SCREEN (Modified) -->
                     <div class="unit-screen">
                         <div class="screen-img-container">
                             <div class="screen-img" style="background-image: url('${img}');"></div>
@@ -493,7 +495,7 @@
                         <div class="ui-name-box">${char.name}</div>
                     </div>
 
-                    <!-- 3. DRAGGABLE SAN (Independent, Big, Inner) -->
+                    <!-- 3. DRAGGABLE SAN -->
                     <div class="ui-san-container draggable-ui">
                         <svg viewBox="0 0 80 80">
                             <circle class="san-bg" cx="40" cy="40" r="35"></circle>
@@ -503,7 +505,7 @@
                         <span class="san-label">SAN</span>
                     </div>
 
-                    <!-- 4. DRAGGABLE STATS (Right Grid) -->
+                    <!-- 4. DRAGGABLE STATS -->
                     <div class="ui-stats-container draggable-ui">
                         <div class="stats-grid">
                             ${Object.entries(statsMap).map(([k, val]) => `
@@ -515,7 +517,7 @@
                         </div>
                     </div>
 
-                    <!-- 5. DRAGGABLE VITALS (Left, More Outer) -->
+                    <!-- 5. DRAGGABLE VITALS -->
                     <div class="ui-vitals draggable-ui">
                         <div class="vital-row">
                             <div class="vital-header"><span>HP</span><span>${v.hp||0}</span></div>
@@ -541,7 +543,6 @@
                     <div class="click-layer"></div>
                 `;
 
-                // Logic
                 const edit = unit.querySelector('.btn-edit');
                 edit.onclick = (e) => {
                     e.stopPropagation();
@@ -549,12 +550,14 @@
                     if(newUrl) { char.image = newUrl; saveToCloud(char).then(() => renderCharacterList(data)); }
                 };
                 
-                // ドラッグ有効化 (SAN, Stats, Vitals)
                 enableDrag(unit.querySelector('.ui-san-container'));
                 enableDrag(unit.querySelector('.ui-stats-container'));
                 enableDrag(unit.querySelector('.ui-vitals'));
 
-                unit.querySelector('.click-layer').onclick = () => window.location.href = `character/detail/detail.html?id=${char.id}`;
+                // ★変更点: クリック時のリンク先指定
+                unit.querySelector('.click-layer').onclick = () => {
+                    window.location.href = `https://chocolatmer.github.io/uchiyoso/character/detail.html?id=${char.id}`;
+                };
 
                 unit.addEventListener('mouseenter', () => {
                     unit.querySelectorAll('.count-up').forEach(el => animateValue(el, parseInt(el.dataset.target)));
