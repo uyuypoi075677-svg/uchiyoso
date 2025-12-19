@@ -43,7 +43,7 @@
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             /* 指定のパスに変更 */
-            background-image: url('images/background/desk1.png'); 
+            background-image: url('../images/background/desk1.png'); 
             /* 読み込み失敗時のフォールバック(Web画像) */
             background-color: #5d4037;
             background-size: cover;
@@ -217,7 +217,7 @@
 </head>
 <body>
 
-<!-- 背景画像 (images/background/desk1.png) -->
+<!-- 背景画像 (../images/background/desk1.png) -->
 <div class="desk-background"></div>
 <div class="shadow-overlay"></div>
 <div class="sun-overlay"></div>
@@ -446,11 +446,11 @@
 
             // アイテム画像のパス修正 (images/icons/...)
             const deskItems = ref([
-                { src: 'images/icons/desk1.png', x: 50, y: 80, name: 'Item 1' },
-                { src: 'images/icons/desk2.png', x: 50, y: 220, name: 'Item 2' },
-                { src: 'images/icons/desk3.png', x: window.innerWidth - 160, y: 80, name: 'Item 3' },
-                { src: 'images/icons/desk4.png', x: window.innerWidth - 160, y: 220, name: 'Item 4' },
-                { src: 'images/icons/desk5.png', x: window.innerWidth - 140, y: 380, name: 'Item 5' },
+                { src: '../images/icons/desk1.png', x: 50, y: 80, name: 'Item 1' },
+                { src: '../images/icons/desk2.png', x: 50, y: 220, name: 'Item 2' },
+                { src: '../images/icons/desk3.png', x: window.innerWidth - 160, y: 80, name: 'Item 3' },
+                { src: '../images/icons/desk4.png', x: window.innerWidth - 160, y: 220, name: 'Item 4' },
+                { src: '../images/icons/desk5.png', x: window.innerWidth - 140, y: 380, name: 'Item 5' },
             ]);
             
             const dragging = ref({ index: -1, offsetX: 0, offsetY: 0 });
