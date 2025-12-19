@@ -43,7 +43,7 @@ createApp({
 
         const deskItems = ref([
             { src: '../images/icons/desk1.png', x: 20, y: 400, name: 'Item 1' }, // Down 1 unit
-            { src: '../images/icons/desk2.png', x: 150, y: 150, name: 'Item 2' }, // Up 2, Right 1
+            { src: '../images/icons/desk2.png', x: 150, y: 250, name: 'Item 2' }, // Up 2, Right 1
             { src: '../images/icons/desk3.png', x: window.innerWidth - 500, y: 100, name: 'Item 3' }, // Left 2, Down small
             { src: '../images/icons/desk4.png', x: window.innerWidth - 320, y: 750, name: 'Item 4' }, // Same
             { src: '../images/icons/desk5.png', x: 150, y: 550, name: 'Item 5' }, // Down 2, Right small
