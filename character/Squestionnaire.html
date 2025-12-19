@@ -55,10 +55,10 @@
             filter: blur(30px);
         }
 
-        /* --- ドラッグアイテム（サイズ拡大・正方形枠） --- */
+        /* --- ドラッグアイテム（さらに大きく調整） --- */
         .draggable-item {
             position: absolute; cursor: grab; transition: transform 0.1s; z-index: 50; user-select: none;
-            width: 220px; height: 220px; /* 大きく */
+            width: 240px; height: 240px; /* サイズアップ */
             display: flex; justify-content: center; align-items: center;
             filter: drop-shadow(8px 15px 10px rgba(0,0,0,0.3));
         }
@@ -74,7 +74,7 @@
             padding-top: 50px; padding-bottom: 100px; z-index: 10;
         }
 
-        /* --- アンケート用紙 --- */
+        /* --- アンケート用紙 (幅を拡張) --- */
         .survey-sheet-container {
             position: relative; margin-bottom: 50px; transform: rotate(0.2deg);
         }
@@ -85,11 +85,13 @@
         }
 
         .survey-sheet {
-            width: 100%; max-width: 760px; min-height: 900px;
+            width: 100%; 
+            max-width: 880px; /* 幅を広げました */
+            min-height: 900px;
             background-color: var(--paper-bg);
             background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
             box-shadow: var(--shadow-float);
-            padding: 60px 80px; position: relative;
+            padding: 60px 90px; position: relative;
         }
 
         /* テープ */
@@ -103,9 +105,9 @@
         .tape-tl { top: -18px; left: -30px; transform: rotate(-35deg); background-color: rgba(180, 200, 190, 0.7); }
         .tape-tr { top: -12px; right: -30px; transform: rotate(25deg); }
 
-        /* --- 質問レイアウト（添付画像再現） --- */
+        /* --- 質問レイアウト --- */
         .question-block {
-            margin-bottom: 2.5rem;
+            margin-bottom: 2.8rem;
             position: relative;
         }
         .question-header {
@@ -113,18 +115,18 @@
         }
         .q-badge {
             background-color: #333; color: #fff;
-            padding: 2px 8px; border-radius: 2px;
-            font-family: 'Oswald', sans-serif; font-size: 0.9rem; letter-spacing: 0.05em;
-            margin-right: 12px; flex-shrink: 0;
+            padding: 3px 8px; border-radius: 2px;
+            font-family: 'Oswald', sans-serif; font-size: 0.95rem; letter-spacing: 0.05em;
+            margin-right: 14px; flex-shrink: 0;
         }
         .q-text {
-            font-size: 1.1rem; font-weight: 700; color: #333; line-height: 1.4;
+            font-size: 1.15rem; font-weight: 700; color: #333; line-height: 1.4;
         }
         .input-line {
             width: 100%; border: none;
             background: repeating-linear-gradient(to right, #ccc 0, #ccc 2px, transparent 2px, transparent 6px);
             background-position: bottom; background-size: 100% 1px; background-repeat: no-repeat;
-            font-family: 'Patrick Hand', cursive; font-size: 1.25rem; line-height: 2rem;
+            font-family: 'Patrick Hand', cursive; font-size: 1.3rem; line-height: 2rem;
             padding: 4px 0; outline: none; color: #444; resize: none; overflow: hidden;
             transition: background 0.3s;
         }
@@ -134,13 +136,6 @@
         }
 
         /* --- スタンプ演出 --- */
-        .stamp-mark {
-            position: absolute; top: 100px; right: 50px;
-            font-family: 'Courier New', serif; font-weight: bold; font-size: 2rem;
-            color: #d32f2f; border: 4px solid #d32f2f; padding: 5px 15px;
-            transform: rotate(-15deg); opacity: 0.7; pointer-events: none; mix-blend-mode: multiply;
-            mask-image: url("data:image/svg+xml;utf8,<svg...>...</svg>"); /* かすれ表現用（簡易） */
-        }
         .stamp-animation {
             animation: stamp-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
@@ -149,11 +144,10 @@
             100% { transform: scale(1) rotate(-15deg); opacity: 0.8; }
         }
 
-        /* --- メモ用紙（リッチ化） --- */
+        /* --- メモ用紙 --- */
         .memo-paper {
-            position: absolute; width: 260px; padding: 25px 20px;
+            position: absolute; width: 280px; padding: 25px 20px;
             background: #fffde7;
-            /* 罫線 */
             background-image: linear-gradient(#b0bec5 1px, transparent 1px);
             background-size: 100% 25px;
             line-height: 25px;
@@ -161,7 +155,7 @@
             font-family: 'Patrick Hand', cursive;
             z-index: 40; transition: transform 0.3s;
         }
-        .memo-paper::after { /* めくれ表現 */
+        .memo-paper::after {
             content: ""; position: absolute; bottom: 0; right: 0;
             width: 30px; height: 30px;
             background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.8) 55%);
@@ -169,24 +163,24 @@
         }
         .memo-paper:hover { z-index: 60; transform: scale(1.02); }
 
-        .memo-global { left: 3%; top: 120px; transform: rotate(-3deg); background-color: #e1f5fe; } /* 青系 */
-        .memo-history { right: 3%; top: 80px; transform: rotate(2deg); background-color: #fff9c4; } /* 黄色系 */
+        /* 配置調整: 中央用紙と被らないように外側へ */
+        .memo-global { left: 40px; top: 100px; transform: rotate(-3deg); background-color: #e1f5fe; } 
+        .memo-history { right: 40px; top: 80px; transform: rotate(2deg); background-color: #fff9c4; }
 
         /* キャラ選択ドロップダウン */
-        .char-select-container {
-            position: relative;
-        }
+        .char-select-container { position: relative; }
         .char-dropdown {
-            position: absolute; top: 100%; left: 0; width: 100%;
+            position: absolute; top: 100%; left: 0; width: 300px;
             background: white; border: 1px solid #ccc; border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 50;
-            max-height: 200px; overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); z-index: 999;
+            max-height: 300px; overflow-y: auto;
         }
         .char-option {
-            padding: 8px 12px; cursor: pointer; display: flex; align-items: center;
+            padding: 10px 15px; cursor: pointer; display: flex; align-items: center;
+            border-bottom: 1px solid #eee;
         }
-        .char-option:hover { background-color: #f5f5f5; }
-        .char-option img { width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; }
+        .char-option:hover { background-color: #f0f4f8; }
+        .char-option img { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 1px solid #ddd; object-fit: cover;}
 
     </style>
 </head>
@@ -197,7 +191,7 @@
 <div class="sun-overlay"></div>
 
 <div id="app">
-    <!-- ドラッグアイテム (初期位置を調整してメモと被らないように) -->
+    <!-- ドラッグアイテム (7つに増量 & 配置を四隅に逃がす) -->
     <div v-for="(item, index) in deskItems" :key="index"
          class="draggable-item"
          :style="{ top: item.y + 'px', left: item.x + 'px' }"
@@ -205,28 +199,28 @@
         <img :src="item.src" :alt="item.name" onerror="this.style.opacity=0.3;">
     </div>
 
-    <!-- 完了スタンプ (アニメーション用) -->
+    <!-- 完了スタンプ -->
     <div v-if="showStamp" class="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
-        <div class="stamp-animation border-4 border-red-700 text-red-700 font-bold text-6xl px-10 py-4 rounded-lg transform -rotate-12 bg-white bg-opacity-80 mix-blend-multiply tracking-widest" style="font-family: 'Courier New', serif;">
+        <div class="stamp-animation border-4 border-red-700 text-red-700 font-bold text-6xl px-12 py-6 rounded-lg transform -rotate-12 bg-white bg-opacity-90 mix-blend-multiply tracking-widest shadow-xl" style="font-family: 'Courier New', serif;">
             THANK YOU!!
         </div>
     </div>
 
     <div class="workspace">
         
-        <!-- 左メモ：Global (みんなの回答) -->
+        <!-- 左メモ：Global Answers -->
         <div class="memo-paper memo-global">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-blue-200 opacity-70 rotate-1 shadow-sm"></div>
             <h4 class="font-bold text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center">
-                <i class="fa-solid fa-earth-americas mr-2"></i>Global
+                <i class="fa-solid fa-earth-americas mr-2"></i>Global Voices
             </h4>
             <div class="h-64 overflow-y-auto pr-1 custom-scrollbar">
                 <div v-if="!selectedGlobalQuestion" class="text-sm text-gray-500 leading-snug">
-                    <p>質問の横にある「<i class="fa-solid fa-eye text-amber-600"></i>」を押すと、みんなの回答が見れます。</p>
+                    <p>アンケートの「<i class="fa-solid fa-eye text-amber-600"></i>」ボタンで、他のキャラクターの回答を表示します。</p>
                 </div>
                 <div v-else>
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[10px] font-bold text-gray-500">PICKUP QUESTION</span>
+                        <span class="text-[10px] font-bold text-gray-500">PICKUP</span>
                         <button @click="selectedGlobalQuestion = null" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-times"></i></button>
                     </div>
                     <div class="text-xs font-bold mb-3 text-gray-700 bg-white/60 p-1 rounded">{{ selectedGlobalQuestion.text }}</div>
@@ -243,7 +237,7 @@
             </div>
         </div>
 
-        <!-- 中央：アンケート用紙 -->
+        <!-- 中央：アンケート用紙 (幅広) -->
         <div class="survey-sheet-container">
             <div class="masking-tape tape-tl"></div>
             <div class="masking-tape tape-tr"></div>
@@ -251,42 +245,61 @@
             <div class="survey-sheet">
                 
                 <!-- CONFIDENTIALスタンプ -->
-                <div class="absolute top-10 right-10 border-2 border-red-800 text-red-800 px-2 py-1 transform rotate-3 opacity-60 font-serif font-bold text-xl tracking-widest pointer-events-none">
+                <div class="absolute top-8 right-8 border-2 border-red-800 text-red-800 px-4 py-1 transform rotate-3 opacity-60 font-serif font-bold text-2xl tracking-widest pointer-events-none">
                     CONFIDENTIAL
                 </div>
 
                 <!-- ヘッダー -->
                 <div class="flex items-end mb-12 border-b-2 border-gray-800 pb-4 relative">
-                    <div class="w-24 h-24 bg-gray-100 rounded-full border-4 border-double border-gray-300 mr-6 overflow-hidden flex-shrink-0">
+                    <div class="w-28 h-28 bg-gray-100 rounded-full border-4 border-double border-gray-300 mr-6 overflow-hidden flex-shrink-0 shadow-inner">
                         <img :src="currentUser.icon" class="w-full h-full object-cover">
                     </div>
-                    <div class="flex-grow">
-                        <div class="text-xs text-gray-500 tracking-[0.2em] font-serif mb-1">NAME</div>
+                    <div class="flex-grow z-50">
+                        <div class="text-xs text-gray-500 tracking-[0.2em] font-serif mb-1">CHARACTER NAME</div>
                         
-                        <!-- キャラ選択 UI (自動読み込み) -->
-                        <div class="char-select-container" v-click-outside="closeDropdown">
-                            <div @click="toggleDropdown" 
-                                 class="text-4xl font-serif font-bold text-gray-800 border-b border-dashed border-gray-400 cursor-pointer hover:bg-gray-50 transition px-2 py-1 flex justify-between items-center">
-                                <span>{{ currentUser.name || 'Select Character...' }}</span>
-                                <i class="fa-solid fa-caret-down text-lg text-gray-400"></i>
-                            </div>
-                            <!-- ドロップダウンリスト -->
-                            <div v-if="isDropdownOpen" class="char-dropdown">
-                                <div v-for="char in schemaDB" :key="char.name" 
+                        <!-- 名前入力 or ロード -->
+                        <div class="flex items-end space-x-2">
+                            <input type="text" 
+                                   v-model="currentUser.name"
+                                   class="text-4xl font-serif font-bold text-gray-800 border-b border-dashed border-gray-400 bg-transparent outline-none w-full max-w-md placeholder-gray-300"
+                                   placeholder="Guest...">
+                            
+                            <!-- ロードボタン -->
+                            <button @click="loadAndShowCharacters" class="mb-1 bg-gray-800 text-white text-xs px-3 py-1.5 rounded shadow hover:bg-black transition flex items-center">
+                                <i class="fa-solid fa-cloud-arrow-down mr-1"></i> LOAD
+                            </button>
+                        </div>
+                        
+                        <!-- キャラ選択ドロップダウン (ロードボタンを押すと表示) -->
+                        <div v-if="isDropdownOpen" class="char-select-container" v-click-outside="closeDropdown">
+                            <div class="char-dropdown">
+                                <div class="p-2 text-xs text-gray-500 bg-gray-100 border-b">
+                                    <i class="fa-solid fa-server mr-1"></i>Server Data
+                                </div>
+                                <div v-if="loadingChars" class="p-4 text-center text-gray-500">
+                                    <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...
+                                </div>
+                                <div v-else-if="characterList.length === 0" class="p-4 text-center text-gray-500">
+                                    No characters found.
+                                </div>
+                                <div v-else v-for="char in characterList" :key="char.name" 
                                      @click="selectCharacter(char)"
                                      class="char-option">
-                                    <img :src="char.icon">
-                                    <span class="font-serif font-bold text-lg">{{ char.name }}</span>
-                                    <span class="text-xs text-gray-400 ml-2">- {{ char.desc }}</span>
+                                    <img :src="char.icon || 'https://placehold.co/50x50/png?text=?'">
+                                    <div>
+                                        <div class="font-serif font-bold text-lg leading-none">{{ char.name }}</div>
+                                        <div class="text-xs text-gray-400 mt-0.5">{{ char.job || char.desc || 'No description' }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="text-sm text-gray-500 mt-2 font-mono h-5">{{ currentUser.description }}</div>
                     </div>
+                    
                     <div class="absolute bottom-4 right-0 text-right">
-                        <div class="text-[10px] text-gray-400">DATE</div>
-                        <div class="font-serif">{{ currentDate }}</div>
+                        <div class="text-[10px] text-gray-400">RECORD DATE</div>
+                        <div class="font-serif text-lg">{{ currentDate }}</div>
                     </div>
                 </div>
 
@@ -297,7 +310,6 @@
                             <span class="q-badge">Q.{{ index + 1 }}</span>
                             <span class="q-text">{{ q.text }}</span>
                             
-                            <!-- 隠しボタン -->
                             <button @click="showGlobalAnswers(q)" class="ml-3 text-amber-600 opacity-0 group-hover:opacity-100 transition text-sm" title="みんなの回答を見る">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
@@ -306,27 +318,27 @@
                     </div>
                 </div>
 
-                <!-- ボタンエリア -->
-                <div class="mt-16 flex justify-center space-x-10">
+                <!-- フッター -->
+                <div class="mt-20 flex justify-center space-x-12">
                     <button @click="resetForm" class="flex flex-col items-center text-gray-400 hover:text-gray-600 transition">
-                        <div class="w-10 h-10 border border-gray-300 rounded-full flex items-center justify-center mb-1">
+                        <div class="w-12 h-12 border border-gray-300 rounded-full flex items-center justify-center mb-1">
                             <i class="fa-solid fa-eraser"></i>
                         </div>
-                        <span class="text-xs font-serif">CLEAR</span>
+                        <span class="text-xs font-serif tracking-widest">CLEAR</span>
                     </button>
                     
                     <button @click="submitSurvey" class="flex flex-col items-center text-gray-800 hover:text-black transition transform hover:scale-105">
-                        <div class="w-16 h-16 bg-gray-800 text-white rounded-full shadow-xl flex items-center justify-center mb-1">
-                            <i class="fa-solid fa-check text-2xl"></i>
+                        <div class="w-20 h-20 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center mb-1 border-4 border-gray-800">
+                            <i class="fa-solid fa-file-import text-3xl"></i>
                         </div>
-                        <span class="text-sm font-serif font-bold tracking-widest">SAVE</span>
+                        <span class="text-sm font-serif font-bold tracking-widest mt-1">SAVE RECORD</span>
                     </button>
                 </div>
 
             </div>
         </div>
 
-        <!-- 右メモ：History (履歴) -->
+        <!-- 右メモ：History -->
         <div class="memo-paper memo-history">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-amber-200 opacity-70 -rotate-2 shadow-sm"></div>
             <h4 class="font-bold text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center">
@@ -334,7 +346,7 @@
             </h4>
             <div class="h-64 overflow-y-auto pr-1 custom-scrollbar">
                 <div v-if="history.length === 0" class="text-center text-gray-400 text-sm mt-10 italic">
-                    No records found...
+                    No history found...
                 </div>
                 <ul v-else class="space-y-4">
                     <li v-for="rec in history" :key="rec.timestamp" class="relative pl-3 border-l-4 border-amber-400/50">
@@ -349,16 +361,34 @@
 </div>
 
 <script type="module">
+    // --- Firestore Imports (Mapped to provided file content) ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // Firebase Config (Dummy for UI Demo)
-    const firebaseConfig = { apiKey: "demo", projectId: "demo" };
-    try { initializeApp(firebaseConfig); } catch(e) {}
+    // Provided Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZVh6NhFA_BSuyUW-sZV2QPSvSzdYJZWU",
+      authDomain: "chocolatmer-uchiyoso.firebaseapp.com",
+      projectId: "chocolatmer-uchiyoso",
+      storageBucket: "chocolatmer-uchiyoso.firebasestorage.app",
+      messagingSenderId: "251681036234",
+      appId: "1:251681036234:web:be56156da1210d45afe133"
+    };
 
+    // Firebase Init
+    let auth, db, provider;
+    try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        provider = new GoogleAuthProvider();
+    } catch(e) { console.error("Firebase Init Error:", e); }
+
+    // --- Vue App ---
     const { createApp, ref, reactive, onMounted } = Vue;
 
-    // クリック外判定ディレクティブ
+    // Click Outside Directive
     const clickOutside = {
         beforeMount(el, binding) {
             el.clickOutsideEvent = function(event) {
@@ -368,26 +398,24 @@
             };
             document.body.addEventListener('click', el.clickOutsideEvent);
         },
-        unmounted(el) {
-            document.body.removeEventListener('click', el.clickOutsideEvent);
-        }
+        unmounted(el) { document.body.removeEventListener('click', el.clickOutsideEvent); }
     };
 
     createApp({
         directives: { clickOutside },
         setup() {
+            // User Data
             const currentUser = reactive({
-                name: '', icon: 'https://placehold.co/100x100/png?text=?', description: 'Select character to start', isGuest: true
+                name: '', icon: 'https://placehold.co/100x100/png?text=?', description: 'Enter name or Load', isGuest: true, uid: null
             });
 
-            // キャラデータ (リスト用)
-            const schemaDB = [
-                { name: 'Alice', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Alice', desc: '好奇心旺盛な冒険家' },
-                { name: 'Bob', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Bob', desc: '冷静なエンジニア' },
-                { name: 'Carol', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Carol', desc: '優しい森の住人' },
-                { name: 'Dave', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Dave', desc: '熱血スポーツマン' }
-            ];
+            // UI State
+            const isDropdownOpen = ref(false);
+            const loadingChars = ref(false);
+            const characterList = ref([]); // Loaded from Cloud
+            const showStamp = ref(false);
 
+            // Questions
             const allQuestions = [
                 { id: 'q1', text: '休日はどのように過ごしていますか？' },
                 { id: 'q2', text: '好きな食べ物とその理由を教えてください。' },
@@ -398,78 +426,88 @@
                 { id: 'q7', text: '自分を動物に例えると？' },
                 { id: 'q8', text: '大切な人へ伝えたいことは？' }
             ];
-            
             const displayedQuestions = ref([]);
             const answers = reactive({});
             const currentDate = new Date().toLocaleDateString('ja-JP');
 
-            // アイテム初期位置（メモと被らないように外側へ配置）
+            // Desk Items (7 items, positioned OUTSIDE the center paper)
             const deskItems = ref([
-                { src: '../images/icons/desk1.png', x: 50, y: 500, name: 'Coffee' },
-                { src: '../images/icons/desk2.png', x: 100, y: 650, name: 'Pen' },
-                { src: '../images/icons/desk3.png', x: window.innerWidth - 250, y: 650, name: 'Glasses' },
-                { src: '../images/icons/desk4.png', x: window.innerWidth - 350, y: 50, name: 'Plant' },
-                { src: '../images/icons/desk5.png', x: 50, y: 50, name: 'Stamp' },
-                { src: '../images/icons/desk6.png', x: 150, y: 150, name: 'Stamp' },
-                { src: '../images/icons/desk7.png', x: 500, y: 50, name: 'Stamp' },
+                { src: '../images/icons/desk1.png', x: 20, y: 20 },
+                { src: '../images/icons/desk2.png', x: 20, y: 600 },
+                { src: '../images/icons/desk3.png', x: window.innerWidth - 300, y: 20 },
+                { src: '../images/icons/desk4.png', x: window.innerWidth - 320, y: 650 },
+                { src: '../images/icons/desk5.png', x: 100, y: 350 },
+                { src: '../images/icons/desk6.png', x: window.innerWidth - 150, y: 350 },
+                { src: '../images/icons/desk7.png', x: 150, y: 800 },
             ]);
-            
             const dragging = ref({ index: -1, offsetX: 0, offsetY: 0 });
+
+            // History & Global
             const history = ref([]);
             const selectedGlobalQuestion = ref(null);
             const globalAnswers = ref([]);
-            
-            // UI State
-            const isDropdownOpen = ref(false);
-            const showStamp = ref(false);
 
-            const getRandomQuestions = () => {
-                displayedQuestions.value = [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, 8);
+            // --- Logic: Load from Cloud ---
+            const loadAndShowCharacters = async () => {
+                isDropdownOpen.value = true;
+                loadingChars.value = true;
+
+                if (!currentUser.uid) {
+                    // Not logged in -> Login first
+                    try {
+                        const result = await signInWithPopup(auth, provider);
+                        currentUser.uid = result.user.uid;
+                        // After login, fetch data
+                    } catch (e) {
+                        alert("Login failed or cancelled.");
+                        loadingChars.value = false;
+                        return;
+                    }
+                }
+
+                // Fetch Data (Logic from firestore.js adapted)
+                try {
+                    const userRef = doc(db, "users", currentUser.uid);
+                    const docSnap = await getDoc(userRef);
+                    if (docSnap.exists()) {
+                        const store = docSnap.data().store || {};
+                        // Convert object to array for list
+                        characterList.value = Object.values(store).map(char => ({
+                            name: char.name,
+                            // data/schema.js mappings
+                            icon: char.inpImageIcon || 'https://placehold.co/100x100/png?text=' + char.name.charAt(0),
+                            desc: char.inpJob || char.job || 'Character',
+                            ...char
+                        }));
+                    } else {
+                        characterList.value = [];
+                    }
+                } catch (e) {
+                    console.error("Load Error", e);
+                    // Mock data if fails (for demo)
+                    characterList.value = [
+                        { name: 'Mock Alice', desc: 'Adventurer', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Alice' },
+                        { name: 'Mock Bob', desc: 'Engineer', icon: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Bob' }
+                    ];
+                } finally {
+                    loadingChars.value = false;
+                }
             };
 
-            // キャラ選択処理
-            const toggleDropdown = () => isDropdownOpen.value = !isDropdownOpen.value;
-            const closeDropdown = () => isDropdownOpen.value = false;
-            
             const selectCharacter = (char) => {
                 currentUser.name = char.name;
                 currentUser.icon = char.icon;
                 currentUser.description = char.desc;
                 currentUser.isGuest = false;
-                isDropdownOpen.value = false;
+                closeDropdown();
                 
-                // 履歴モックロード
-                history.value = [
-                    { timestamp: new Date().toISOString(), summary: `${char.name}の過去ログ...` }
-                ];
-            };
-
-            const submitSurvey = () => {
-                if(!currentUser.name) return alert("キャラクターを選択してください");
-                
-                // スタンプ演出
-                showStamp.value = true;
-                setTimeout(() => showStamp.value = false, 2000);
-
-                // 履歴保存
-                history.value.unshift({
-                    timestamp: new Date().toISOString(),
-                    summary: Object.values(answers)[0] || '回答なし'
-                });
+                // Add dummy history for visual feedback
+                history.value = [{ timestamp: new Date().toISOString(), summary: 'Previous session data...' }];
             };
             
-            const resetForm = () => {
-                if(confirm("入力内容をクリアしますか？")) displayedQuestions.value.forEach(q => answers[q.id] = '');
-            };
+            const closeDropdown = () => isDropdownOpen.value = false;
 
-            const showGlobalAnswers = (q) => {
-                selectedGlobalQuestion.value = q;
-                globalAnswers.value = [
-                    { user: 'Alice', icon: schemaDB[0].icon, text: '秘密です！' },
-                    { user: 'Bob', icon: schemaDB[1].icon, text: '効率重視。' }
-                ].sort(() => 0.5 - Math.random());
-            };
-
+            // --- Logic: Drag ---
             const startDrag = (e, i) => {
                 dragging.value = { index: i, offsetX: e.clientX - deskItems.value[i].x, offsetY: e.clientY - deskItems.value[i].y };
                 window.addEventListener('mousemove', onDrag);
@@ -488,19 +526,46 @@
                 window.removeEventListener('mouseup', stopDrag);
             };
 
-            const formatDate = (iso) => new Date(iso).toLocaleDateString();
+            // --- Logic: Survey ---
+            const submitSurvey = () => {
+                if(!currentUser.name) return alert("Please enter or load a character name.");
+                showStamp.value = true;
+                setTimeout(() => showStamp.value = false, 2500);
+                
+                history.value.unshift({
+                    timestamp: new Date().toISOString(),
+                    summary: Object.values(answers)[0] || 'No answer recorded'
+                });
+            };
+
+            const resetForm = () => {
+                if(confirm("Discard changes?")) displayedQuestions.value.forEach(q => answers[q.id] = '');
+            };
+
+            const showGlobalAnswers = (q) => {
+                selectedGlobalQuestion.value = q;
+                globalAnswers.value = [
+                    { user: 'Guest A', icon: 'https://placehold.co/50x50/png?text=A', text: 'This is a secret.' },
+                    { user: 'Guest B', icon: 'https://placehold.co/50x50/png?text=B', text: 'I prefer logic over magic.' }
+                ];
+            };
 
             onMounted(() => {
-                getRandomQuestions();
+                displayedQuestions.value = [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, 8);
+                
+                // Check auth on load
+                onAuthStateChanged(auth, (user) => {
+                    if (user) currentUser.uid = user.uid;
+                });
             });
 
             return {
-                currentUser, schemaDB, displayedQuestions, answers, currentDate,
+                currentUser, characterList, displayedQuestions, answers, currentDate,
                 deskItems, startDrag, 
-                isDropdownOpen, toggleDropdown, closeDropdown, selectCharacter,
+                loadAndShowCharacters, selectCharacter, isDropdownOpen, closeDropdown, loadingChars,
                 submitSurvey, resetForm, showStamp,
                 history, selectedGlobalQuestion, globalAnswers, showGlobalAnswers,
-                formatDate
+                formatDate: (iso) => new Date(iso).toLocaleDateString()
             };
         }
     }).mount('#app');
