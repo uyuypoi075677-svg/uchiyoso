@@ -88,7 +88,7 @@ body {
 
 /* --- Question Layout --- */
 .question-block {
-    margin-bottom: 2.8rem; position: relative;
+    margin-bottom: 1.7rem; position: relative;
 }
 .question-header {
     display: flex; align-items: baseline; margin-bottom: 0.8rem;
