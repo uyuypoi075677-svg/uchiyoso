@@ -1,63 +1,50 @@
-// Wquestionnaire/script.js
-
-// 新しく作ったペア用質問データをインポート
 import { PAIR_QUESTIONS } from "./questions.js";
-// ルートにある firestore.js を利用
 import { loadFromCloud, saveToCloud, login, monitorAuth } from "../firestore.js";
 
 const { createApp, ref, reactive, computed, onMounted } = Vue;
 
 createApp({
     setup() {
-        // Data
         const questions = ref([]);
         const currentIndex = ref(0);
         
-        // Characters (A:左, B:右)
         const charA = reactive({ name: '', icon: 'https://placehold.co/150x150/png?text=A', color: '#ff9a9e', uid: null, original: null });
         const charB = reactive({ name: '', icon: 'https://placehold.co/150x150/png?text=B', color: '#a29bfe', uid: null, original: null });
         
-        // Answers
         const answersA = reactive({});
         const answersB = reactive({});
 
-        // UI State
         const showModal = ref(false);
-        const targetSide = ref('A'); // 'A' or 'B'
+        const targetSide = ref('A');
         const charList = ref([]);
         const loading = ref(false);
         const saveMessage = ref('');
         const currentUserUid = ref(null);
 
-        // Init
         onMounted(() => {
-            // ペア用質問からランダム10問選出
             questions.value = [...PAIR_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, 10);
-            
-            // パーティクル生成
             createParticles();
-
-            // 認証監視
-            monitorAuth((user) => {
-                if (user) currentUserUid.value = user.uid;
-            });
+            monitorAuth((user) => { if (user) currentUserUid.value = user.uid; });
         });
 
-        // Computed
         const currentQ = computed(() => questions.value[currentIndex.value] || {});
+        
+        // ★プログレスバーの進捗率を計算
+        const progressPercentage = computed(() => {
+            if (questions.value.length === 0) return 0;
+            return ((currentIndex.value + 1) / questions.value.length) * 100;
+        });
 
-        // Actions
         const nextQ = () => { if (currentIndex.value < questions.value.length - 1) currentIndex.value++; };
         const prevQ = () => { if (currentIndex.value > 0) currentIndex.value--; };
 
-        // Load Logic
         const openLoader = async (side) => {
             targetSide.value = side;
             showModal.value = true;
             loading.value = true;
 
             if (!currentUserUid.value) {
-                try { await login(); } catch(e) { /* ignore cancel */ }
+                try { await login(); } catch(e) {}
             }
 
             if (currentUserUid.value) {
@@ -68,7 +55,7 @@ createApp({
                             name: c.name,
                             icon: c.inpImageIcon || c.icon || 'https://placehold.co/50x50/png?text='+c.name[0],
                             job: c.inpJob || c.job || '',
-                            color: c.inpThemeColor || c.color || '#ccc',
+                            color: c.inpThemeColor || c.color || (side === 'A' ? '#ff9a9e' : '#a29bfe'),
                             ...c
                         }));
                     }
@@ -81,27 +68,25 @@ createApp({
             const target = targetSide.value === 'A' ? charA : charB;
             target.name = char.name;
             target.icon = char.icon;
-            target.color = char.color;
-            target.original = char; // 保存用に保持
+            // テーマカラーがあれば適用、なければデフォルト
+            target.color = char.color || (targetSide.value === 'A' ? '#ff9a9e' : '#a29bfe');
+            target.original = char;
             showModal.value = false;
         };
 
-        // Save Logic
         const savePairData = async () => {
             if (!charA.name || !charB.name) {
-                alert("二人とも名前を入力してください。");
+                alert("Please enter both names.");
                 return;
             }
 
             const timestamp = new Date().toISOString();
             const recordId = Date.now().toString();
 
-            // 共通の記録データを作成
             const pairResultBase = {
                 id: recordId,
                 type: 'pair_survey',
                 timestamp: timestamp,
-                // answersは後でセット
             };
 
             const saveForChar = async (charObj, myAnswers, partnerName, partnerAnswers) => {
@@ -109,13 +94,12 @@ createApp({
                     const dataToSave = { ...charObj.original };
                     if (!dataToSave.surveys) dataToSave.surveys = [];
                     
-                    // 履歴データ作成 (自分の回答 + 相手の情報)
                     const myRecord = { 
                         ...pairResultBase,
                         summary: `Pair Survey with ${partnerName}`,
                         partner: partnerName,
                         answers: { ...myAnswers },
-                        partnerAnswers: { ...partnerAnswers } // 相手の回答も保存
+                        partnerAnswers: { ...partnerAnswers } 
                     };
 
                     dataToSave.surveys.push(myRecord);
@@ -124,7 +108,6 @@ createApp({
             };
 
             try {
-                // 両方のキャラに履歴を追加（サーバー上のキャラなら）
                 await saveForChar(charA, answersA, charB.name, answersB);
                 await saveForChar(charB, answersB, charA.name, answersA);
                 
@@ -135,7 +118,6 @@ createApp({
             }
         };
 
-        // Decorative Particles
         const createParticles = () => {
             const container = document.getElementById('particles');
             for(let i=0; i<15; i++) {
@@ -153,7 +135,7 @@ createApp({
         return {
             questions, currentIndex, currentQ,
             charA, charB, answersA, answersB,
-            nextQ, prevQ,
+            nextQ, prevQ, progressPercentage,
             showModal, targetSide, charList, loading,
             openLoader, selectCharacter, savePairData, saveMessage
         };

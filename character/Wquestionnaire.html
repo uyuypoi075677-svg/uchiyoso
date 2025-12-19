@@ -23,20 +23,20 @@
 <body>
 
 <div class="sparkles"></div>
-<!-- 背景パーティクル (JSで生成) -->
 <div id="particles"></div>
 
 <div id="app" class="main-container">
 
     <!-- LEFT CHARACTER (SIDE A) -->
     <div class="char-section" :style="{'--theme-color': charA.color || '#ff9a9e'}">
-        <div class="theme-bar" :style="{background: charA.color || '#ff9a9e'}"></div>
+        <!-- 背景装飾 -->
+        <div class="char-bg-tint"></div>
         
         <div class="char-icon-box">
             <img :src="charA.icon" alt="CharA">
         </div>
         
-        <div class="text-center w-full relative">
+        <div class="text-center w-full relative z-10">
             <input type="text" v-model="charA.name" class="char-name-input" placeholder="Name...">
             <button @click="openLoader('A')" class="load-btn">
                 <i class="fa-solid fa-cloud-arrow-down"></i> Load
@@ -44,7 +44,7 @@
         </div>
 
         <div class="answer-area">
-            <div class="text-xs text-center text-gray-400 mb-2 font-bold tracking-widest">ANSWER A</div>
+            <div class="text-xs text-center text-gray-500 mb-2 font-bold tracking-widest" :style="{color: charA.color}">ANSWER A</div>
             <textarea 
                 v-model="answersA[currentQ.id]" 
                 class="handwritten-area" 
@@ -53,24 +53,33 @@
         </div>
     </div>
 
-    <!-- CENTER STAGE (Questions) -->
+    <!-- CENTER STAGE -->
     <div class="center-stage">
         
         <div class="heart-icon"><i class="fa-solid fa-heart"></i></div>
 
-        <!-- 質問カード (アニメーション付き) -->
-        <transition name="fade" mode="out-in">
-            <div :key="currentQ.id" class="question-card">
-                <div class="q-number">Question {{ currentIndex + 1 }} / {{ questions.length }}</div>
-                <div class="q-text">{{ currentQ.text }}</div>
-            </div>
-        </transition>
+        <!-- ★追加機能: プログレスバー -->
+        <div class="progress-container">
+            <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
+        </div>
+
+        <!-- 質問カード (フリップアニメーション用コンテナ) -->
+        <div class="card-scene">
+            <transition name="card-flip" mode="out-in">
+                <div :key="currentQ.id" class="question-card">
+                    <div class="q-number">Question {{ currentIndex + 1 }}</div>
+                    <div class="q-text">{{ currentQ.text }}</div>
+                    <div class="q-deco"></div>
+                </div>
+            </transition>
+        </div>
 
         <!-- コントロール -->
         <div class="controls">
             <button @click="prevQ" :disabled="currentIndex === 0" class="control-btn">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
+            <span class="page-indicator">{{ currentIndex + 1 }} / {{ questions.length }}</span>
             <button @click="nextQ" :disabled="currentIndex === questions.length - 1" class="control-btn">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
@@ -80,7 +89,7 @@
             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>SAVE MEMORY
         </button>
 
-        <div v-if="saveMessage" class="mt-4 text-green-600 font-bold fade-enter-active text-center">
+        <div v-if="saveMessage" class="mt-4 text-green-600 font-bold fade-enter-active text-center bg-white/80 px-4 py-1 rounded-full shadow">
             {{ saveMessage }}
         </div>
 
@@ -88,13 +97,13 @@
 
     <!-- RIGHT CHARACTER (SIDE B) -->
     <div class="char-section" :style="{'--theme-color': charB.color || '#a29bfe'}">
-        <div class="theme-bar" :style="{background: charB.color || '#a29bfe'}"></div>
+        <div class="char-bg-tint"></div>
 
         <div class="char-icon-box">
             <img :src="charB.icon" alt="CharB">
         </div>
         
-        <div class="text-center w-full relative">
+        <div class="text-center w-full relative z-10">
             <input type="text" v-model="charB.name" class="char-name-input" placeholder="Name...">
             <button @click="openLoader('B')" class="load-btn">
                 <i class="fa-solid fa-cloud-arrow-down"></i> Load
@@ -102,7 +111,7 @@
         </div>
 
         <div class="answer-area">
-            <div class="text-xs text-center text-gray-400 mb-2 font-bold tracking-widest">ANSWER B</div>
+            <div class="text-xs text-center text-gray-500 mb-2 font-bold tracking-widest" :style="{color: charB.color}">ANSWER B</div>
             <textarea 
                 v-model="answersB[currentQ.id]" 
                 class="handwritten-area" 
