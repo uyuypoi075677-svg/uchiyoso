@@ -2,6 +2,9 @@
 function createParticles() {
     const colors = ['#ff9ebb', '#a8cce8', '#ffffff'];
     const fragment = document.createDocumentFragment();
+    // 画面幅を取得し、パーティクルがはみ出さない安全マージンを確保
+    const safeWidth = window.innerWidth - 100; 
+    
     for(let i=0; i < 12; i++) {
         const span = document.createElement('span');
         span.classList.add('floating-particle');
@@ -9,8 +12,10 @@ function createParticles() {
         span.style.width = sizeValue + 'px';
         span.style.height = sizeValue + 'px';
         
-        // 修正: 画面端(100%)ぎりぎりに配置されるとはみ出してスクロールバーを誘発するため、最大値を90%に抑える
-        span.style.left = Math.random() * 90 + '%';
+        // 修正: %指定ではなくpx計算ではみ出しを物理的に防ぐ
+        // 万が一マイナスにならないようMath.maxを使用
+        const randomX = Math.random() * Math.max(0, safeWidth);
+        span.style.left = randomX + 'px';
         
         span.style.top = Math.random() * 100 + 'vh';
         span.style.background = colors[Math.floor(Math.random() * colors.length)];
