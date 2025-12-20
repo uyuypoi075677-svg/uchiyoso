@@ -17,12 +17,11 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-/* 修正: 二重スクロールバーの完全防止 */
+/* 修正: 二重スクロールバー防止 */
 html {
     width: 100%;
     height: 100%;
     overflow-x: hidden;
-    /* overflow-yはブラウザに任せ、body側でのオーバーフロー誘発を防ぐ */
 }
 
 body {
@@ -32,16 +31,14 @@ body {
     background-size: cover;
     background-position: center;
     
-    /* 修正: 最小高さを100%とし、コンテンツ量に応じた自然なスクロールにする */
     min-height: 100%;
     width: 100%;
     display: block;
     color: var(--text-main);
     perspective: 1500px;
     
-    /* パディング設定 */
+    /* 余白設定（PC初期値） */
     padding-top: calc(var(--top-bar-height) + 60px); 
-    /* 修正: 下部余白はリボンの高さピッタリにする */
     padding-bottom: var(--bottom-ribbon-height); 
     
     overflow-x: hidden;
@@ -54,17 +51,10 @@ body {
     pointer-events: none; z-index: 0;
 }
 
-/* === 新設：パーティクル隔離用ラッパー === */
-/* これが「動くスクロールバー」と「謎の空間」を消す決定的な修正です */
+/* === パーティクル隔離用ラッパー === */
 #particle-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden; /* 画面外の要素を完全に切り捨てる */
-    pointer-events: none; /* クリックなどを阻害しない */
-    z-index: -1; /* 背景として配置 */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    overflow: hidden; pointer-events: none; z-index: -1;
 }
 
 /* === PC用 3Dグリッド === */
@@ -81,7 +71,7 @@ body {
     transition: transform 0.5s ease;
 }
 
-/* === グラスモーフィズムカード (質感維持) === */
+/* === グラスモーフィズムカード === */
 .glass-card {
     background: var(--glass-bg);
     backdrop-filter: blur(40px) saturate(180%);
@@ -193,7 +183,7 @@ body {
 
 /* パーティクル & マスコット */
 .floating-particle {
-    position: absolute; /* 親要素(#particle-wrapper)に対して絶対配置 */
+    position: absolute;
     border-radius: 50%; filter: blur(8px); opacity: 0.6; 
     animation: floatUp 15s linear infinite;
     pointer-events: none; will-change: transform;
@@ -328,53 +318,111 @@ body {
 .ribbon-toggle-btn span { font-size: 20px; transition: 0.5s; }
 .bottom-ribbon-container.hidden .ribbon-toggle-btn span { transform: rotate(180deg); }
 
-/* === スマホ最適化 === */
+/* === スマホ最適化（全体的に小さくし、密度を上げる修正） === */
 @media (max-width: 768px) {
+    /* ルート変数をスマホ用に上書きし、全体をコンパクトに */
+    :root {
+        --top-bar-height: 40px;      /* 50px -> 40px */
+        --bottom-ribbon-height: 30px; /* 40px -> 30px */
+        --walker-size: 32px;
+    }
+
     body {
         display: block; overflow-y: auto; overflow-x: hidden;
         height: auto; perspective: none;
-        padding-top: calc(var(--top-bar-height) + 40px);
-        /* 修正: スマホでもパディングはリボン高さのみにし、謎の空間を削除 */
-        padding-bottom: var(--bottom-ribbon-height);
+        
+        /* フォントサイズを小さくしてPC画面に近づける */
+        font-size: 0.85rem; 
+        
+        /* コンパクトなヘッダー・フッターに合わせて余白も縮小 */
+        padding-top: calc(var(--top-bar-height) + 20px);
+        padding-bottom: var(--bottom-ribbon-height); 
     }
     
     .bento-container {
-        width: 94%; margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        /* 幅を広げて情報量を増やす */
+        width: 96%; 
+        margin: 0 auto;
+        display: grid; grid-template-columns: 1fr 1fr; 
+        gap: 12px; /* ギャップを詰める */
         transform: none !important;
     }
     
-    .glass-card { width: 100%; transform: none !important; margin-bottom: 0; }
+    .glass-card { 
+        width: 100%; transform: none !important; margin-bottom: 0;
+        /* パディングを減らして密度アップ */
+        padding: 14px; 
+        border-radius: 24px;
+    }
     .glass-card:active { transform: scale(0.98) !important; background: rgba(255, 255, 255, 0.25); }
 
-    .area-profile { grid-column: span 2; text-align: center; align-items: center; padding: 24px; }
-    .profile-header { flex-direction: column; gap: 12px; margin-bottom: 12px; }
-    .avatar { width: 80px; height: 80px; } 
-    .site-title { font-size: 1.6rem; }
+    /* プロフィールエリア：横並びに戻してコンパクトに */
+    .area-profile { 
+        grid-column: span 2; 
+        text-align: left; 
+        align-items: flex-start; 
+        padding: 20px; 
+    }
+    .profile-header { 
+        flex-direction: row; /* PCと同じ横並び */
+        gap: 16px; 
+        margin-bottom: 12px; 
+    }
+    .avatar { 
+        width: 60px; height: 60px; /* 縮小 */
+        border-width: 3px;
+    } 
+    .site-title { font-size: 1.4rem; }
+    .site-desc { font-size: 0.8rem; }
+    .profile-text { font-size: 0.8rem; line-height: 1.6; }
     
-    .area-ticker { grid-column: span 2; height: 50px; order: 2; }
+    .area-ticker { grid-column: span 2; height: 40px; order: 2; }
+    .ticker-item { font-size: 1.2rem; margin: 0 10px; }
     
-    .area-tool { aspect-ratio: 1 / 1; flex-direction: column; justify-content: center; text-align: center; padding: 10px; gap: 8px; }
-    .area-tool-wide { grid-column: span 2; aspect-ratio: auto; flex-direction: row; justify-content: flex-start; padding: 16px 24px; }
-    .area-tool .icon-circle { width: 54px; height: 54px; font-size: 26px; margin-bottom: 0; transform: none !important; }
+    /* ツールボタン：余白とアイコンを小さく */
+    .area-tool { 
+        aspect-ratio: 1 / 1; 
+        flex-direction: column; justify-content: center; text-align: center; 
+        padding: 10px; gap: 6px; 
+    }
+    .area-tool-wide { 
+        grid-column: span 2; 
+        aspect-ratio: auto; 
+        flex-direction: row; justify-content: flex-start; 
+        padding: 12px 20px; gap: 12px;
+    }
+    .area-tool .icon-circle { 
+        width: 40px; height: 40px; /* アイコン縮小 */
+        font-size: 20px; 
+        margin-bottom: 4px; transform: none !important; 
+    }
+    .area-tool-wide .icon-circle { margin-bottom: 0; }
     
-    .tool-label { font-size: 1rem; }
-    .tool-sub { font-size: 0.75rem; display: none; }
-    .area-tool-wide .tool-sub { display: block; }
+    .tool-label { font-size: 0.9rem; }
+    .tool-sub { font-size: 0.7rem; display: none; }
+    .area-tool-wide .tool-sub { display: block; font-size: 0.7rem; }
     
-    .badge { top: 10px; right: 10px; padding: 4px 10px; font-size: 0.65rem; animation: none; }
-    .area-share { grid-column: span 2; padding: 0; margin-top: 10px; }
+    .badge { top: 8px; right: 8px; padding: 3px 8px; font-size: 0.6rem; animation: none; }
+    .area-share { grid-column: span 2; padding: 0; margin-top: 5px; }
+    .btn-share-pill { padding: 10px 30px; font-size: 0.9rem; }
 
-    .header-right-area { gap: 8px; margin-left: 10px; }
+    /* ヘッダー・フッターも少し小さく */
+    .top-news-bar { height: var(--top-bar-height); font-size: 0.8rem; }
+    .bottom-ribbon-container { height: var(--bottom-ribbon-height); }
+    .ribbon-toggle-btn { width: 36px; height: 20px; top: -20px; }
+    .ribbon-toggle-btn span { font-size: 16px; }
+
+    .header-right-area { gap: 6px; margin-left: 8px; }
     .honobono-report {
-        font-size: 0.8rem;
-        max-width: 150px; 
+        font-size: 0.75rem;
+        max-width: 120px; 
         overflow: hidden; text-overflow: ellipsis;
     }
+    .digital-clock { font-size: 0.9rem; padding: 1px 6px; }
     
-    .floating-mascot { width: 85px; bottom: 100px; right: 10px; }
-    .pixel-walker { bottom: 35px; }
-    :root { --walker-size: 42px; }
+    /* マスコット縮小 */
+    .floating-mascot { width: 70px; bottom: 80px; right: 10px; }
+    .pixel-walker { bottom: 30px; } /* リボン高さに合わせて調整 */
 
     body.ribbon-hidden .floating-mascot { transform: translateY(30px); }
     body.ribbon-hidden .pixel-walker { bottom: 5px; }
