@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pattern Preview</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;800&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Potta+One&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- ▼▼▼ 同階層の patterns.js を読み込み ▼▼▼ -->
+    <script src="patterns.js"></script>
+    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: "Noto Sans JP", sans-serif; }
+    </style>
+</head>
+<!-- 中身は分布メーカーと同じですが、読み込みパスが異なります -->
+<body class="bg-gray-50 text-gray-800 antialiased" x-data="canvasApp()">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">📊</span>
+                <h1 class="text-xl font-bold text-gray-700">Pattern Preview <span class="text-xs text-gray-400 ml-1">for developers</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button @click="reset()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full font-bold shadow-md transition flex items-center gap-1 text-sm">
+                    <span>↺</span> リセット
+                </button>
+                <button @click="randomize()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full font-bold shadow-md transition flex items-center gap-1 text-sm">
+                    <span>🎲</span> ランダム
+                </button>
+                <button @click="openPreview()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-full font-bold shadow-md transition flex items-center gap-1 text-sm">
+                    <span>👁️</span> プレビュー
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <!-- 設定パネル -->
+        <div class="lg:col-span-4 space-y-6 mb-8 lg:mb-0">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2">🎨 デザイン・背景</h2>
+                <div class="space-y-4">
+                    <div class="flex bg-gray-100 p-1 rounded-xl">
+                        <button @click="bgType='color'; draw()" :class="bgType==='color'?'bg-white shadow text-pink-600':''" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition">単色</button>
+                        <button @click="bgType='gradient'; draw()" :class="bgType==='gradient'?'bg-white shadow text-pink-600':''" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition">グラデ</button>
+                        <button @click="bgType='pattern'; draw()" :class="bgType==='pattern'?'bg-white shadow text-pink-600':''" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition">柄</button>
+                        <button @click="bgType='image'; draw()" :class="bgType==='image'?'bg-white shadow text-pink-600':''" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition">画像</button>
+                    </div>
+
+                    <div x-show="bgType==='pattern'">
+                        <input type="color" x-model="config.bgColor" @input="updateThumbnails(); draw()" class="w-full h-8 mb-2 rounded cursor-pointer">
+                        <div class="grid grid-cols-5 gap-2">
+                            <template x-for="(p, idx) in patterns">
+                                <button @click="config.patternIndex = idx; draw()" 
+                                        class="aspect-square rounded-lg border hover:ring-2 ring-pink-400 relative overflow-hidden"
+                                        :class="config.patternIndex === idx ? 'ring-2 ring-pink-500' : ''">
+                                    <div class="absolute inset-0 bg-cover bg-center" :style="`background-image: url(${p.thumbUrl});`"></div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- 他の設定項目は省略せず最低限動作するものとして残します -->
+                    <div x-show="bgType==='color'">
+                         <input type="color" x-model="config.bgColor" @input="draw()" class="w-full h-10 rounded cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プレビューエリア -->
+        <div class="lg:col-span-8">
+            <div class="bg-gray-200 rounded-2xl p-4 shadow-inner text-center">
+                <canvas x-ref="canvas" width="1200" height="1600" class="w-full h-auto max-w-[400px] mx-auto bg-white shadow-xl rounded-lg"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- プレビューモーダル -->
+    <div x-show="preview.isOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" style="display: none;">
+        <button @click="preview.isOpen = false" class="absolute top-4 right-4 text-white hover:text-gray-300 z-[100] bg-gray-800/50 rounded-full p-2 transition">✕</button>
+        <div class="relative w-full h-full flex flex-col items-center justify-center" @click.self="preview.isOpen = false">
+            <img x-show="preview.src" :src="preview.src" class="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-md" @click.stop>
+        </div>
+    </div>
+
+    <script>
+        function canvasApp() {
+            return {
+                bgType: 'pattern',
+                bgImageObj: null,
+                defaults: {
+                    title: 'Pattern Preview',
+                    labelTop: 'Top', labelBottom: 'Bottom', labelLeft: 'Left', labelRight: 'Right',
+                    watermark: '@patterns',
+                    fontFamily: "'M PLUS Rounded 1c'",
+                    textColor: '#ec4899', textGlass: true, textShadow: true, labelRounded: true,
+                    bgColor: '#fbcfe8',
+                    gradientStart: '#fbcfe8', gradientEnd: '#a78bfa', gradientDirection: 'br',
+                    patternIndex: 0, 
+                    cornerRadius: 60, gridEnabled: true, graphShadow: true,
+                    crossType: 'gap', crossColor: '#ec4899', crossWidth: 4,
+                },
+                config: {},
+                preview: { isOpen: false, src: null },
+                gradientDirections: [ { value: 'br', icon: '↘' } ], // 簡略化
+
+                // ▼▼▼ patterns.js から読み込んだデータを使用 ▼▼▼
+                patterns: window.chartPatternsConfig || [],
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+                init() {
+                    this.reset();
+                    this.$watch('config.fontFamily', (val) => {
+                        document.fonts.load(`bold 20px ${val}`).then(() => { this.draw(); });
+                        setTimeout(() => this.draw(), 100);
+                    });
+                    document.fonts.ready.then(() => { this.updateThumbnails(); this.draw(); });
+                },
+
+                reset() {
+                    this.config = JSON.parse(JSON.stringify(this.defaults));
+                    this.bgType = 'pattern';
+                    this.$nextTick(() => { if(this.bgType === 'pattern') this.updateThumbnails(); this.draw(); });
+                },
+
+                randomize() {
+                    this.config.patternIndex = Math.floor(Math.random() * this.patterns.length);
+                    this.updateThumbnails();
+                    this.draw();
+                },
+
+                updateThumbnails() {
+                    const tempC = document.createElement('canvas'); tempC.width = 100; tempC.height = 100;
+                    const ctx = tempC.getContext('2d');
+                    this.patterns.forEach(p => {
+                        ctx.fillStyle = this.config.bgColor; ctx.fillRect(0, 0, 100, 100);
+                        this.drawPattern(ctx, 100, 100, p.canvas);
+                        p.thumbUrl = tempC.toDataURL();
+                    });
+                },
+
+                draw() {
+                    const canvas = this.$refs.canvas;
+                    const ctx = canvas.getContext('2d');
+                    const W = canvas.width; const H = canvas.height;
+                    ctx.clearRect(0, 0, W, H);
+                    
+                    // 背景のみ簡略描画
+                    if(this.bgType === 'pattern') {
+                        ctx.fillStyle = this.config.bgColor; ctx.fillRect(0, 0, W, H);
+                        this.drawPattern(ctx, W, H, this.patterns[this.config.patternIndex].canvas);
+                    } else if (this.bgType === 'color') {
+                        ctx.fillStyle = this.config.bgColor; ctx.fillRect(0, 0, W, H);
+                    }
+                    
+                    // 枠線
+                    ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.lineWidth = 10; ctx.strokeRect(0,0,W,H);
+                },
+
+                drawPattern(ctx, w, h, p) {
+                    const tempCanvas = document.createElement('canvas');
+                    const tCtx = tempCanvas.getContext('2d');
+                    if (p.opacity) tCtx.globalAlpha = p.opacity;
+
+                    if (p.type === 'dot') {
+                        tempCanvas.width = p.spacing; tempCanvas.height = p.spacing;
+                        tCtx.fillStyle = p.color; tCtx.beginPath(); tCtx.arc(p.spacing/2, p.spacing/2, p.size, 0, Math.PI*2); tCtx.fill();
+                    } else if (p.type === 'ichimatsu') {
+                        tempCanvas.width = p.size * 2; tempCanvas.height = p.size * 2;
+                        tCtx.fillStyle = p.color; tCtx.fillRect(0, 0, p.size, p.size); tCtx.fillRect(p.size, p.size, p.size, p.size);
+                    } else if (p.type === 'stripe') {
+                        const size = p.width * 2;
+                        tempCanvas.width = size; tempCanvas.height = size;
+                        tCtx.fillStyle = p.color;
+                        tCtx.beginPath();
+                        tCtx.moveTo(0, size); tCtx.lineTo(size, 0); tCtx.lineTo(size + p.width, 0); tCtx.lineTo(p.width, size); tCtx.fill();
+                        tCtx.beginPath(); tCtx.moveTo(0, 0); tCtx.lineTo(p.width, 0); tCtx.lineTo(0, p.width); tCtx.fill();
+                    } else if (p.type === 'check') {
+                        tempCanvas.width = p.size; tempCanvas.height = p.size;
+                        tCtx.fillStyle = p.color; tCtx.fillRect(0, 0, p.size, p.size/2);
+                        tCtx.globalCompositeOperation = 'source-over'; 
+                        tCtx.fillStyle = p.color; tCtx.fillRect(0, 0, p.size/2, p.size);
+                    } else if (p.type === 'argyle') {
+                        tempCanvas.width = p.size; tempCanvas.height = p.size;
+                        tCtx.fillStyle = p.color;
+                        tCtx.beginPath(); tCtx.moveTo(p.size/2, 0); tCtx.lineTo(p.size, p.size/2); tCtx.lineTo(p.size/2, p.size); tCtx.lineTo(0, p.size/2); tCtx.fill();
+                        tCtx.strokeStyle = "rgba(255,255,255,0.6)"; tCtx.lineWidth = 1;
+                        tCtx.beginPath(); tCtx.moveTo(0,0); tCtx.lineTo(p.size, p.size); tCtx.moveTo(p.size,0); tCtx.lineTo(0, p.size); tCtx.stroke();
+                    }
+                    const pattern = ctx.createPattern(tempCanvas, 'repeat');
+                    ctx.fillStyle = pattern; ctx.fillRect(0, 0, w, h);
+                },
+                
+                openPreview() {
+                    this.preview.src = this.$refs.canvas.toDataURL('image/png');
+                    this.preview.isOpen = true;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

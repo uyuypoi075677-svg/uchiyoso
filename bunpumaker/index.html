@@ -12,6 +12,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
+    <!-- ▼▼▼ パス修正: 親階層を経由して patterns.js を読み込み ▼▼▼ -->
+    <script src="../patterns/patterns.js"></script>
+    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+
     <script>
         tailwind.config = {
             theme: {
@@ -243,13 +247,9 @@
                     { value: 'br', icon: '↘' }, { value: 'tr', icon: '↗' }, { value: 'circle', icon: '◎' }, { value: 'conic', icon: '◑' },
                 ],
 
-                patterns: [
-                    { id: 1, canvas: { type: 'dot', color: '#ffffff', size: 4, spacing: 20, opacity: 0.7 }, thumbUrl: '' },
-                    { id: 2, canvas: { type: 'stripe', color: 'rgba(255,255,255,0.4)', width: 20 }, thumbUrl: '' },
-                    { id: 3, canvas: { type: 'check', color: 'rgba(255,255,255,0.3)', size: 40 }, thumbUrl: '' },
-                    { id: 4, canvas: { type: 'ichimatsu', color: 'rgba(255,255,255,0.4)', size: 40 }, thumbUrl: '' },
-                    { id: 5, canvas: { type: 'argyle', color: 'rgba(255,255,255,0.3)', size: 60 }, thumbUrl: '' }
-                ],
+                // ▼▼▼ patterns.js から読み込んだデータを使用 ▼▼▼
+                patterns: window.chartPatternsConfig || [],
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
                 init() {
                     // ★初期化★
