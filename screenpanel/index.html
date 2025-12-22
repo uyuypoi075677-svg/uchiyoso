@@ -6,7 +6,6 @@
     <title>Cocofolia Panel Generator V31 - Luxury Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <!-- 外部パターンライブラリの読み込み -->
     <script src="../patterns/patterns.js"></script>
     <style>
@@ -247,8 +246,10 @@
         const compCtx = compCanvas.getContext('2d');
 
         function init() {
+            // 初期設定でも最高品質を指定
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
+            
             addListeners();
             // パターンボタンの生成
             initPatternButtons();
@@ -406,6 +407,7 @@
 
         function resizePreview() {
             canvas.width = state.width; canvas.height = state.height;
+            // リサイズ時にコンテキスト設定がリセットされる場合があるため再設定
             ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
             
             const areaW = previewContainer.clientWidth - 80; const areaH = previewContainer.clientHeight - 80;
@@ -425,10 +427,11 @@
 
         // --- V31 Core Engine ---
         function draw() {
-            const S = 2;
+            const S = 2; // Super-Sampling Scale
             const W = state.width * S;
             const H = state.height * S;
 
+            // 各Canvasの設定を確実に最高品質にする
             offCanvas.width = W; offCanvas.height = H; 
             offCtx.imageSmoothingEnabled = true; offCtx.imageSmoothingQuality = 'high';
             
@@ -438,17 +441,24 @@
             compCanvas.width = W; compCanvas.height = H;
             compCtx.imageSmoothingEnabled = true; compCtx.imageSmoothingQuality = 'high';
             
+            ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
             ctx.clearRect(0,0,state.width,state.height);
 
             const marginPx = Math.min(W, H) * (state.margin / 100);
             const drawX = marginPx; const drawY = marginPx;
             const drawW = W - (marginPx * 2); const drawH = H - (marginPx * 2);
 
-            // 1. ソース画像の描画
+            // 1. ソース画像の描画 (High-Res Fill)
             offCtx.save();
             drawFill(offCtx, 0, 0, W, H, S);
             
-            // 2. 装飾の描画 (背景の上に描画される)
+            // ★ バンディング対策の肝：高解像度段階でのディザリング適用 ★
+            // グラデーション等の階調を散らしてから縮小することで、より自然な滑らかさを得る
+            if (state.fill === 'linear' || state.fill === 'solid') {
+                applyDithering(offCtx, W, H, 5); // 強度5のノイズを注入
+            }
+            
+            // 2. 装飾の描画
             if (state.deco !== 'none') {
                 drawDeco(offCtx, drawX, drawY, drawW, drawH, S);
             }
@@ -469,7 +479,7 @@
 
             // 5. 合成 (影 + 不透明度)
             compCtx.save();
-            compCtx.globalAlpha = state.opacity; // ここで不透明度を反映
+            compCtx.globalAlpha = state.opacity;
             if (state.sDist > 0 || state.sBlur > 0) {
                 const rad = state.sAngle * (Math.PI/180);
                 compCtx.shadowColor = "rgba(0,0,0,0.8)";
@@ -489,20 +499,29 @@
             compCtx.fill();
             compCtx.restore();
 
-            // 7. 出力
+            // 7. 出力 (Downscaling)
+            // 高解像度でノイズ処理済みの画像を縮小するため、非常に滑らかな階調になる
             ctx.drawImage(compCanvas, 0, 0, state.width, state.height);
-            applyDithering(ctx, state.width, state.height);
+            
+            // 最後の仕上げにごく弱いディザリングをかける（念のため）
+            // applyDithering(ctx, state.width, state.height, 2); 
+            // ↑今回は高解像度側で処理したので、ここでは不要と判断しコメントアウト（ザラザラ感防止）
         }
 
-        function applyDithering(c, w, h) {
+        // --- Improved Dithering Function ---
+        function applyDithering(c, w, h, amount = 3) {
             const idata = c.getImageData(0, 0, w, h);
             const data = idata.data;
             for (let i = 0; i < data.length; i += 4) {
                 if (data[i+3] > 0) { 
-                    const noise = (Math.random() - 0.5) * 3; 
-                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
-                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise));
-                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise));
+                    // RGBそれぞれに独立したノイズを加えることで色の段差を散らす
+                    const rNoise = (Math.random() - 0.5) * amount;
+                    const gNoise = (Math.random() - 0.5) * amount;
+                    const bNoise = (Math.random() - 0.5) * amount;
+                    
+                    data[i]   = Math.min(255, Math.max(0, data[i]   + rNoise));
+                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + gNoise));
+                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + bNoise));
                 }
             }
             c.putImageData(idata, 0, 0);
