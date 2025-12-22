@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <!-- ▼▼▼ 上部ニュース＆レポートバー ▼▼▼ -->
+    <!-- ▼▼▼ 新設：上部ニュース＆レポートバー ▼▼▼ -->
     <div class="top-news-bar">
         <div class="news-label-badge">
             <span class="material-symbols-rounded">campaign</span> NEWS
@@ -25,90 +25,57 @@
         </div>
 
         <div class="header-right-area">
-            <!-- レポート -->
+            <!-- レポート（はみ出しOK） -->
             <div class="honobono-report" id="report-text">
-                <!-- script.jsにより report.json の内容が表示されます -->
+                <!-- ここに report.json の内容が表示されます -->
             </div>
-            <!-- ▼▼▼ 時計（リンクに変更） ▼▼▼ -->
-            <!-- hrefにお好みのリンク先（時間設定ページなど）を指定してください -->
-            <a href="setting/time.html" class="digital-clock" id="digital-clock" title="時間設定へ">00:00</a>
+            <!-- 時計 -->
+            <div class="digital-clock" id="digital-clock">00:00</div>
         </div>
     </div>
 
     <div class="ambient-light"></div>
     
-    <!-- ▼▼▼ ラッパー（サイドバーとメインエリアの横並び用） ▼▼▼ -->
-    <div class="main-wrapper">
-
-        <!-- ▼▼▼ 左側のお知らせ版（サイドバー） ▼▼▼ -->
-        <aside class="side-info-panel">
-            <div class="info-header">
-                <span class="material-symbols-rounded">notifications</span> Information
-            </div>
-            <ul class="info-list">
-                <li>
-                    <span class="date">2025.04.15</span>
-                    <span class="text">新機能「スクリーンパネル生成」を追加しました。</span>
-                </li>
-                <li>
-                    <span class="date">2025.04.10</span>
-                    <span class="text">「ログ変換」ツールでチャット履歴を保存できるようになりました。</span>
-                </li>
-                <li>
-                    <span class="date">2025.04.01</span>
-                    <span class="text">春のテーマカラー更新。配色はパレットから変更可能です。</span>
-                </li>
-            </ul>
-            
-            <div class="info-header sub-header">
-                <span class="material-symbols-rounded">favorite</span> Thanks
-            </div>
-            <div class="info-footer-text">
-                不具合報告やご要望は<br>ページ下部のシェアボタン、<br>またはSNSまでお願いします。
-            </div>
-        </aside>
-
-        <!-- ▼▼▼ メインツールエリア（3D弁当箱） ▼▼▼ -->
-        <div class="bento-container">
-            
-            <!-- プロフィール -->
-            <div class="glass-card area-profile">
-                <div class="profile-header">
-                    <div class="avatar"></div>
-                    <div>
-                        <h1 class="site-title">Uchiyoso Maker</h1>
-                        <p class="site-desc">あなたの「うちよそ」を、もっと特別に。</p>
-                    </div>
-                </div>
-                <p class="profile-text">
-                    創作活動を支援するデザインツールセット。<br>
-                    関係性グラフやSS、セッション素材を<br>
-                    まるで魔法のように直感的に作成できます。
-                </p>
-            </div>
-
-            <!-- 飾りティッカー -->
-            <div class="glass-card area-ticker">
-                <div class="ticker-wrap">
-                    <div class="ticker-content">
-                        <div class="ticker-item"><span>♥</span>LOVE</div>
-                        <div class="ticker-item hollow">CREATION</div>
-                        <div class="ticker-item"><span>★</span>DREAM</div>
-                        <div class="ticker-item hollow">STORY</div>
-                        <div class="ticker-item"><span>♦</span>RELATION</div>
-                        <div class="ticker-item hollow">UCHIYOSO</div>
-                        <!-- ループ用 -->
-                        <div class="ticker-item"><span>♥</span>LOVE</div>
-                        <div class="ticker-item hollow">CREATION</div>
-                        <div class="ticker-item"><span>★</span>DREAM</div>
-                        <div class="ticker-item hollow">STORY</div>
-                        <div class="ticker-item"><span>♦</span>RELATION</div>
-                        <div class="ticker-item hollow">UCHIYOSO</div>
-                    </div>
+    <div class="bento-container">
+        
+        <!-- プロフィール -->
+        <div class="glass-card area-profile">
+            <div class="profile-header">
+                <div class="avatar"></div>
+                <div>
+                    <h1 class="site-title">Uchiyoso Maker</h1>
+                    <p class="site-desc">あなたの「うちよそ」を、もっと特別に。</p>
                 </div>
             </div>
+            <p class="profile-text">
+                創作活動を支援するデザインツールセット。<br>
+                美しい関係性グラフやSSを、<br>
+                まるで魔法のように直感的に作成できます。
+            </p>
+        </div>
 
-            <!-- ツールリンク群 -->
+        <!-- 飾りティッカー -->
+        <div class="glass-card area-ticker">
+            <div class="ticker-wrap">
+                <div class="ticker-content">
+                    <div class="ticker-item"><span>♥</span>LOVE</div>
+                    <div class="ticker-item hollow">CREATION</div>
+                    <div class="ticker-item"><span>★</span>DREAM</div>
+                    <div class="ticker-item hollow">STORY</div>
+                    <div class="ticker-item"><span>♦</span>RELATION</div>
+                    <div class="ticker-item hollow">UCHIYOSO</div>
+                    <!-- ループ用 -->
+                    <div class="ticker-item"><span>♥</span>LOVE</div>
+                    <div class="ticker-item hollow">CREATION</div>
+                    <div class="ticker-item"><span>★</span>DREAM</div>
+                    <div class="ticker-item hollow">STORY</div>
+                    <div class="ticker-item"><span>♦</span>RELATION</div>
+                    <div class="ticker-item hollow">UCHIYOSO</div>
+                </div>
+            </div>
+        </div>
+
+             <!-- ツールリンク群 -->
             
             <!-- 既存: 分布図 -->
             <a href="bunpumaker/index.html" class="glass-card area-tool area-tool-wide">
@@ -237,6 +204,7 @@
     <div class="bottom-ribbon-container" id="bottom-ribbon">
         <div class="ribbon-bar">
             <div class="ribbon-stitch"></div>
+            <!-- 中身は空っぽ -->
         </div>
         <!-- 収納ボタン -->
         <button class="ribbon-toggle-btn" id="ribbon-toggle" title="リボンを隠す">
@@ -244,7 +212,7 @@
         </button>
     </div>
 
-    <script src="https://chocolatmer.github.io/uchiyoso/character/list.html"></script>
+    <script src="TOP/script.js"></script>
 
 </body>
 </html>
