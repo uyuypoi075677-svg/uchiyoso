@@ -1,9 +1,11 @@
+--- START OF FILE index.html ---
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChartMaker Pro (Final v13 Pattern Scale)</title>
+    <title>ChartMaker Pro (Color Custom V2)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
-    <!-- 親階層の patterns.js を読み込み -->
+    <!-- 柄設定ファイルを読み込み (パスは環境に合わせて調整) -->
     <script src="../patterns/patterns.js"></script>
 
     <script>
@@ -107,20 +109,44 @@
                     </div>
 
                     <div x-show="bgType==='pattern'">
+                        <label class="text-xs font-bold text-gray-500">背景のベース色</label>
                         <input type="color" x-model="config.bgColor" @input="updateThumbnails(); draw()" class="w-full h-8 mb-2 rounded cursor-pointer">
+                        
                         <div class="grid grid-cols-5 gap-2 mb-3">
                             <template x-for="(p, idx) in patterns">
-                                <button @click="config.patternIndex = idx; draw()" 
+                                <button @click="setPattern(idx)" 
                                         class="aspect-square rounded-lg border hover:ring-2 ring-pink-400 relative overflow-hidden"
                                         :class="config.patternIndex === idx ? 'ring-2 ring-pink-500' : ''">
                                     <div class="absolute inset-0 bg-cover bg-center" :style="`background-image: url(${p.thumbUrl});`"></div>
                                 </button>
                             </template>
                         </div>
-                        <!-- ▼▼▼ 柄のサイズ調整スライダー (新規追加) ▼▼▼ -->
-                        <div class="flex items-center gap-2 p-2 bg-pink-50 rounded-lg border border-pink-100">
-                            <span class="text-xs font-bold text-pink-500 whitespace-nowrap">柄の大きさ</span>
-                            <input type="range" min="0.2" max="3.0" step="0.1" x-model="config.patternScale" @input="draw()" class="w-full h-1.5 bg-pink-200 rounded-lg accent-pink-500 cursor-pointer">
+                        
+                        <!-- 柄の詳細設定 -->
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
+                            <!-- 柄の大きさ -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-gray-500 w-16">柄サイズ</span>
+                                <input type="range" min="0.2" max="3.0" step="0.1" x-model="config.patternScale" @input="draw()" class="flex-1 h-1.5 bg-gray-200 rounded-lg accent-pink-500 cursor-pointer">
+                            </div>
+
+                            <!-- 柄の色 (メイン) -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-gray-500 w-16">柄の色</span>
+                                <input type="color" x-model="config.patternColor" @input="draw()" class="h-6 w-8 rounded cursor-pointer border border-gray-300">
+                                
+                                <!-- 柄の色 (サブ・2色柄の時のみ表示) -->
+                                <template x-if="patterns[config.patternIndex] && patterns[config.patternIndex].canvas.color2">
+                                    <input type="color" x-model="config.patternColor2" @input="draw()" class="h-6 w-8 rounded cursor-pointer border border-gray-300 ml-1">
+                                </template>
+                            </div>
+
+                            <!-- 柄の透明度 -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-gray-500 w-16">透明度</span>
+                                <input type="range" min="0.1" max="1.0" step="0.05" x-model="config.patternOpacity" @input="draw()" class="flex-1 h-1.5 bg-gray-200 rounded-lg accent-gray-500 cursor-pointer">
+                                <span class="text-xs text-gray-400 w-6 text-right" x-text="Math.round(config.patternOpacity * 100) + '%'"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -232,8 +258,10 @@
                     bgColor: '#fbcfe8',
                     gradientStart: '#fbcfe8', gradientEnd: '#a78bfa', gradientDirection: 'br',
                     patternIndex: 4, 
-                    // ★デフォルト倍率：1.0
                     patternScale: 1.0, 
+                    patternColor: '#ffffff', // 初期値仮置き
+                    patternColor2: '#ffffff',
+                    patternOpacity: 0.5,
                     cornerRadius: 60,
                     gridEnabled: true,
                     graphShadow: true,
@@ -253,7 +281,7 @@
                 patterns: window.ChartPatternLibrary.config,
 
                 init() {
-                    this.reset();
+                    this.reset(); // ここで初期パターン情報を読み込む
                     this.$watch('config.fontFamily', (val) => {
                         document.fonts.load(`bold 20px ${val}`).then(() => { this.draw(); });
                         setTimeout(() => this.draw(), 100);
@@ -262,10 +290,31 @@
                 },
 
                 reset() {
+                    // 基本設定をリセット
                     this.config = JSON.parse(JSON.stringify(this.defaults));
+                    
+                    // 現在のパターンIDに基づいて初期色と透明度をセット
+                    this.syncPatternSettings(this.config.patternIndex);
+
                     this.bgType = 'pattern';
                     this.bgImageObj = null;
                     this.$nextTick(() => { if(this.bgType === 'pattern') this.updateThumbnails(); this.draw(); });
+                },
+
+                // パターン切り替え時に、そのパターンのデフォルト色を反映する
+                setPattern(idx) {
+                    this.config.patternIndex = idx;
+                    this.syncPatternSettings(idx);
+                    this.draw();
+                },
+
+                syncPatternSettings(idx) {
+                    const p = this.patterns[idx].canvas;
+                    this.config.patternColor = p.color;
+                    this.config.patternOpacity = p.opacity;
+                    if (p.color2) {
+                        this.config.patternColor2 = p.color2;
+                    }
                 },
 
                 randomize() {
@@ -288,9 +337,17 @@
                     this.config.gradientStart = randColor();
                     this.config.gradientEnd = randColor();
                     this.config.gradientDirection = pick(directions);
-                    this.config.patternIndex = Math.floor(Math.random() * this.patterns.length);
-                    // ランダム時も適度なサイズに
+                    
+                    // パターンランダム
+                    const rndPatIdx = Math.floor(Math.random() * this.patterns.length);
+                    this.config.patternIndex = rndPatIdx;
+                    this.syncPatternSettings(rndPatIdx); // デフォルト色をロード
                     this.config.patternScale = (Math.random() * 1.5 + 0.5).toFixed(1);
+                    
+                    // 50%の確率でパターン色もランダムに変えてみる
+                    if (randBool()) {
+                        this.config.patternColor = randColor();
+                    }
 
                     this.config.cornerRadius = Math.floor(Math.random() * 200);
                     this.config.gridEnabled = randBool();
@@ -310,7 +367,7 @@
                     const ctx = tempC.getContext('2d');
                     this.patterns.forEach(p => {
                         ctx.fillStyle = this.config.bgColor; ctx.fillRect(0, 0, 100, 100);
-                        // ★★★ 修正点: サムネイル作成時は倍率を 0.4 に固定して見やすくする ★★★
+                        // サムネイルはデフォルトの色（設定ファイルの値）で描画してわかりやすくする
                         window.ChartPatternLibrary.draw(ctx, 100, 100, p.canvas, 0.4);
                         p.thumbUrl = tempC.toDataURL();
                     });
@@ -354,11 +411,25 @@
                         ctx.fillStyle = grd;
                         ctx.fillRect(0, 0, W, H);
                     } else {
+                        // 背景色
                         ctx.fillStyle = this.config.bgColor;
                         ctx.fillRect(0, 0, W, H);
+                        
                         if (this.bgType === 'pattern') {
-                            // ★★★ 修正点: ユーザー指定の倍率 (patternScale) を適用 ★★★
-                            window.ChartPatternLibrary.draw(ctx, W, H, this.patterns[this.config.patternIndex].canvas, this.config.patternScale);
+                            // ★ユーザーが設定した色と透明度を渡す
+                            const overrides = {
+                                color: this.config.patternColor,
+                                opacity: parseFloat(this.config.patternOpacity),
+                                // 2色目がある場合のみ渡す
+                                color2: this.patterns[this.config.patternIndex].canvas.color2 ? this.config.patternColor2 : null
+                            };
+
+                            window.ChartPatternLibrary.draw(
+                                ctx, W, H, 
+                                this.patterns[this.config.patternIndex].canvas, 
+                                this.config.patternScale,
+                                overrides
+                            );
                         }
                     }
 
