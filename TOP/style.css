@@ -17,9 +17,14 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-html, body { width: 100%; overflow-x: hidden; }
+html { 
+    width: 100%; 
+    overflow-x: hidden; /* 横スクロールバー防止 */
+}
 
 body {
+    width: 100%;
+    overflow-x: hidden;
     font-family: "Zen Maru Gothic", sans-serif;
     background-color: #fce4ec;
     background-image: url('../images/background/fur-texture-pink.jpg');
@@ -27,7 +32,7 @@ body {
     background-position: center;
     min-height: 100vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* 縦積みベース */
     align-items: center; 
     color: var(--text-main);
     perspective: 1500px;
@@ -36,29 +41,33 @@ body {
 }
 
 .ambient-light {
-    position: absolute; width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.1) 100%);
     pointer-events: none; z-index: 0;
 }
 
-/* === 修正：メインラッパー（中央配置） === */
+/* === 修正：メインラッパー（レイアウトの要） === */
 .main-wrapper {
-    display: flex;
-    gap: 30px;
-    width: 1200px;
-    max-width: 95%;
-    /* ここで中央揃えを確実に指定 */
-    margin: 0 auto; 
-    justify-content: center;
-    align-items: flex-start;
+    /* 画面全体を使って配置制御 */
     position: relative;
+    width: 100%;
+    max-width: 100%; 
+    display: flex;
+    justify-content: center; /* メインパネルを中央へ */
+    align-items: flex-start;
+    padding: 20px 0;
     z-index: 10;
 }
 
-/* === サイドバー（お知らせ版） === */
+/* === 修正：サイドバー（お知らせ版） === */
 .side-info-panel {
+    /* 画面幅が広いときは左端に絶対配置 */
+    position: absolute;
+    left: 40px; 
+    top: 20px;
     width: 260px;
-    flex-shrink: 0;
+    z-index: 20;
+    
     background: var(--glass-bg);
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -68,6 +77,8 @@ body {
     padding: 24px;
     display: flex; flex-direction: column;
     transform: translateZ(0);
+    opacity: 0;
+    animation: entranceFadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .info-header {
@@ -93,19 +104,23 @@ body {
     font-size: 0.8rem; color: var(--text-sub); line-height: 1.6; margin-top: 5px;
 }
 
-/* === PC用 3Dグリッド === */
+/* === PC用 3Dグリッド（メインパネル） === */
 .bento-container {
-    flex-grow: 1; 
+    /* Flexアイテムとして中央配置 */
+    position: relative;
+    width: 1000px; 
+    max-width: 90%;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-auto-rows: auto;
     gap: 24px;
+    
     transform: rotateX(5deg) translateY(-20px);
     transform-style: preserve-3d;
     transition: transform 0.5s ease;
-    /* 修正：コンテナ自体も中央寄せの挙動を安定させる */
-    margin-left: auto;
-    margin-right: auto;
+    
+    /* マージンで明示的に中央揃えを強化 */
+    margin: 0 auto;
 }
 
 /* === グラスモーフィズムカード === */
@@ -120,12 +135,12 @@ body {
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     position: relative; overflow: hidden;
     
-    /* 修正：チカチカ防止のための設定 */
+    /* チカチカ防止設定 */
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     transform: translateZ(0px); 
     transform-style: preserve-3d;
-    backface-visibility: hidden; /* 裏面の描画を抑制してちらつき防止 */
-    will-change: transform;      /* ブラウザへアニメーション予告 */
+    backface-visibility: hidden;
+    will-change: transform;
     -webkit-font-smoothing: subpixel-antialiased;
 }
 
@@ -185,14 +200,14 @@ body {
 .area-tool { grid-column: span 1; aspect-ratio: 1 / 1; cursor: pointer; text-align: center; }
 .area-tool-wide { grid-column: span 2; aspect-ratio: auto; flex-direction: row; gap: 20px; justify-content: flex-start; padding-left: 40px; }
 
-/* 修正：アイコンのチカチカ防止 */
+/* アイコン */
 .icon-circle {
     width: 64px; height: 64px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 32px; color: var(--accent-pink); margin-bottom: 12px;
     box-shadow: 0 10px 25px rgba(255, 158, 187, 0.2); 
     transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
     transform: translateZ(20px); flex-shrink: 0; pointer-events: none;
-    will-change: transform; /* アニメーション最適化 */
+    will-change: transform; 
     backface-visibility: hidden;
 }
 
@@ -228,8 +243,7 @@ body {
 @keyframes dance-reverse { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(6px) rotate(3deg); } 75% { transform: translateY(-2px) rotate(-2deg); } }
 @keyframes bounce { 0%, 100% { transform: translateZ(30px) translateY(0); } 50% { transform: translateZ(30px) translateY(-5px); } }
 @keyframes entranceFadeUp { 0% { opacity: 0; transform: translateY(60px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-.glass-card, .area-share, .side-info-panel { opacity: 0; animation: entranceFadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-.side-info-panel { animation-delay: 0s; }
+.glass-card, .area-share { opacity: 0; animation: entranceFadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 .glass-card:nth-of-type(1) { animation-delay: 0.1s; } 
 .glass-card:nth-of-type(2) { animation-delay: 0.2s; } 
 
@@ -286,10 +300,22 @@ body {
     white-space: nowrap; height: 100%; display: flex; align-items: center;
     mask-image: linear-gradient(to right, transparent 0%, black 20px, black 95%, transparent 100%);
 }
+
+/* 修正：スクロールバー対策（paddingではなくtransformで制御） */
 .news-content {
     display: inline-block; white-space: nowrap;
-    animation: news-scroll 80s linear infinite; padding-left: 100%; will-change: transform;
+    padding-left: 0;
+    /* 画面右外から開始するように初期位置をずらす */
+    transform: translateX(100%); 
+    animation: news-scroll 40s linear infinite; 
+    will-change: transform;
 }
+/* キーフレームも変更 */
+@keyframes news-scroll { 
+    0% { transform: translateX(100%); } 
+    100% { transform: translateX(-100%); } 
+}
+
 .news-item { display: inline-block; margin-right: 60px; position: relative; color: var(--text-main); font-size: 0.9rem; }
 .news-item::before { content: '★'; color: var(--accent-pink); margin-right: 6px; }
 
@@ -329,8 +355,6 @@ a.digital-clock:hover {
     animation: fadeReport 15s infinite;
 }
 
-@keyframes news-scroll { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
-
 @keyframes fadeReport {
     0% { opacity: 0; transform: translateY(10px); }
     10% { opacity: 1; transform: translateY(0); }
@@ -365,23 +389,36 @@ a.digital-clock:hover {
 .ribbon-toggle-btn span { font-size: 20px; transition: 0.5s; }
 .bottom-ribbon-container.hidden .ribbon-toggle-btn span { transform: rotate(180deg); }
 
-/* === スマホ・タブレット最適化 === */
-@media (max-width: 950px) {
+/* === レスポンシブ: 重なる幅でレイアウト変更 === */
+/* 目安: メイン(1000px) + 左(260px) + 余裕(100px) = 1360px */
+@media (max-width: 1360px) {
     .main-wrapper {
         flex-direction: column;
-        width: 94%;
-        margin: 0 auto;
-        gap: 20px;
-        align-items: center; /* スマホ時は中央揃え */
+        align-items: center; /* 中央揃え */
+        gap: 30px;
     }
     
     .side-info-panel {
+        /* 絶対配置を解除して通常フローへ */
+        position: static; 
         width: 100%;
-        margin-bottom: 10px;
+        max-width: 600px;
+        order: 0; /* メインより上に表示 */
+        opacity: 1; /* アニメーション完了状態 */
+        animation: none;
     }
 
     .bento-container {
+        /* メインパネル */
+        order: 1;
+    }
+}
+
+/* スマホ・タブレット最適化 */
+@media (max-width: 950px) {
+    .bento-container {
         width: 100%;
+        width: 94%;
         display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
         transform: none !important;
         margin: 0 auto;
