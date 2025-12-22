@@ -264,10 +264,42 @@
                 container.innerHTML = '';
                 ChartPatternLibrary.config.forEach((conf, index) => {
                     const btn = document.createElement('button');
-                    btn.className = 'p-1 bg-[#222] border border-[#444] rounded hover:bg-[#333] text-[9px] text-gray-300 transition';
-                    btn.textContent = `No.${conf.id}`;
+                    btn.className = 'p-1 bg-[#222] border border-[#444] rounded hover:bg-[#333] text-[9px] text-gray-300 transition flex flex-col items-center gap-1 h-auto';
                     btn.id = `btn-pattern-${conf.id}`;
                     btn.onclick = () => setPattern(conf.id);
+
+                    // 1. サムネイル用キャンバスの生成
+                    const thumbSize = 32;
+                    const c = document.createElement('canvas');
+                    c.width = thumbSize; c.height = thumbSize;
+                    c.className = 'rounded border border-[#555]';
+                    
+                    // 2. プレビュー描画（視認性のため、ダークグレー背景＋白柄で固定）
+                    const tCtx = c.getContext('2d');
+                    // 背景
+                    tCtx.fillStyle = '#333333';
+                    tCtx.fillRect(0,0,thumbSize,thumbSize);
+                    
+                    // 柄の設定（白っぽく表示）
+                    const pParams = { ...conf.canvas };
+                    // チェック柄などは半透明にしないと見づらいので調整
+                    if (conf.canvas.type === 'check') {
+                        pParams.color = 'rgba(255,255,255,0.5)';
+                    } else {
+                        pParams.color = 'rgba(255,255,255,0.8)';
+                        if(pParams.color2) pParams.color2 = 'rgba(200,200,200,0.5)';
+                    }
+                    
+                    // ライブラリを使って描画 (縮小スケール)
+                    ChartPatternLibrary.draw(tCtx, thumbSize, thumbSize, pParams, 0.4);
+
+                    btn.appendChild(c);
+
+                    // 3. テキストラベル
+                    const span = document.createElement('span');
+                    span.textContent = `No.${conf.id}`;
+                    btn.appendChild(span);
+
                     container.appendChild(btn);
                 });
                 updatePatternButtonState();
@@ -380,6 +412,14 @@
             let cssW, cssH;
             if (areaW / areaH > aspect) { cssH = areaH; cssW = areaH * aspect; } else { cssW = areaW; cssH = areaW / aspect; }
             canvas.style.width = `${cssW}px`; canvas.style.height = `${cssH}px`;
+        }
+
+        // --- Helper: Hex to RGBA ---
+        function hexToRgba(hex, alpha) {
+            let c = hex.substring(1).split('');
+            if(c.length===3){ c = [c[0], c[0], c[1], c[1], c[2], c[2]]; }
+            c = '0x'+c.join('');
+            return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
         }
 
         // --- V31 Core Engine ---
@@ -513,7 +553,7 @@
                 g.addColorStop(0, color1); g.addColorStop(1, color2);
                 c.fillStyle = g; c.fillRect(x, y, w, h);
             } else if (fill === 'pattern') {
-                // Color1を背景色として塗りつぶす (これにより不透明度と背景色が反映される)
+                // Color1を背景色として塗りつぶす
                 c.fillStyle = color1;
                 c.fillRect(x, y, w, h);
 
@@ -521,8 +561,15 @@
                     const conf = ChartPatternLibrary.config.find(i => i.id === state.patternId);
                     if (conf) {
                         const pParams = { ...conf.canvas };
-                        // Color2を柄の色として使用
-                        pParams.color = color2;
+                        
+                        // ★ チェック柄(No.3)の修正ロジック ★
+                        // チェック柄は重なりを表現するため、強制的に半透明にする
+                        if (conf.canvas.type === 'check') {
+                            pParams.color = hexToRgba(color2, 0.5); 
+                        } else {
+                            // その他の柄は指定色をそのまま使う
+                            pParams.color = color2;
+                        }
                         
                         c.save();
                         c.translate(x, y);
