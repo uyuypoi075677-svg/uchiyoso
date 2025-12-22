@@ -5,6 +5,8 @@ let characters = [
     { id: 'char2', name: 'Yua', type: 'other', icon: '../images/icons/lineicon-yua.png', defaultIcon: 'images/icons/lineicon-yua.png' },
     { id: 'char3', name: '天空', type: 'other', icon: '../images/icons/lineicon-sora.png', defaultIcon: 'images/icons/lineicon-sora.png' },
     { id: 'char4', name: '雨蓮', type: 'other', icon: '../images/icons/lineicon-uren.png', defaultIcon: 'images/icons/lineicon-uren.png' },
+    { id: 'char5', name: '澪', type: 'other', icon: '../images/icons/lineicon-mio.png', defaultIcon: 'images/icons/lineicon-mio.png' },
+    { id: 'char6', name: '雷', type: 'other', icon: '../images/icons/lineicon-rai.png', defaultIcon: 'images/icons/lineicon-rai.png' },
 ];
 
 let state = { 
@@ -493,5 +495,6 @@ if(jsonUpload) {
         }
     });
 }
+
 
 init();
