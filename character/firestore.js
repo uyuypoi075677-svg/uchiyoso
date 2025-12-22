@@ -1,4 +1,4 @@
-// --- firestore.js (修正版) ---
+// --- firestore.js (共有設定版) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -23,6 +23,7 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 
 // --- 認証機能 ---
+
 // ログイン処理
 export function login() {
     signInWithPopup(auth, provider)
@@ -54,7 +55,12 @@ export function monitorAuth(onLogin, onLogout) {
     });
 }
 
-// --- データベース機能 ---
+// --- データベース機能 (共有設定) ---
+
+// 2人で共有するための固定された場所を指定
+// ※セキュリティルールで許可した "rooms" コレクションを使用します
+const SHARED_COLLECTION = "rooms";
+const SHARED_DOC_ID = "couple_shared_data"; 
 
 // 保存 (SAVE CLOUD)
 export async function saveToCloud(charData) {
@@ -68,10 +74,11 @@ export async function saveToCloud(charData) {
     }
 
     try {
-        const userRef = doc(db, "users", currentUser.uid);
+        // 【修正】個人のUIDではなく、共有用の固定IDを指定
+        const sharedRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID);
         
         // 既存データを取得してマージ
-        const docSnap = await getDoc(userRef);
+        const docSnap = await getDoc(sharedRef);
         let currentStore = {};
         if (docSnap.exists()) {
             currentStore = docSnap.data().store || {};
@@ -79,12 +86,13 @@ export async function saveToCloud(charData) {
         
         currentStore[charData.name] = charData;
 
-        await setDoc(userRef, { store: currentStore }, { merge: true });
-        alert("UPLOAD COMPLETE: " + charData.name);
+        await setDoc(sharedRef, { store: currentStore }, { merge: true });
+        alert("SHARED UPLOAD COMPLETE: " + charData.name);
         
     } catch (e) {
         console.error("Error adding document: ", e);
-        alert("UPLOAD ERROR: See console.");
+        // エラー詳細：権限がない場合はここに引っかかります
+        alert("UPLOAD ERROR: " + e.message);
     }
 }
 
@@ -96,18 +104,19 @@ export async function loadFromCloud() {
     }
 
     try {
-        const userRef = doc(db, "users", currentUser.uid);
-        const docSnap = await getDoc(userRef);
+        // 【修正】読み込みも共有用の固定IDから取得
+        const sharedRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID);
+        const docSnap = await getDoc(sharedRef);
 
         if (docSnap.exists()) {
             return docSnap.data().store || {};
         } else {
+            // まだデータがひとつもない場合
             return {};
         }
     } catch (e) {
         console.error("Error loading document: ", e);
-        alert("LOAD ERROR: See console.");
+        alert("LOAD ERROR: " + e.message);
         return null;
     }
 }
-
