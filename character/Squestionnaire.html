@@ -76,11 +76,12 @@
         <!-- 左メモ：Global Answers -->
         <div class="memo-paper memo-global">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-blue-200 opacity-70 rotate-1 shadow-sm"></div>
-            <!-- タイトルサイズ調整: text-lg -->
-            <h4 class="font-bold text-lg text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center px-2">
+            <!-- タイトルを大きく (text-xl) -->
+            <h4 class="font-bold text-xl text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center px-2">
                 <i class="fa-solid fa-earth-americas mr-2"></i>Global Voices
             </h4>
-            <div class="h-60 overflow-y-auto px-2 custom-scrollbar">
+            <!-- 高さをさらに調整 (h-48) してはみ出し防止 -->
+            <div class="h-48 overflow-y-auto px-2 custom-scrollbar">
                 <div v-if="!selectedGlobalQuestion" class="text-sm text-gray-500 leading-snug">
                     <p>アンケートの「<i class="fa-solid fa-eye text-amber-600"></i>」ボタンで、他のキャラクターの回答を表示します。</p>
                 </div>
@@ -183,19 +184,20 @@
                     <div v-for="(q, index) in displayedQuestions.slice(0, 5)" :key="q.id" class="question-block group">
                         <div class="question-header">
                             <span class="q-badge">Q.{{ index + 1 }}</span>
-                            <!-- タイトルサイズ調整: text-smを削除し標準+太字強調へ -->
-                            <span class="q-text font-bold">{{ q.text }}</span>
+                            <!-- 質問文: text-base + bold で少し強調 -->
+                            <span class="q-text text-base font-bold">{{ q.text }}</span>
                             <button @click="showGlobalAnswers(q)" class="ml-3 text-amber-600 opacity-0 group-hover:opacity-100 transition text-sm" title="みんなの回答を見る">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
-                        <!-- 修正: rows="1"に戻し、oninputで自動拡張 + 文字サイズ縮小(!text-lg) -->
+                        <!-- 回答欄: rows=1, text-base, oninputで高さ自動拡張 -->
                         <textarea 
                             v-model="answers[q.id]" 
                             rows="1" 
-                            class="input-line !h-auto !text-lg overflow-hidden leading-relaxed py-1" 
+                            class="input-line text-base leading-8 py-1" 
+                            style="min-height: 2.5rem; height: auto; overflow-y: hidden; resize: none;"
                             placeholder="(回答を記述...)"
-                            oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">
+                            oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'">
                         </textarea>
                     </div>
                 </div>
@@ -223,12 +225,12 @@
         <!-- 右メモ：History -->
         <div class="memo-paper memo-history">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-amber-200 opacity-70 -rotate-2 shadow-sm"></div>
-            <!-- タイトルサイズ調整: text-lg -->
-            <h4 class="font-bold text-lg text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center px-2">
+            <!-- タイトルを大きく (text-xl) -->
+            <h4 class="font-bold text-xl text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center px-2">
                 <i class="fa-solid fa-clock-rotate-left mr-2"></i>History
             </h4>
-            <!-- レイアウト調整: h-56に縮小して紙からはみ出さないように -->
-            <div class="h-56 overflow-y-auto px-2 custom-scrollbar">
+            <!-- 高さをさらに調整 (h-48) してはみ出し防止 -->
+            <div class="h-48 overflow-y-auto px-2 custom-scrollbar">
                 <div v-if="history.length === 0" class="text-center text-gray-400 text-sm mt-10 italic">
                     No history found...
                 </div>
