@@ -17,11 +17,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-/* ▼▼▼ 修正：スクロールバーのガタつき防止・一本化 ▼▼▼ */
-html { 
-    width: 100%; 
-    /* 常にスクロールバーを表示させることで、コンテンツ量によるガタつき（勝手に動く現象）を防ぐ */
-    overflow-y: scroll; 
+/* 修正: 二重スクロールバー防止 */
+html {
+    width: 100%;
+    height: 100%;
     overflow-x: hidden;
 }
 
@@ -32,41 +31,48 @@ body {
     background-size: cover;
     background-position: center;
     
-    min-height: 100vh;
-    
+    /* 修正: PCでは画面一杯を使って中央揃えにするための設定 */
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    
     color: var(--text-main);
     perspective: 1500px;
     
-    /* ▼▼▼ 修正：ヘッダーとの余白を十分に確保（重なり防止） ▼▼▼ */
-    /* Bar(50px) + 余白(40px) + 3D変形の食い込み分(20px) = 110px */
-    padding-top: 110px; 
-    padding-bottom: calc(var(--bottom-ribbon-height) + 40px);
+    /* ヘッダー・フッターに被らないための最小限の余白 */
+    padding-top: calc(var(--top-bar-height) + 20px);
+    padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
     
-    /* body側ではスクロールバーを出さない */
-    overflow: visible;
-    width: 100%;
+    overflow-x: hidden;
     position: relative;
 }
 
 .ambient-light {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: absolute; width: 100%; height: 100%; top: 0; left: 0;
     background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.1) 100%);
     pointer-events: none; z-index: 0;
+}
+
+/* === パーティクル隔離用ラッパー === */
+#particle-wrapper {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    overflow: hidden; pointer-events: none; z-index: -1;
 }
 
 /* === PC用 3Dグリッド === */
 .bento-container {
     position: relative; z-index: 10;
     width: 1000px; max-width: 90%;
+    
+    /* 修正: 画面中央に自動配置（入らない場合はスクロール位置に） */
+    margin: auto;
+    
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: auto auto auto;
     gap: 24px;
-    transform: rotateX(5deg) translateY(-20px);
+    transform: rotateX(5deg);
     transform-style: preserve-3d;
     transition: transform 0.5s ease;
 }
@@ -136,14 +142,6 @@ body {
 .ticker-item.hollow { color: transparent; -webkit-text-stroke: 2px rgba(139, 107, 97, 0.4); opacity: 0.8; }
 .ticker-item span { margin-right: 8px; }
 
-/* リンク用スタイル */
-.ticker-item.trigger-link {
-    cursor: pointer; position: relative; z-index: 100; text-decoration: none; pointer-events: auto;
-}
-.ticker-item.trigger-link:hover {
-    color: var(--text-main); -webkit-text-stroke: 0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-}
-
 /* ツールボタン */
 .area-tool { grid-column: span 1; aspect-ratio: 1 / 1; cursor: pointer; text-align: center; }
 .area-tool-wide { grid-column: span 2; aspect-ratio: auto; flex-direction: row; gap: 20px; justify-content: flex-start; padding-left: 40px; }
@@ -189,26 +187,29 @@ body {
 .glass-card:nth-of-type(7) { animation-delay: 0.7s; } 
 .area-share { animation-delay: 0.9s; }
 
-/* パーティクル（固定配置でスクロール影響なし） */
+/* パーティクル & マスコット */
 .floating-particle {
-    position: fixed; 
+    position: absolute;
     border-radius: 50%; filter: blur(8px); opacity: 0.6; 
-    animation: floatUp 15s linear infinite; 
-    z-index: -1; pointer-events: none; will-change: transform;
+    animation: floatUp 15s linear infinite;
+    pointer-events: none; will-change: transform;
 }
 @keyframes floatUp { 
-    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; } 
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; } 
     10% { opacity: 0.6; } 
     90% { opacity: 0.6; } 
-    100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } 
+    100% { transform: translateY(-130vh) rotate(360deg); opacity: 0; } 
 }
 
 .floating-mascot {
     position: fixed; bottom: 120px; right: 20px; width: 140px; height: auto; z-index: 95; cursor: pointer;
     animation: playful-float 7s ease-in-out infinite; transition: 0.3s; will-change: transform;
 }
-.floating-mascot img { width: 100%; display: block; filter: drop-shadow(0 8px 20px rgba(90, 61, 53, 0.25)); }
-.floating-mascot:hover { transform: scale(1.15) rotate(10deg); }
+.floating-mascot img { width: 100%; display: block; filter: drop-shadow(0 8px 20px rgba(90, 61, 53, 0.25)); transition: filter 0.3s; }
+.floating-mascot:hover { 
+    transform: scale(1.15) rotate(-10deg);
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 30px var(--accent-pink));
+}
 @keyframes playful-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px) rotate(3deg); } }
 
 .pixel-walker {
@@ -277,6 +278,7 @@ body {
     box-shadow: 2px 2px 0 rgba(255, 158, 187, 0.3);
 }
 
+/* === レポート === */
 .honobono-report {
     font-size: 0.95rem; 
     color: var(--text-main);
@@ -287,10 +289,11 @@ body {
 
 @keyframes news-scroll { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
 
+/* 浮き上がって消えるアニメーション */
 @keyframes fadeReport {
     0% { opacity: 0; transform: translateY(10px); }
     10% { opacity: 1; transform: translateY(0); }
-    90% { opacity: 1; transform: translateY(0); } 
+    90% { opacity: 1; transform: translateY(0); }
     100% { opacity: 0; transform: translateY(-10px); }
 }
 
@@ -321,53 +324,114 @@ body {
 .ribbon-toggle-btn span { font-size: 20px; transition: 0.5s; }
 .bottom-ribbon-container.hidden .ribbon-toggle-btn span { transform: rotate(180deg); }
 
-/* === スマホ最適化 === */
+/* === スマホ最適化（全体的に小さくし、密度を上げる修正） === */
 @media (max-width: 768px) {
+    /* ルート変数をスマホ用に上書きし、全体をコンパクトに */
+    :root {
+        --top-bar-height: 40px;      /* 50px -> 40px */
+        --bottom-ribbon-height: 30px; /* 40px -> 30px */
+        --walker-size: 32px;
+    }
+
     body {
-        display: block; overflow-y: auto; overflow-x: hidden;
+        /* 修正: スマホではスクロール前提のBlock配置にする */
+        display: block; 
+        min-height: 100%;
+        overflow-y: auto; overflow-x: hidden;
         height: auto; perspective: none;
-        /* スマホ用余白調整 */
-        padding-top: 100px;
-        padding-bottom: 120px; 
+        
+        /* フォントサイズを小さくしてPC画面に近づける */
+        font-size: 0.85rem; 
+        
+        /* コンパクトなヘッダー・フッターに合わせて余白も縮小 */
+        padding-top: calc(var(--top-bar-height) + 20px);
+        padding-bottom: var(--bottom-ribbon-height); 
     }
     
     .bento-container {
-        width: 94%; margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        /* 幅を広げて情報量を増やす */
+        width: 96%; 
+        margin: 0 auto;
+        display: grid; grid-template-columns: 1fr 1fr; 
+        gap: 12px; /* ギャップを詰める */
         transform: none !important;
     }
     
-    .glass-card { width: 100%; transform: none !important; margin-bottom: 0; }
+    .glass-card { 
+        width: 100%; transform: none !important; margin-bottom: 0;
+        /* パディングを減らして密度アップ */
+        padding: 14px; 
+        border-radius: 24px;
+    }
     .glass-card:active { transform: scale(0.98) !important; background: rgba(255, 255, 255, 0.25); }
 
-    .area-profile { grid-column: span 2; text-align: center; align-items: center; padding: 24px; }
-    .profile-header { flex-direction: column; gap: 12px; margin-bottom: 12px; }
-    .avatar { width: 80px; height: 80px; } 
-    .site-title { font-size: 1.6rem; }
+    /* プロフィールエリア：横並びに戻してコンパクトに */
+    .area-profile { 
+        grid-column: span 2; 
+        text-align: left; 
+        align-items: flex-start; 
+        padding: 20px; 
+    }
+    .profile-header { 
+        flex-direction: row; /* PCと同じ横並び */
+        gap: 16px; 
+        margin-bottom: 12px; 
+    }
+    .avatar { 
+        width: 60px; height: 60px; /* 縮小 */
+        border-width: 3px;
+    } 
+    .site-title { font-size: 1.4rem; }
+    .site-desc { font-size: 0.8rem; }
+    .profile-text { font-size: 0.8rem; line-height: 1.6; }
     
-    .area-ticker { grid-column: span 2; height: 50px; order: 2; }
+    .area-ticker { grid-column: span 2; height: 40px; order: 2; }
+    .ticker-item { font-size: 1.2rem; margin: 0 10px; }
     
-    .area-tool { aspect-ratio: 1 / 1; flex-direction: column; justify-content: center; text-align: center; padding: 10px; gap: 8px; }
-    .area-tool-wide { grid-column: span 2; aspect-ratio: auto; flex-direction: row; justify-content: flex-start; padding: 16px 24px; }
-    .area-tool .icon-circle { width: 54px; height: 54px; font-size: 26px; margin-bottom: 0; transform: none !important; }
+    /* ツールボタン：余白とアイコンを小さく */
+    .area-tool { 
+        aspect-ratio: 1 / 1; 
+        flex-direction: column; justify-content: center; text-align: center; 
+        padding: 10px; gap: 6px; 
+    }
+    .area-tool-wide { 
+        grid-column: span 2; 
+        aspect-ratio: auto; 
+        flex-direction: row; justify-content: flex-start; 
+        padding: 12px 20px; gap: 12px;
+    }
+    .area-tool .icon-circle { 
+        width: 40px; height: 40px; /* アイコン縮小 */
+        font-size: 20px; 
+        margin-bottom: 4px; transform: none !important; 
+    }
+    .area-tool-wide .icon-circle { margin-bottom: 0; }
     
-    .tool-label { font-size: 1rem; }
-    .tool-sub { font-size: 0.75rem; display: none; }
-    .area-tool-wide .tool-sub { display: block; }
+    .tool-label { font-size: 0.9rem; }
+    .tool-sub { font-size: 0.7rem; display: none; }
+    .area-tool-wide .tool-sub { display: block; font-size: 0.7rem; }
     
-    .badge { top: 10px; right: 10px; padding: 4px 10px; font-size: 0.65rem; animation: none; }
-    .area-share { grid-column: span 2; padding: 0; margin-top: 10px; }
+    .badge { top: 8px; right: 8px; padding: 3px 8px; font-size: 0.6rem; animation: none; }
+    .area-share { grid-column: span 2; padding: 0; margin-top: 5px; }
+    .btn-share-pill { padding: 10px 30px; font-size: 0.9rem; }
 
-    .header-right-area { gap: 8px; margin-left: 10px; }
+    /* ヘッダー・フッターも少し小さく */
+    .top-news-bar { height: var(--top-bar-height); font-size: 0.8rem; }
+    .bottom-ribbon-container { height: var(--bottom-ribbon-height); }
+    .ribbon-toggle-btn { width: 36px; height: 20px; top: -20px; }
+    .ribbon-toggle-btn span { font-size: 16px; }
+
+    .header-right-area { gap: 6px; margin-left: 8px; }
     .honobono-report {
-        font-size: 0.8rem;
-        max-width: 150px; 
+        font-size: 0.75rem;
+        max-width: 120px; 
         overflow: hidden; text-overflow: ellipsis;
     }
+    .digital-clock { font-size: 0.9rem; padding: 1px 6px; }
     
-    .floating-mascot { width: 85px; bottom: 100px; right: 10px; }
-    .pixel-walker { bottom: 35px; }
-    :root { --walker-size: 42px; }
+    /* マスコット縮小 */
+    .floating-mascot { width: 70px; bottom: 80px; right: 10px; }
+    .pixel-walker { bottom: 30px; } /* リボン高さに合わせて調整 */
 
     body.ribbon-hidden .floating-mascot { transform: translateY(30px); }
     body.ribbon-hidden .pixel-walker { bottom: 5px; }
