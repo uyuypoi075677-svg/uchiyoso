@@ -304,7 +304,7 @@
             const newsEl = document.getElementById('news-content');
             try {
                 // 同じ階層にあるreport.jsonを読み込み
-                const response = await fetch('./report.json');
+                const response = await fetch('./TOP/report.json');
                 if(!response.ok) throw new Error("JSON Not Found");
                 
                 const newsList = await response.json();
