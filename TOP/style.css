@@ -17,12 +17,11 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-/* 修正: 二重スクロールバー防止 */
-html, body {
-    width: 100%;
-    overflow-x: hidden;
-    overflow-y: hidden; /* ロード直後は縦スクロールを隠しておく */
-    /* scrollbar-gutter: stable; は削除 */
+/* 修正：最初からスクロールバーを常に表示させて、左右のガタつきを物理的に防ぐ */
+html { 
+    width: 100%; 
+    overflow-x: hidden; 
+    overflow-y: scroll; 
 }
 
 body {
@@ -31,51 +30,44 @@ body {
     background-image: url('../images/background/fur-texture-pink.jpg');
     background-size: cover;
     background-position: center;
-    
-    /* 修正: PCでは画面一杯を使って中央揃えにするための設定 */
-    display: flex;
-    flex-direction: column;
     min-height: 100vh;
-    width: 100%;
+    display: flex;
+    flex-direction: column; /* 縦に並べる */
+    align-items: center;    /* 左右中央 */
+    
+    /* 修正：上下中央揃えを維持しつつ、溢れたら上基準にする（見切れ防止） */
+    justify-content: center; 
     
     color: var(--text-main);
-    perspective: 1500px;
-    
-    /* ヘッダー・フッターに被らないための最小限の余白 */
-    padding-top: calc(var(--top-bar-height) + 20px);
-    padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
-    
-    overflow-x: hidden;
-    position: relative;
+    perspective: 1500px; /* 3D効果 */
+
+    /* 修正：ヘッダーとリボンに被らないための「絶対的な余白」を確保 */
+    padding-top: 100px;
+    padding-bottom: 150px;
 }
 
 .ambient-light {
-    position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+    position: absolute; width: 100%; height: 100%;
     background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.1) 100%);
     pointer-events: none; z-index: 0;
-}
-
-/* === パーティクル隔離用ラッパー === */
-#particle-wrapper {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    overflow: hidden; pointer-events: none; z-index: -1;
 }
 
 /* === PC用 3Dグリッド === */
 .bento-container {
     position: relative; z-index: 10;
     width: 1000px; max-width: 90%;
-    
-    /* 修正: 画面中央に自動配置（入らない場合はスクロール位置に） */
-    margin: auto;
-    
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto;
     gap: 24px;
-    transform: rotateX(5deg);
+    
+    /* 修正：3D変形で下が隠れないよう、少し傾きを調整 */
+    transform: rotateX(2deg) translateY(-20px);
     transform-style: preserve-3d;
     transition: transform 0.5s ease;
+    
+    /* 修正：サイズ固定を維持 */
+    flex-shrink: 0; 
 }
 
 /* === グラスモーフィズムカード === */
@@ -143,6 +135,15 @@ body {
 .ticker-item.hollow { color: transparent; -webkit-text-stroke: 2px rgba(139, 107, 97, 0.4); opacity: 0.8; }
 .ticker-item span { margin-right: 8px; }
 
+/* 修正：リンク要素の設定（クリック不可問題の解決） */
+.trigger-link {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 10;
+    color: inherit;
+    text-decoration: none;
+}
+
 /* ツールボタン */
 .area-tool { grid-column: span 1; aspect-ratio: 1 / 1; cursor: pointer; text-align: center; }
 .area-tool-wide { grid-column: span 2; aspect-ratio: auto; flex-direction: row; gap: 20px; justify-content: flex-start; padding-left: 40px; }
@@ -164,7 +165,7 @@ body {
 }
 
 /* シェアボタン */
-.area-share { grid-column: span 4; background: transparent; border: none; box-shadow: none; backdrop-filter: none; padding: 10px; display: flex; justify-content: center; }
+.area-share { grid-column: span 4; background: transparent; border: none; box-shadow: none; backdrop-filter: none; padding: 10px; display: flex; justify-content: center; margin-top: 20px; }
 .btn-share-pill {
     padding: 14px 40px; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid #fff; border-radius: 50px;
     font-weight: 800; color: var(--text-main); transition: 0.3s; display: flex; align-items: center; gap: 10px;
@@ -172,13 +173,16 @@ body {
 }
 .btn-share-pill:hover { background: #fff; color: var(--accent-pink); transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 40px rgba(255, 158, 187, 0.3); }
 
-/* アニメーション */
+/* アニメーション設定 */
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 @keyframes dance { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-6px) rotate(-3deg); } 75% { transform: translateY(2px) rotate(2deg); } }
 @keyframes dance-reverse { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(6px) rotate(3deg); } 75% { transform: translateY(-2px) rotate(-2deg); } }
 @keyframes bounce { 0%, 100% { transform: translateZ(30px) translateY(0); } 50% { transform: translateZ(30px) translateY(-5px); } }
-@keyframes entranceFadeUp { 0% { opacity: 0; transform: translateY(60px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes entranceFadeUp { 0% { opacity: 0; transform: translateY(40px) scale(0.95); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
 .glass-card, .area-share { opacity: 0; animation: entranceFadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+/* 修正：すべてのツールの出現アニメーションを設定 */
 .glass-card:nth-of-type(1) { animation-delay: 0.1s; } 
 .glass-card:nth-of-type(2) { animation-delay: 0.2s; } 
 .glass-card:nth-of-type(3) { animation-delay: 0.3s; }
@@ -188,281 +192,42 @@ body {
 .glass-card:nth-of-type(7) { animation-delay: 0.7s; } 
 .glass-card:nth-of-type(8) { animation-delay: 0.8s; } 
 .glass-card:nth-of-type(9) { animation-delay: 0.9s; } 
+.area-share { animation-delay: 1.1s; }
 
-/* 予備 */
-.glass-card:nth-of-type(10) { animation-delay: 1.0s; }
-.glass-card:nth-of-type(11) { animation-delay: 1.1s; }
+/* 以下、マスコット・バー・スマホ設定は維持 */
+.floating-particle { position: absolute; border-radius: 50%; filter: blur(8px); opacity: 0.6; animation: floatUp 15s linear infinite; z-index: -1; pointer-events: none; }
+@keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } }
 
-.area-share { animation-delay: 1.3s; }
-
-/* パーティクル & マスコット */
-.floating-particle {
-    position: absolute;
-    border-radius: 50%; filter: blur(8px); opacity: 0.6; 
-    animation: floatUp 15s linear infinite;
-    pointer-events: none; will-change: transform;
-}
-@keyframes floatUp { 
-    0% { transform: translateY(0) rotate(0deg); opacity: 0; } 
-    10% { opacity: 0.6; } 
-    90% { opacity: 0.6; } 
-    100% { transform: translateY(-130vh) rotate(360deg); opacity: 0; } 
-}
-
-.floating-mascot {
-    position: fixed; bottom: 120px; right: 20px; width: 140px; height: auto; z-index: 95; cursor: pointer;
-    animation: playful-float 7s ease-in-out infinite; transition: 0.3s; will-change: transform;
-}
-.floating-mascot img { width: 100%; display: block; filter: drop-shadow(0 8px 20px rgba(90, 61, 53, 0.25)); transition: filter 0.3s; }
-.floating-mascot:hover { 
-    transform: scale(1.15) rotate(-10deg);
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 30px var(--accent-pink));
-}
+.floating-mascot { position: fixed; bottom: 120px; right: 20px; width: 140px; height: auto; z-index: 95; cursor: pointer; animation: playful-float 7s ease-in-out infinite; transition: 0.3s; }
+.floating-mascot img { width: 100%; display: block; filter: drop-shadow(0 8px 20px rgba(90, 61, 53, 0.25)); }
 @keyframes playful-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px) rotate(3deg); } }
 
-.pixel-walker {
-    position: fixed; bottom: 35px; z-index: 90; width: var(--walker-size); height: var(--walker-size); left: 0; pointer-events: none;
-    will-change: transform; transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.pixel-walker .sprite {
-    width: 100%; height: 100%;
-    background-image: url('../images/hoko/mahiru.png'); background-size: 300% 400%; background-repeat: no-repeat; image-rendering: pixelated;
-    animation: walk-cycle 0.8s step-start infinite;
-}
-.pixel-walker[data-facing="front"] .sprite { background-position-y: 0%; animation: none; }
-.pixel-walker[data-facing="left"] .sprite  { background-position-y: 33.33%; }
-.pixel-walker[data-facing="right"] .sprite { background-position-y: 66.66%; }
+.pixel-walker { position: fixed; bottom: 35px; z-index: 90; width: var(--walker-size); height: var(--walker-size); left: 0; pointer-events: none; transition: bottom 0.5s; }
+.pixel-walker .sprite { width: 100%; height: 100%; background-image: url('../images/hoko/mahiru.png'); background-size: 300% 400%; image-rendering: pixelated; animation: walk-cycle 0.8s step-start infinite; }
 @keyframes walk-cycle { 0% { background-position-x: 0%; } 33% { background-position-x: 50%; } 66% { background-position-x: 100%; } }
 
-/* === 上部ニュース＆レポートバー === */
-.top-news-bar {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: var(--top-bar-height);
-    background: #fffafa;
-    border-bottom: 2px solid var(--accent-pink);
-    z-index: 999;
-    display: flex; align-items: center;
-    box-shadow: 0 4px 15px rgba(255, 158, 187, 0.2);
-    font-size: 0.95rem; font-weight: 700; color: var(--text-main);
-    padding-left: 15px; padding-right: 20px;
-    box-sizing: border-box;
-}
-.news-label-badge {
-    background: var(--accent-gradient); color: #fff; padding: 4px 12px; border-radius: 20px;
-    font-size: 0.75rem; font-weight: 900;
-    display: flex; align-items: center; gap: 4px;
-    box-shadow: 0 2px 8px rgba(255, 158, 187, 0.6);
-    flex-shrink: 0; margin-right: 15px;
-}
-.news-scroller {
-    flex-grow: 1; overflow: hidden; position: relative;
-    white-space: nowrap; height: 100%; display: flex; align-items: center;
-    mask-image: linear-gradient(to right, transparent 0%, black 20px, black 95%, transparent 100%);
-}
-.news-content {
-    display: inline-block; white-space: nowrap;
-    animation: news-scroll 80s linear infinite; padding-left: 100%; will-change: transform;
-}
-.news-item { display: inline-block; margin-right: 60px; position: relative; color: var(--text-main); font-size: 0.9rem; }
-.news-item::before { content: '★'; color: var(--accent-pink); margin-right: 6px; }
+.top-news-bar { position: fixed; top: 0; left: 0; width: 100%; height: var(--top-bar-height); background: #fffafa; border-bottom: 2px solid var(--accent-pink); z-index: 999; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(255, 158, 187, 0.2); padding: 0 20px; }
+.news-label-badge { background: var(--accent-gradient); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 900; display: flex; align-items: center; gap: 4px; margin-right: 15px; flex-shrink: 0; }
+.news-scroller { flex-grow: 1; overflow: hidden; white-space: nowrap; }
+.news-content { display: inline-block; animation: news-scroll 80s linear infinite; padding-left: 100%; }
+.news-item { display: inline-block; margin-right: 60px; color: var(--text-main); font-size: 0.9rem; }
+@keyframes news-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-/* 右側エリア（時計＆レポート） */
-.header-right-area {
-    display: flex; align-items: center; gap: 15px;
-    margin-left: 20px; position: relative;
-    flex-shrink: 0;
-    background: #fffafa;
-    padding-left: 10px;
-    box-shadow: -10px 0 10px -5px #fffafa;
-    z-index: 2;
-}
+.header-right-area { display: flex; align-items: center; gap: 15px; flex-shrink: 0; background: #fffafa; padding-left: 10px; z-index: 2; }
+.digital-clock { font-weight: 900; color: var(--accent-pink); background: #fff; padding: 2px 10px; border-radius: 8px; border: 2px solid #ffe4ea; }
+.honobono-report { font-size: 0.95rem; color: var(--text-main); font-weight: bold; animation: fadeReport 15s infinite; }
+@keyframes fadeReport { 0%, 100% { opacity: 0; transform: translateY(10px); } 10%, 90% { opacity: 1; transform: translateY(0); } }
 
-.digital-clock {
-    font-family: 'Zen Maru Gothic', monospace;
-    font-weight: 900; color: var(--accent-pink);
-    font-size: 1.1rem; letter-spacing: 0.05em;
-    background: #fff; padding: 2px 10px; border-radius: 8px;
-    border: 2px solid #ffe4ea;
-    box-shadow: 2px 2px 0 rgba(255, 158, 187, 0.3);
-}
-
-/* === レポート === */
-.honobono-report {
-    font-size: 0.95rem; 
-    color: var(--text-main);
-    font-weight: bold;
-    white-space: nowrap;
-    animation: fadeReport 15s infinite;
-}
-
-@keyframes news-scroll { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
-
-/* 浮き上がって消えるアニメーション */
-@keyframes fadeReport {
-    0% { opacity: 0; transform: translateY(10px); }
-    10% { opacity: 1; transform: translateY(0); }
-    90% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-10px); }
-}
-
-/* === 下部リボン === */
-.bottom-ribbon-container {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: var(--bottom-ribbon-height);
-    z-index: 80; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 0; padding: 0;
-}
+.bottom-ribbon-container { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--bottom-ribbon-height); z-index: 80; transition: transform 0.5s; }
 .bottom-ribbon-container.hidden { transform: translateY(100%); }
+.ribbon-bar { width: 100%; height: 100%; background: #fffafa; border-top: 4px solid var(--accent-pink); }
+.ribbon-toggle-btn { position: absolute; top: -24px; right: 20px; width: 40px; height: 24px; background: var(--accent-pink); border-radius: 8px 8px 0 0; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; }
 
-.ribbon-bar {
-    width: 100%; height: 100%; background: #fffafa; border-top: 4px solid var(--accent-pink);
-    position: relative; box-shadow: 0 -4px 15px rgba(255, 158, 187, 0.2);
-}
-.ribbon-stitch {
-    position: absolute; top: 2px; left: 0; width: 100%; height: calc(100% - 4px);
-    border-top: 2px dotted rgba(255, 158, 187, 0.5);
-    border-bottom: 2px dotted rgba(255, 158, 187, 0.5); pointer-events: none;
-}
-.ribbon-toggle-btn {
-    position: absolute; top: -24px; right: 20px; width: 40px; height: 24px;
-    background: var(--accent-pink); border: none; border-radius: 8px 8px 0 0;
-    cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); transition: 0.3s;
-}
-.ribbon-toggle-btn:hover { padding-bottom: 5px; }
-.ribbon-toggle-btn span { font-size: 20px; transition: 0.5s; }
-.bottom-ribbon-container.hidden .ribbon-toggle-btn span { transform: rotate(180deg); }
-
-/* === スマホ最適化（全体的に小さくし、密度を上げる修正） === */
 @media (max-width: 768px) {
-    /* ルート変数をスマホ用に上書きし、全体をコンパクトに */
-    :root {
-        --top-bar-height: 40px;      /* 50px -> 40px */
-        --bottom-ribbon-height: 30px; /* 40px -> 30px */
-        --walker-size: 32px;
-    }
-
-    body {
-        /* 修正: スマホではスクロール前提のBlock配置にする */
-        display: block; 
-        min-height: 100%;
-        overflow-y: auto; overflow-x: hidden;
-        height: auto; perspective: none;
-        
-        /* フォントサイズを小さくしてPC画面に近づける */
-        font-size: 0.85rem; 
-        
-        /* コンパクトなヘッダー・フッターに合わせて余白も縮小 */
-        padding-top: calc(var(--top-bar-height) + 20px);
-        padding-bottom: var(--bottom-ribbon-height); 
-    }
-    
-    .bento-container {
-        /* 幅を広げて情報量を増やす */
-        width: 96%; 
-        margin: 0 auto;
-        display: grid; grid-template-columns: 1fr 1fr; 
-        gap: 12px; /* ギャップを詰める */
-        transform: none !important;
-    }
-    
-    .glass-card { 
-        width: 100%; transform: none !important; margin-bottom: 0;
-        /* パディングを減らして密度アップ */
-        padding: 14px; 
-        border-radius: 24px;
-    }
-    .glass-card:active { transform: scale(0.98) !important; background: rgba(255, 255, 255, 0.25); }
-
-    /* プロフィールエリア：横並びに戻してコンパクトに */
-    .area-profile { 
-        grid-column: span 2; 
-        text-align: left; 
-        align-items: flex-start; 
-        padding: 20px; 
-    }
-    .profile-header { 
-        flex-direction: row; /* PCと同じ横並び */
-        gap: 16px; 
-        margin-bottom: 12px; 
-    }
-    .avatar { 
-        width: 60px; height: 60px; /* 縮小 */
-        border-width: 3px;
-    } 
-    .site-title { font-size: 1.4rem; }
-    .site-desc { font-size: 0.8rem; }
-    .profile-text { font-size: 0.8rem; line-height: 1.6; }
-    
-    .area-ticker { grid-column: span 2; height: 40px; order: 2; }
-    .ticker-item { font-size: 1.2rem; margin: 0 10px; }
-    
-    /* ツールボタン：余白とアイコンを小さく */
-    .area-tool { 
-        aspect-ratio: 1 / 1; 
-        flex-direction: column; justify-content: center; text-align: center; 
-        padding: 10px; gap: 6px; 
-    }
-    .area-tool-wide { 
-        grid-column: span 2; 
-        aspect-ratio: auto; 
-        flex-direction: row; justify-content: flex-start; 
-        padding: 12px 20px; gap: 12px;
-    }
-    .area-tool .icon-circle { 
-        width: 40px; height: 40px; /* アイコン縮小 */
-        font-size: 20px; 
-        margin-bottom: 4px; transform: none !important; 
-    }
-    .area-tool-wide .icon-circle { margin-bottom: 0; }
-    
-    .tool-label { font-size: 0.9rem; }
-    .tool-sub { font-size: 0.7rem; display: none; }
-    .area-tool-wide .tool-sub { display: block; font-size: 0.7rem; }
-    
-    .badge { top: 8px; right: 8px; padding: 3px 8px; font-size: 0.6rem; animation: none; }
-    .area-share { grid-column: span 2; padding: 0; margin-top: 5px; }
-    .btn-share-pill { padding: 10px 30px; font-size: 0.9rem; }
-
-    /* ヘッダー・フッターも少し小さく */
-    .top-news-bar { height: var(--top-bar-height); font-size: 0.8rem; }
-    .bottom-ribbon-container { height: var(--bottom-ribbon-height); }
-    .ribbon-toggle-btn { width: 36px; height: 20px; top: -20px; }
-    .ribbon-toggle-btn span { font-size: 16px; }
-
-    .header-right-area { gap: 6px; margin-left: 8px; }
-    .honobono-report {
-        font-size: 0.75rem;
-        max-width: 120px; 
-        overflow: hidden; text-overflow: ellipsis;
-    }
-    .digital-clock { font-size: 0.9rem; padding: 1px 6px; }
-    
-    /* マスコット縮小 */
-    .floating-mascot { width: 70px; bottom: 80px; right: 10px; }
-    .pixel-walker { bottom: 30px; } /* リボン高さに合わせて調整 */
-
-    body.ribbon-hidden .floating-mascot { transform: translateY(30px); }
-    body.ribbon-hidden .pixel-walker { bottom: 5px; }
-}
-
-/* style.css の末尾などに追加 */
-
-.trigger-link {
-    /* 1. 色が青くなったり下線が出たりするのを防ぐ */
-    color: inherit; 
-    text-decoration: none;
-    
-    /* 2. マウスを乗せたときに指のマークにする */
-    cursor: pointer; 
-    
-    /* 3. クリックの反応を良くする（重要） */
-    pointer-events: auto; 
-    position: relative;
-    z-index: 10;
-}
-
-/* ホバーした時の演出（お好みで） */
-.trigger-link:hover {
-    filter: brightness(1.2); /* 少し明るくする */
-    transition: 0.3s;
+    body { padding-top: 80px; padding-bottom: 120px; display: block; }
+    .bento-container { width: 94%; grid-template-columns: 1fr 1fr; gap: 16px; transform: none !important; }
+    .area-profile, .area-ticker, .area-share { grid-column: span 2; }
+    .area-tool-wide { flex-direction: column; align-items: center; padding: 20px; }
+    .tool-sub { display: none; }
+    .floating-mascot { width: 80px; bottom: 80px; }
 }
