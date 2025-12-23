@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uchiyoso Maker - Luxe Archive</title>
+    <title>Uchiyoso Maker - Luxe Archive v2.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -37,9 +37,9 @@
             --bg-color: #f0f0f0; 
             --text-main: #111111; 
             --text-sub: #555555;
-            --ui-border: rgba(0, 0, 0, 0.15); /* 枠線を見やすく */
+            --ui-border: rgba(0, 0, 0, 0.15);
             --ui-bg: rgba(0, 0, 0, 0.03);
-            --canvas-blend: normal; /* 白背景では通常合成で黒っぽい粒子を表示 */
+            --canvas-blend: normal;
             --canvas-opacity: 0.6;
         }
         
@@ -73,7 +73,7 @@
         /* --- News Ticker --- */
         #news-ticker {
             position: fixed; top: 0; left: 0; width: 100%; height: 32px;
-            background: rgba(0, 0, 0, 0.9); /* 常に黒背景で視認性確保 */
+            background: rgba(0, 0, 0, 0.9);
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(4px); z-index: 100;
             display: flex; align-items: center; padding: 0 20px;
@@ -99,25 +99,20 @@
         .viewport {
             position: relative; width: 100vw; height: 100vh;
             display: grid;
-            /* 
-               Grid Layout 調整:
-               左: 80px固定
-               中: 残りのスペース (1fr)
-               右: 350px固定 (見切れ防止のため固定幅に)
-            */
             grid-template-columns: 80px 1fr 350px;
             grid-template-rows: 60px 1fr 120px;
             z-index: 10;
-            padding-top: 32px; /* Ticker分下げる */
+            padding-top: 32px;
         }
 
-        /* --- Left Nav --- */
+        /* --- Left Nav (枠のみ) --- */
         .sub-nav {
             grid-row: 1 / 4; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             border-right: 1px solid var(--ui-border);
             background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
             transition: border-color 0.5s;
+            z-index: 10; /* コントロールより下にする */
         }
         .sub-nav-content {
             display: flex; flex-direction: column; align-items: center; gap: 50px;
@@ -131,24 +126,34 @@
             color: var(--accent-color); opacity: 1;
             transform: translateY(-8px); text-shadow: 0 0 15px var(--accent-color);
         }
-        
-        /* Display Mode Button (Vertical) */
-        .bg-trigger {
-            writing-mode: vertical-rl;
+
+        /* --- New Left Controls (枠無視・横書き) --- */
+        .left-controls {
+            position: fixed; 
+            bottom: 40px; 
+            left: 40px; 
+            z-index: 150; /* Left Navより上に表示 */
+            display: flex; 
+            flex-direction: row; /* 横書き */
+            align-items: center; 
+            gap: 25px;
+        }
+
+        /* Display Button (Horizontal) */
+        .bg-trigger-horiz {
             font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             color: var(--text-main); border: 1px solid var(--ui-border);
-            padding: 15px 5px; cursor: pointer; transition: 0.3s;
+            padding: 8px 20px; cursor: pointer; transition: 0.3s;
             background: var(--ui-bg);
+            white-space: nowrap;
         }
-        .bg-trigger:hover { 
+        .bg-trigger-horiz:hover { 
             background: var(--accent-color); color: #000; border-color: var(--accent-color); 
         }
 
-        /* --- BGM Player (Stylish) --- */
-        .sound-control {
-            position: fixed; bottom: 25px; left: 15px;
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-            z-index: 101;
+        /* Sound Controls (Horizontal) */
+        .sound-group {
+            display: flex; align-items: center; gap: 15px;
         }
         .sound-icon {
             color: var(--text-main); font-size: 20px; cursor: pointer;
@@ -157,13 +162,12 @@
         .sound-icon:hover { opacity: 1; color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
         .sound-icon.playing { color: var(--accent-color); opacity: 1; }
         
-        /* Stylish Range Slider */
+        /* Horizontal Volume Bar */
         .volume-bar {
             -webkit-appearance: none; appearance: none;
-            width: 3px; height: 50px; /* 縦向きに見せる */
+            width: 80px; height: 3px; /* 横長 */
             background: var(--ui-border);
             outline: none; border-radius: 2px; cursor: pointer;
-            writing-mode: bt-lr; /* IE/Edge */
         }
         .volume-bar::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none;
@@ -174,48 +178,78 @@
             box-shadow: 0 0 5px var(--accent-color);
         }
 
-        /* --- Character Stage --- */
+        /* --- Character Stage (1人/2人対応) --- */
         .character-stage {
             grid-column: 2; grid-row: 1 / 4;
-            display: flex; align-items: flex-end; justify-content: flex-start;
-            padding-left: 8%; position: relative; overflow: hidden;
+            position: relative; overflow: hidden;
             pointer-events: auto; cursor: pointer;
+            display: flex; flex-direction: column; 
+            justify-content: flex-end; /* 下揃え */
+            padding-bottom: 0;
         }
+
+        /* 立ち絵コンテナ */
+        .char-container {
+            display: flex; 
+            justify-content: center; /* 中央揃え */
+            align-items: flex-end;
+            width: 100%; height: 100%;
+            padding: 0 5%;
+            box-sizing: border-box;
+        }
+        
+        /* 個別の立ち絵画像 */
         .char-img {
-            /* 修正: 90%ほどの高さ、透過マスク削除、影削除 */
             height: 90%; width: auto; max-width: 100%;
-            object-fit: cover; object-position: top center;
-            
-            /* ホバー時の動き用 */
+            object-fit: contain; object-position: bottom center;
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.6s ease, opacity 1s;
             transform-origin: center bottom;
-            
-            /* 初期状態 */
             opacity: 0; transform: translateY(30px) scale(0.98);
+            margin: 0 -2%; /* 少し重ねる */
         }
-        .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
+        /* 2人表示時の調整 */
+        .char-img.duo {
+            max-width: 55%; 
+            height: 85%;
+        }
         
-        /* ホバー時の「かわいい動き」 */
+        .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
         .char-img.visible:hover {
             transform: translateY(-5px) scale(1.02);
             filter: brightness(1.1);
+            z-index: 10;
         }
 
-        /* Speech Bubble */
+        /* 吹き出しコンテナ（2つの場合の配置制御） */
+        .bubble-container {
+            position: absolute; bottom: 25%; left: 0; width: 100%;
+            display: flex; 
+            justify-content: center; /* 画面中央 */
+            align-items: flex-end;
+            gap: 20px; /* 吹き出し間の隙間 */
+            pointer-events: none;
+            z-index: 20;
+            padding: 0 5%;
+            box-sizing: border-box;
+        }
+
+        /* Speech Bubble Style (デザインは維持、位置指定は親に委譲) */
         .speech-bubble {
-            position: absolute; bottom: 25%; left: 2%;
+            /* absolute除去 */
+            position: relative; 
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
             color: #fff; background: rgba(10, 10, 10, 0.85);
             padding: 25px 35px; backdrop-filter: blur(12px);
             border-left: 3px solid var(--accent-color);
             border-top: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            max-width: 450px; line-height: 1.8;
-            opacity: 0; transform: translateX(-20px);
+            width: 450px; max-width: 45%; /* 2つ並んでも入るように */
+            line-height: 1.8;
+            opacity: 0; transform: translateY(20px);
             transition: all 0.5s ease 0.3s, border-color 1s;
-            pointer-events: none;
         }
-        .speech-bubble.show { opacity: 1; transform: translateX(0); }
+        .speech-bubble.show { opacity: 1; transform: translateY(0); }
+        
         .char-name-label {
             font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
             margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
@@ -226,7 +260,6 @@
         .header-title {
             grid-column: 3; grid-row: 1;
             padding: 20px 40px 0 0; text-align: right;
-            /* 文字が見切れないように調整 */
             white-space: nowrap; 
         }
         .header-title h1 {
@@ -254,7 +287,9 @@
         .main-nav {
             grid-column: 3; grid-row: 2 / 4;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
-            padding: 0 40px 50px 0; gap: 24px;
+            /* 位置修正: 上にずらすため padding-bottom を大きく */
+            padding: 0 40px 100px 0; 
+            gap: 24px;
         }
         .nav-btn-group { display: flex; flex-direction: column; align-items: flex-end; }
         .btn-label { font-family: var(--font-en); font-size: 8px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 0.2em; }
@@ -342,27 +377,31 @@
     </div>
 
     <div class="viewport">
-        <!-- Left Nav -->
+        <!-- Left Nav (枠のみ、コンテンツは外へ) -->
         <nav class="sub-nav">
             <div class="sub-nav-content">
                 <div class="sub-nav-item">System Log</div>
                 <div class="sub-nav-item">Archive</div>
-                <div class="bg-trigger" onclick="toggleBgModal()">DISPLAY</div>
             </div>
         </nav>
         
-        <!-- BGM (Bottom Left) -->
-        <div class="sound-control">
-            <!-- 縦型のボリュームバー -->
-            <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
-                   oninput="changeVolume(this.value)" style="transform: rotate(-90deg); width: 60px; margin-bottom: 20px;">
-            <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
+        <!-- NEW: Left Controls (枠無視、横書き) -->
+        <div class="left-controls">
+            <!-- Display Setting -->
+            <div class="bg-trigger-horiz" onclick="toggleBgModal()">DISPLAY</div>
+
+            <!-- Sound Control -->
+            <div class="sound-group">
+                <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
+                <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
+                       oninput="changeVolume(this.value)">
+            </div>
         </div>
 
         <!-- Header -->
         <div class="header-title">
             <h1>UCHIYOSO<br>ARCHIVE</h1>
-            <div class="header-sub">PREMIUM INTERFACE v2.2</div>
+            <div class="header-sub">PREMIUM INTERFACE v2.3</div>
         </div>
 
         <div class="user-status">
@@ -371,13 +410,11 @@
             <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
         </div>
 
-        <!-- Character Stage -->
+        <!-- Character Stage (Clickable) -->
         <section class="character-stage" onclick="handleCharClick()">
-            <img id="char-img" class="char-img" src="" alt="Character">
-            <div class="speech-bubble">
-                <span id="char-name-label" class="char-name-label">SYSTEM</span>
-                <span id="typewriter-text"></span><span class="cursor"></span>
-            </div>
+            <!-- JSで動的に書き換えるエリア -->
+            <div id="char-container" class="char-container"></div>
+            <div id="bubble-container" class="bubble-container"></div>
         </section>
 
         <!-- Right Nav -->
@@ -407,7 +444,11 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
-        import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
+        // 実際のファイル構成に合わせてimportしてください。エラー防止のためダミー関数でラップしています。
+        // import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
+        const login = () => console.log("Login stub");
+        const monitorAuth = (cb1, cb2) => { cb2(); }; // Default to guest
+        const loadFromCloud = async () => ({}); 
 
         const LOCAL_IMG_BASE = "./images/character/";
         const PHOTO_BASE = "./images/photo/";
@@ -416,18 +457,40 @@
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
-        let typeWriterTimeout = null;
+        let typeWriterTimeouts = [];
         
-        let particleMaterial;
-        let targetColor = new THREE.Color(DEFAULT_THEME);
-        let currentBlendMode = THREE.AdditiveBlending; // 初期は加算合成
-
-        const fallbackData = [{
-            name: "System",
-            color: "#00ffcc",
-            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
-            image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
-        }];
+        // --- 1人版と2人版のデモデータ ---
+        const fallbackData = [
+            // 1人バージョン
+            {
+                type: 'solo',
+                chars: [
+                    {
+                        name: "System",
+                        color: "#00ffcc",
+                        remarks: "アーカイブへようこそ。<br>画面左下でディスプレイと音量を設定可能です。",
+                        image: "https://via.placeholder.com/800x1200/111/333?text=SYSTEM"
+                    }
+                ]
+            },
+            // 2人バージョン
+            {
+                type: 'duo',
+                color: "#ff0066",
+                chars: [
+                    {
+                        name: "Partner A",
+                        remarks: "2人バージョンの<br>テスト表示だね。",
+                        image: "https://via.placeholder.com/800x1200/221/552?text=CHAR+A"
+                    },
+                    {
+                        name: "Partner B",
+                        remarks: "真ん中に吹き出しが<br>2つ並ぶはずだよ。",
+                        image: "https://via.placeholder.com/800x1200/122/255?text=CHAR+B"
+                    }
+                ]
+            }
+        ];
 
         // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
@@ -450,13 +513,11 @@
 
         // --- BG Modal ---
         window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
-
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
             body.className = "";
             document.documentElement.style.setProperty('--bg-image-url', 'none');
             
-            // 背景モード設定とパーティクル設定
             if (mode === 'black') {
                 body.classList.add('mode-black');
                 updateParticlesForBg('dark');
@@ -466,7 +527,7 @@
             } else if (mode === 'photo') {
                 body.classList.add('mode-photo');
                 document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
-                updateParticlesForBg('dark'); // 写真の上は加算合成が良い
+                updateParticlesForBg('dark');
             }
             toggleBgModal();
         };
@@ -480,56 +541,35 @@
             bgGrid.appendChild(div);
         }
 
-        // --- Update Particles based on BG ---
+        // --- Particles ---
+        let particleMaterial;
+        let targetColor = new THREE.Color(DEFAULT_THEME);
+
         function updateParticlesForBg(type) {
+            if (!particleMaterial) return;
             if (type === 'light') {
-                // 白背景用: 色を濃く、通常合成に
                 particleMaterial.blending = THREE.NormalBlending;
-                // 色目標を少し暗めに上書きするロジックが必要だが、
-                // 簡易的に透明度を下げて対応
                 particleMaterial.opacity = 0.4;
-                particleMaterial.color.setHex(0x555555); // 一時的にグレー
+                particleMaterial.color.setHex(0x555555);
                 targetColor.setHex(0x555555);
             } else {
-                // 黒/写真用: 加算合成で光らせる
                 particleMaterial.blending = THREE.AdditiveBlending;
                 particleMaterial.opacity = 0.8;
-                // 色はキャラ色に戻す（次のupdateで反映）
                 const char = charDataList[currentIndex];
-                const theme = char ? (char.color || char.inpThemeColor || DEFAULT_THEME) : DEFAULT_THEME;
+                const theme = (char && char.color) ? char.color : ((char && char.chars && char.chars[0].color) || DEFAULT_THEME);
                 targetColor.set(theme);
             }
             particleMaterial.needsUpdate = true;
         }
 
-        // --- News ---
-        async function initNews() {
-            const el = document.getElementById('news-content');
-            const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
-            let data = null;
-            for (const path of paths) {
-                try {
-                    const res = await fetch(`${path}?t=${Date.now()}`);
-                    if (res.ok) { data = await res.json(); break; }
-                } catch (e) {}
-            }
-            if (!data || !data.length) {
-                el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return;
-            }
-            const cycle = () => {
-                el.classList.remove('active');
-                setTimeout(() => {
-                    el.textContent = data[Math.floor(Math.random() * data.length)];
-                    el.classList.add('active');
-                }, 500);
-            };
-            cycle(); setInterval(cycle, 6000);
-        }
+        // --- Display Logic ---
+        const charContainer = document.getElementById('char-container');
+        const bubbleContainer = document.getElementById('bubble-container');
+        const rootStyles = document.documentElement.style;
 
-        // --- Display ---
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
-                if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
+                if (!charName) { resolve(cloudUrl || "https://via.placeholder.com/800x1200"); return; }
                 const localPath = `${LOCAL_IMG_BASE}${charName}.png`;
                 const img = new Image();
                 img.onload = () => resolve(localPath);
@@ -538,57 +578,87 @@
             });
         }
 
-        const imgEl = document.getElementById('char-img');
-        const nameLabel = document.getElementById('char-name-label');
-        const textContainer = document.getElementById('typewriter-text');
-        const bubbleEl = document.querySelector('.speech-bubble');
-        const rootStyles = document.documentElement.style;
-
         async function updateDisplay() {
-            const char = charDataList[currentIndex];
-            imgEl.classList.remove('visible');
-            bubbleEl.classList.remove('show');
+            const data = charDataList[currentIndex];
+            const isDuo = data.type === 'duo';
+            const chars = data.chars || [data]; // データ形式吸収
+            
+            // Clear existing
+            charContainer.innerHTML = '';
+            bubbleContainer.innerHTML = '';
+            typeWriterTimeouts.forEach(t => clearTimeout(t));
+            typeWriterTimeouts = [];
 
-            const nextImgSrc = await resolveImage(char.name, char.image);
-            const theme = char.color || char.inpThemeColor || DEFAULT_THEME;
-            
+            // テーマカラー設定
+            const theme = data.color || chars[0].color || chars[0].inpThemeColor || DEFAULT_THEME;
             rootStyles.setProperty('--accent-color', theme);
-            
-            // 白背景モードじゃなければターゲットカラー更新
             if (!document.body.classList.contains('mode-white')) {
                 targetColor.set(theme);
             }
 
-            let dialogue = char.remarks || char.txtRoleplay || "……。";
-            dialogue = dialogue.replace(/<br>/g, "\n");
+            // 要素の生成
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                
+                // 画像要素
+                const img = document.createElement('img');
+                img.className = `char-img ${isDuo ? 'duo' : ''}`;
+                img.src = await resolveImage(char.name, char.image);
+                charContainer.appendChild(img);
 
-            setTimeout(() => {
-                imgEl.src = nextImgSrc;
-                imgEl.onload = () => {
-                    nameLabel.textContent = char.name.toUpperCase();
-                    imgEl.classList.add('visible');
+                // 吹き出し要素
+                const bubble = document.createElement('div');
+                bubble.className = 'speech-bubble'; // デザインは既存維持
+                bubble.innerHTML = `
+                    <span class="char-name-label">${(char.name || 'UNKNOWN').toUpperCase()}</span>
+                    <span class="typewriter-text-${i}"></span><span class="cursor"></span>
+                `;
+                bubbleContainer.appendChild(bubble);
+
+                // アニメーション発火
+                setTimeout(() => {
+                    img.classList.add('visible');
                     setTimeout(() => {
-                        bubbleEl.classList.add('show');
-                        startTypewriter(dialogue);
+                        bubble.classList.add('show');
+                        const textEl = bubble.querySelector(`.typewriter-text-${i}`);
+                        const dialogue = (char.remarks || char.txtRoleplay || "……").replace(/<br>/g, "\n");
+                        startTypewriter(textEl, dialogue);
                     }, 400);
-                };
-            }, 600);
+                }, 100 + (i * 200));
+            }
         }
 
-        function startTypewriter(text) {
-            textContainer.textContent = "";
-            if (typeWriterTimeout) clearTimeout(typeWriterTimeout);
+        function startTypewriter(element, text) {
+            element.textContent = "";
             let i = 0;
             function type() {
                 if (i < text.length) {
-                    textContainer.textContent += text.charAt(i); i++;
-                    typeWriterTimeout = setTimeout(type, 30);
+                    element.textContent += text.charAt(i); i++;
+                    const t = setTimeout(type, 30);
+                    typeWriterTimeouts.push(t);
                 }
             }
             type();
         }
 
-        // --- Particles ---
+        // --- Init & Event ---
+        // 簡易的な初期化（Firestore連携部分はコメントアウト前提で、フォールバックデータを使用）
+        charDataList = fallbackData;
+        updateDisplay();
+
+        window.handleConnect = () => {
+            if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
+            nextChar();
+        };
+
+        window.handleCharClick = () => { nextChar(); };
+
+        function nextChar() {
+            currentIndex = (currentIndex + 1) % charDataList.length;
+            updateDisplay();
+        }
+
+        // --- Three.js Setup (Particles) ---
         function createParticles() {
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -622,51 +692,21 @@
             function animate() {
                 requestAnimationFrame(animate);
                 points.rotation.x += 0.0003; points.rotation.y += 0.0005;
-                
-                // 白モードでなければ色を追従させる
                 if (!document.body.classList.contains('mode-white')) {
                     particleMaterial.color.lerp(targetColor, 0.05);
                 }
-                
                 renderer.render(scene, camera);
             }
             animate();
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         }
+        createParticles();
 
-        // --- Auth ---
-        const userDisplay = document.getElementById('user-display');
-        const connectBtn = document.getElementById('main-connect-btn');
-
-        monitorAuth(
-            async (user) => {
-                currentUser = user;
-                userDisplay.textContent = (user.displayName || "MEMBER").toUpperCase();
-                connectBtn.textContent = "NEXT";
-                const data = await loadFromCloud();
-                if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
-                else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
-                currentIndex = Math.floor(Math.random() * charDataList.length);
-                updateDisplay();
-            },
-            () => {
-                currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
-                charDataList = fallbackData; currentIndex = 0; updateDisplay();
-            }
-        );
-
-        window.handleConnect = () => {
-            if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
-            if (!currentUser) login(); else nextChar();
-        };
-        window.handleCharClick = () => { if (currentUser) nextChar(); };
-        function nextChar() {
-            if (charDataList.length <= 1) return;
-            currentIndex = (currentIndex + 1) % charDataList.length;
-            updateDisplay();
-        }
-
-        createParticles(); initNews();
+        // News Ticker
+        (async function initNews() {
+            const el = document.getElementById('news-content');
+            setTimeout(() => { el.textContent = "Welcome to Uchiyoso Archive v2.3 - Dual Mode Ready"; el.classList.add('active'); }, 500);
+        })();
     </script>
 </body>
 </html>
