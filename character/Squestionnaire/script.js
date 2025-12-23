@@ -200,7 +200,7 @@ createApp({
 
         // --- その他：質問更新など ---
         const refreshQuestions = () => {
-            displayedQuestions.value = [...allQuestions.value].sort(() => 0.5 - Math.random()).slice(0, 10);
+            displayedQuestions.value = [...allQuestions.value].sort(() => 0.5 - Math.random()).slice(0, 5);
             Object.keys(answers).forEach(k => delete answers[k]);
         };
 

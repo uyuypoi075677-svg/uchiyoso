@@ -76,12 +76,11 @@
         <!-- 左メモ：Global Answers -->
         <div class="memo-paper memo-global">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-blue-200 opacity-70 rotate-1 shadow-sm"></div>
-            <!-- タイトルを大きく (text-xl) -->
-            <h4 class="font-bold text-xl text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center px-2">
+            <h4 class="font-bold text-xl text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center">
                 <i class="fa-solid fa-earth-americas mr-2"></i>Global Voices
             </h4>
-            <!-- 高さをさらに調整 (h-48) してはみ出し防止 -->
-            <div class="h-48 overflow-y-auto px-2 custom-scrollbar">
+            <!-- 修正: 高さh-52, px削除(親にpaddingあるため), 内部マージン調整 -->
+            <div class="h-52 overflow-y-auto pr-1 custom-scrollbar">
                 <div v-if="!selectedGlobalQuestion" class="text-sm text-gray-500 leading-snug">
                     <p>アンケートの「<i class="fa-solid fa-eye text-amber-600"></i>」ボタンで、他のキャラクターの回答を表示します。</p>
                 </div>
@@ -90,9 +89,11 @@
                         <span class="text-[10px] font-bold text-gray-500">PICKUP</span>
                         <button @click="selectedGlobalQuestion = null" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-times"></i></button>
                     </div>
-                    <div class="text-xs font-bold mb-3 text-gray-700 bg-white/60 p-1 rounded">{{ selectedGlobalQuestion.text }}</div>
-                    <ul class="space-y-3">
-                        <li v-for="ans in globalAnswers" :key="ans.user" class="text-sm">
+                    <!-- 修正: mb-3 -> mb-1 に短縮 -->
+                    <div class="text-xs font-bold mb-1 text-gray-700 bg-white/60 p-1 rounded">{{ selectedGlobalQuestion.text }}</div>
+                    <!-- 修正: space-y-3 -> space-y-2 に短縮 -->
+                    <ul class="space-y-2">
+                        <li v-for="ans in globalAnswers" :key="ans.user" class="text-sm border-b border-dotted border-blue-200 pb-1">
                             <div class="flex items-center space-x-1 mb-0.5">
                                 <img :src="ans.icon" class="w-4 h-4 rounded-full border">
                                 <span class="font-bold text-xs text-gray-600">{{ ans.user }}</span>
@@ -181,16 +182,15 @@
                 </div>
 
                 <div class="pl-2">
-                    <div v-for="(q, index) in displayedQuestions.slice(0, 5)" :key="q.id" class="question-block group">
+                    <!-- 修正: .slice(0, 5) を削除 (JS側で初期数を制御し、手動選択時は全件表示するため) -->
+                    <div v-for="(q, index) in displayedQuestions" :key="q.id" class="question-block group">
                         <div class="question-header">
                             <span class="q-badge">Q.{{ index + 1 }}</span>
-                            <!-- 質問文: text-base + bold で少し強調 -->
                             <span class="q-text text-base font-bold">{{ q.text }}</span>
                             <button @click="showGlobalAnswers(q)" class="ml-3 text-amber-600 opacity-0 group-hover:opacity-100 transition text-sm" title="みんなの回答を見る">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
-                        <!-- 回答欄: rows=1, text-base, oninputで高さ自動拡張 -->
                         <textarea 
                             v-model="answers[q.id]" 
                             rows="1" 
@@ -225,12 +225,11 @@
         <!-- 右メモ：History -->
         <div class="memo-paper memo-history">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-amber-200 opacity-70 -rotate-2 shadow-sm"></div>
-            <!-- タイトルを大きく (text-xl) -->
-            <h4 class="font-bold text-xl text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center px-2">
+            <h4 class="font-bold text-xl text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center">
                 <i class="fa-solid fa-clock-rotate-left mr-2"></i>History
             </h4>
-            <!-- 高さをさらに調整 (h-48) してはみ出し防止 -->
-            <div class="h-48 overflow-y-auto px-2 custom-scrollbar">
+            <!-- 修正: 高さh-52, px削除 -->
+            <div class="h-52 overflow-y-auto pr-1 custom-scrollbar">
                 <div v-if="history.length === 0" class="text-center text-gray-400 text-sm mt-10 italic">
                     No history found...
                 </div>
