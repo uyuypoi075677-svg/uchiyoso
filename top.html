@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uchiyoso Maker - Luxe Archive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@100;300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
+            /* Default (Black Mode) */
             --bg-color: #080808;
             --text-main: #ffffff;
             --text-sub: #8899a6;
@@ -17,19 +18,40 @@
             --font-jp: 'Noto Sans JP', sans-serif;
             --accent-color: #00ffcc; /* JSで書き換え */
             --bg-image-url: none;
+            
+            /* Particle Setting */
+            --canvas-blend: screen;
+            --canvas-opacity: 1.0;
         }
 
-        /* --- 背景モード --- */
-        body.mode-black { --bg-color: #080808; --text-main: #ffffff; }
-        body.mode-white { --bg-color: #f4f4f4; --text-main: #1a1a1a; --text-sub: #555; }
+        /* --- 背景モード定義 --- */
+        body.mode-black { 
+            --bg-color: #080808; 
+            --text-main: #ffffff; 
+            --text-sub: #8899a6;
+            --ui-border: rgba(255, 255, 255, 0.15);
+            --canvas-blend: screen;
+        }
+        
+        body.mode-white { 
+            --bg-color: #f0f0f0; 
+            --text-main: #111111; 
+            --text-sub: #555555;
+            --ui-border: rgba(0, 0, 0, 0.15); /* 枠線を見やすく */
+            --ui-bg: rgba(0, 0, 0, 0.03);
+            --canvas-blend: normal; /* 白背景では通常合成で黒っぽい粒子を表示 */
+            --canvas-opacity: 0.6;
+        }
+        
         body.mode-photo {
             --bg-color: #000000; --text-main: #ffffff;
             background-image: var(--bg-image-url);
             background-size: cover; background-position: center;
+            --canvas-blend: screen;
         }
         body.mode-photo::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); z-index: -1; pointer-events: none;
+            background: rgba(0, 0, 0, 0.6); z-index: -1; pointer-events: none;
         }
 
         body, html {
@@ -39,19 +61,23 @@
             transition: background-color 0.5s, color 0.5s;
         }
 
+        /* --- Canvas (Particles) --- */
         #canvas-container {
             position: fixed; top: 0; left: 0; z-index: 0;
-            opacity: 1.0; pointer-events: none; mix-blend-mode: screen;
+            opacity: var(--canvas-opacity); 
+            pointer-events: none; 
+            mix-blend-mode: var(--canvas-blend);
+            transition: opacity 0.5s;
         }
 
-        /* --- News Ticker (Original Layout, Bigger Font) --- */
+        /* --- News Ticker --- */
         #news-ticker {
             position: fixed; top: 0; left: 0; width: 100%; height: 32px;
-            background: rgba(0, 0, 0, 0.85);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.9); /* 常に黒背景で視認性確保 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(4px); z-index: 100;
             display: flex; align-items: center; padding: 0 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         .ticker-label {
             font-family: var(--font-en); font-size: 10px;
@@ -62,8 +88,8 @@
             border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px;
         }
         .ticker-content {
-            font-family: var(--font-jp); font-weight: 500; font-size: 14px; /* 文字を大きく */
-            color: #ddd;
+            font-family: var(--font-jp); font-weight: 500; font-size: 13px;
+            color: #eee;
             opacity: 0; transform: translateY(5px); transition: all 0.5s;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
@@ -73,20 +99,28 @@
         .viewport {
             position: relative; width: 100vw; height: 100vh;
             display: grid;
-            grid-template-columns: 80px 45% 1fr;
-            grid-template-rows: 60px 1fr 150px;
+            /* 
+               Grid Layout 調整:
+               左: 80px固定
+               中: 残りのスペース (1fr)
+               右: 350px固定 (見切れ防止のため固定幅に)
+            */
+            grid-template-columns: 80px 1fr 350px;
+            grid-template-rows: 60px 1fr 120px;
             z-index: 10;
+            padding-top: 32px; /* Ticker分下げる */
         }
 
-        /* --- Left Nav (Layout Fixed) --- */
+        /* --- Left Nav --- */
         .sub-nav {
             grid-row: 1 / 4; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             border-right: 1px solid var(--ui-border);
-            background: linear-gradient(to right, rgba(0,0,0,0.2), transparent);
+            background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
+            transition: border-color 0.5s;
         }
         .sub-nav-content {
-            display: flex; flex-direction: column; align-items: center; gap: 60px;
+            display: flex; flex-direction: column; align-items: center; gap: 50px;
         }
         .sub-nav-item {
             writing-mode: vertical-rl; font-family: var(--font-en); font-size: 9px; letter-spacing: 0.6em;
@@ -97,77 +131,79 @@
             color: var(--accent-color); opacity: 1;
             transform: translateY(-8px); text-shadow: 0 0 15px var(--accent-color);
         }
+        
+        /* Display Mode Button (Vertical) */
         .bg-trigger {
+            writing-mode: vertical-rl;
             font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             color: var(--text-main); border: 1px solid var(--ui-border);
-            padding: 15px 6px; cursor: pointer; transition: 0.3s;
+            padding: 15px 5px; cursor: pointer; transition: 0.3s;
+            background: var(--ui-bg);
         }
-        .bg-trigger:hover { background: var(--accent-color); color: #000; border-color: var(--accent-color);}
+        .bg-trigger:hover { 
+            background: var(--accent-color); color: #000; border-color: var(--accent-color); 
+        }
 
-        /* --- BGM Player (Bottom Left) --- */
+        /* --- BGM Player (Stylish) --- */
         .sound-control {
-            position: fixed; bottom: 20px; left: 15px;
-            display: flex; align-items: center; gap: 10px;
-            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 20px;
-            backdrop-filter: blur(5px);
+            position: fixed; bottom: 25px; left: 15px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
             z-index: 101;
         }
         .sound-icon {
             color: var(--text-main); font-size: 20px; cursor: pointer;
-            opacity: 0.5; transition: 0.3s;
+            opacity: 0.6; transition: 0.3s;
         }
-        .sound-icon:hover, .sound-icon.playing { opacity: 1; color: var(--accent-color); }
-        .volume-bar { -webkit-appearance: none; appearance: none; width: 60px; height: 3px; background: #555; outline: none; transition: 0.2s; cursor: pointer; }
-        .volume-bar::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; background: var(--accent-color); border-radius: 50%; }
-
-        /* --- BG Selection Modal --- */
-        #bg-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-            z-index: 200; display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: 0.3s;
-        }
-        #bg-modal.open { opacity: 1; pointer-events: auto; }
-        .modal-content {
-            background: rgba(20,20,20,0.9); border: 1px solid var(--accent-color);
-            padding: 40px; border-radius: 8px; max-width: 600px; width: 90%;
-            text-align: center;
-        }
-        .modal-title { font-family: var(--font-en); color: var(--text-main); margin-bottom: 20px; }
-        .bg-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px;
-        }
-        .bg-option {
-            aspect-ratio: 16/9; border: 2px solid #555; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            font-family: var(--font-en); font-size: 14px;
-            color: #fff; background-size: cover; background-position: center;
-            transition: 0.2s;
-        }
-        .bg-option:hover { border-color: var(--accent-color); transform: scale(1.05); }
-        .bg-black { background: #000; }
-        .bg-white { background: #fff; color: #000; }
-        .close-modal { margin-top: 20px; background: none; border: none; color: #888; cursor: pointer; }
+        .sound-icon:hover { opacity: 1; color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
+        .sound-icon.playing { color: var(--accent-color); opacity: 1; }
         
-        /* --- Character --- */
+        /* Stylish Range Slider */
+        .volume-bar {
+            -webkit-appearance: none; appearance: none;
+            width: 3px; height: 50px; /* 縦向きに見せる */
+            background: var(--ui-border);
+            outline: none; border-radius: 2px; cursor: pointer;
+            writing-mode: bt-lr; /* IE/Edge */
+        }
+        .volume-bar::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 9px; height: 9px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+
+        /* --- Character Stage --- */
         .character-stage {
             grid-column: 2; grid-row: 1 / 4;
             display: flex; align-items: flex-end; justify-content: flex-start;
-            padding-left: 5%; position: relative; overflow: hidden;
+            padding-left: 8%; position: relative; overflow: hidden;
             pointer-events: auto; cursor: pointer;
         }
         .char-img {
-            height: 92%; width: auto; max-width: 100%;
+            /* 修正: 90%ほどの高さ、透過マスク削除、影削除 */
+            height: 90%; width: auto; max-width: 100%;
             object-fit: cover; object-position: top center;
-            mask-image: linear-gradient(to top, transparent 5%, black 25%);
-            -webkit-mask-image: linear-gradient(to top, transparent 5%, black 25%);
-            filter: drop-shadow(-10px 0 40px rgba(0,0,0,0.6));
+            
+            /* ホバー時の動き用 */
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.6s ease, opacity 1s;
+            transform-origin: center bottom;
+            
+            /* 初期状態 */
             opacity: 0; transform: translateY(30px) scale(0.98);
-            transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
+        
+        /* ホバー時の「かわいい動き」 */
+        .char-img.visible:hover {
+            transform: translateY(-5px) scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        /* Speech Bubble */
         .speech-bubble {
-            position: absolute; bottom: 25%; left: 0%;
+            position: absolute; bottom: 25%; left: 2%;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
             color: #fff; background: rgba(10, 10, 10, 0.85);
             padding: 25px 35px; backdrop-filter: blur(12px);
@@ -177,8 +213,9 @@
             max-width: 450px; line-height: 1.8;
             opacity: 0; transform: translateX(-20px);
             transition: all 0.5s ease 0.3s, border-color 1s;
+            pointer-events: none;
         }
-        .speech-bubble.show { opacity: 1; transform: translateX(20px); }
+        .speech-bubble.show { opacity: 1; transform: translateX(0); }
         .char-name-label {
             font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
             margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
@@ -188,21 +225,25 @@
         /* --- Right Column --- */
         .header-title {
             grid-column: 3; grid-row: 1;
-            padding: 25px 40px; text-align: right;
+            padding: 20px 40px 0 0; text-align: right;
+            /* 文字が見切れないように調整 */
+            white-space: nowrap; 
         }
         .header-title h1 {
-            font-family: var(--font-en); font-size: 26px; margin: 0;
-            color: var(--text-main); letter-spacing: 0.2em;
+            font-family: var(--font-en); font-size: 24px; margin: 0;
+            color: var(--text-main); letter-spacing: 0.1em;
             text-shadow: 0 0 20px rgba(255,255,255,0.1);
+            transition: color 0.5s;
         }
         .header-sub { font-size: 9px; color: var(--text-sub); letter-spacing: 0.4em; margin-top: 5px; opacity: 0.7; }
 
         .user-status {
-            position: absolute; top: 110px; right: 40px; text-align: right;
+            position: absolute; top: 120px; right: 40px; text-align: right;
             border-right: 1px solid var(--ui-border); padding-right: 20px;
+            transition: border-color 0.5s;
         }
         .status-label { font-size: 8px; color: var(--accent-color); letter-spacing: 0.2em; font-family: var(--font-en); }
-        .status-name { font-size: 15px; margin-top: 5px; font-weight: 500; letter-spacing: 0.1em; color: var(--text-main); }
+        .status-name { font-size: 14px; margin-top: 5px; font-weight: 500; letter-spacing: 0.1em; color: var(--text-main); }
         .connect-btn {
             background: none; border: 1px solid var(--accent-color); color: var(--accent-color);
             font-size: 10px; padding: 6px 20px; margin-top: 12px; cursor: pointer;
@@ -220,10 +261,10 @@
         
         .nav-btn {
             display: flex; align-items: center; justify-content: center;
-            width: 230px; height: 50px;
+            width: 220px; height: 45px;
             background: var(--ui-bg); border: 1px solid var(--ui-border);
             color: var(--text-main); text-decoration: none;
-            font-family: var(--font-en); font-size: 11px; letter-spacing: 0.2em;
+            font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             position: relative; overflow: hidden;
             transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
         }
@@ -244,6 +285,33 @@
         .nav-btn:hover::before { left: 150%; transition: 0.7s; }
         .nav-btn:hover::after { transform: scaleY(1); }
 
+        /* --- Modal --- */
+        #bg-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            z-index: 200; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #bg-modal.open { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: rgba(20,20,20,0.9); border: 1px solid var(--accent-color);
+            padding: 40px; border-radius: 4px; max-width: 600px; width: 90%;
+            text-align: center;
+        }
+        .modal-title { font-family: var(--font-en); color: #fff; margin-bottom: 20px; letter-spacing: 0.1em; }
+        .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; }
+        .bg-option {
+            aspect-ratio: 16/9; border: 2px solid #444; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-family: var(--font-en); font-size: 12px; color: #fff;
+            background-size: cover; background-position: center; transition: 0.2s;
+        }
+        .bg-option:hover { border-color: var(--accent-color); transform: scale(1.05); }
+        .bg-black { background: #000; }
+        .bg-white { background: #fff; color: #000; }
+        .close-modal { margin-top: 20px; background: none; border: 1px solid #555; color: #aaa; padding: 8px 20px; cursor: pointer; transition: 0.2s; }
+        .close-modal:hover { color: #fff; border-color: #fff; }
+
         @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
@@ -254,22 +322,27 @@
     </audio>
 
     <div id="canvas-container"></div>
+    
     <div id="bg-modal">
         <div class="modal-content">
-            <h3 class="modal-title">SELECT DISPLAY MODE</h3>
+            <h3 class="modal-title">SELECT BACKGROUND</h3>
             <div class="bg-grid" id="bg-grid">
                 <div class="bg-option bg-black" onclick="setBgMode('black')">BLACK</div>
                 <div class="bg-option bg-white" onclick="setBgMode('white')">WHITE</div>
+                <!-- JSで写真ボタン追加 -->
             </div>
             <button class="close-modal" onclick="toggleBgModal()">CLOSE</button>
         </div>
     </div>
+
+    <!-- News Ticker -->
     <div id="news-ticker">
         <span class="ticker-label">LATEST REPORT</span>
         <span id="news-content" class="ticker-content">Initializing System...</span>
     </div>
 
     <div class="viewport">
+        <!-- Left Nav -->
         <nav class="sub-nav">
             <div class="sub-nav-content">
                 <div class="sub-nav-item">System Log</div>
@@ -278,20 +351,27 @@
             </div>
         </nav>
         
+        <!-- BGM (Bottom Left) -->
         <div class="sound-control">
+            <!-- 縦型のボリュームバー -->
+            <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
+                   oninput="changeVolume(this.value)" style="transform: rotate(-90deg); width: 60px; margin-bottom: 20px;">
             <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
-            <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" oninput="changeVolume(this.value)">
         </div>
 
+        <!-- Header -->
         <div class="header-title">
             <h1>UCHIYOSO<br>ARCHIVE</h1>
             <div class="header-sub">PREMIUM INTERFACE v2.2</div>
         </div>
+
         <div class="user-status">
             <div class="status-label">LOGGED IN AS</div>
             <div id="user-display" class="status-name">GUEST</div>
             <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
         </div>
+
+        <!-- Character Stage -->
         <section class="character-stage" onclick="handleCharClick()">
             <img id="char-img" class="char-img" src="" alt="Character">
             <div class="speech-bubble">
@@ -299,6 +379,8 @@
                 <span id="typewriter-text"></span><span class="cursor"></span>
             </div>
         </section>
+
+        <!-- Right Nav -->
         <nav class="main-nav">
             <div class="nav-btn-group">
                 <span class="btn-label">QUICK EDIT</span>
@@ -335,8 +417,10 @@
         let charDataList = [];
         let currentIndex = 0;
         let typeWriterTimeout = null;
+        
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
+        let currentBlendMode = THREE.AdditiveBlending; // 初期は加算合成
 
         const fallbackData = [{
             name: "System",
@@ -345,10 +429,9 @@
             image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
         }];
 
-        // --- BGM Logic ---
+        // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
         const playBtn = document.getElementById('btn-play');
-        const volumeSlider = document.getElementById('volume-slider');
         bgmPlayer.volume = 0.3;
 
         window.toggleBGM = () => {
@@ -356,16 +439,16 @@
                 bgmPlayer.play().then(() => {
                     playBtn.textContent = 'pause';
                     playBtn.classList.add('playing');
-                }).catch(e => console.log("Audio play was prevented. User interaction needed."));
+                }).catch(e => console.log("User interaction required"));
             } else {
                 bgmPlayer.pause();
                 playBtn.textContent = 'play_arrow';
                 playBtn.classList.remove('playing');
             }
         };
-        window.changeVolume = (value) => { bgmPlayer.volume = value; };
+        window.changeVolume = (v) => { bgmPlayer.volume = v; };
 
-        // --- BG Modal Logic ---
+        // --- BG Modal ---
         window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
 
         window.setBgMode = (mode, photoIdx) => {
@@ -373,11 +456,17 @@
             body.className = "";
             document.documentElement.style.setProperty('--bg-image-url', 'none');
             
-            if (mode === 'black') body.classList.add('mode-black');
-            else if (mode === 'white') body.classList.add('mode-white');
-            else if (mode === 'photo') {
+            // 背景モード設定とパーティクル設定
+            if (mode === 'black') {
+                body.classList.add('mode-black');
+                updateParticlesForBg('dark');
+            } else if (mode === 'white') {
+                body.classList.add('mode-white');
+                updateParticlesForBg('light');
+            } else if (mode === 'photo') {
                 body.classList.add('mode-photo');
                 document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
+                updateParticlesForBg('dark'); // 写真の上は加算合成が良い
             }
             toggleBgModal();
         };
@@ -391,7 +480,29 @@
             bgGrid.appendChild(div);
         }
 
-        // --- News Ticker ---
+        // --- Update Particles based on BG ---
+        function updateParticlesForBg(type) {
+            if (type === 'light') {
+                // 白背景用: 色を濃く、通常合成に
+                particleMaterial.blending = THREE.NormalBlending;
+                // 色目標を少し暗めに上書きするロジックが必要だが、
+                // 簡易的に透明度を下げて対応
+                particleMaterial.opacity = 0.4;
+                particleMaterial.color.setHex(0x555555); // 一時的にグレー
+                targetColor.setHex(0x555555);
+            } else {
+                // 黒/写真用: 加算合成で光らせる
+                particleMaterial.blending = THREE.AdditiveBlending;
+                particleMaterial.opacity = 0.8;
+                // 色はキャラ色に戻す（次のupdateで反映）
+                const char = charDataList[currentIndex];
+                const theme = char ? (char.color || char.inpThemeColor || DEFAULT_THEME) : DEFAULT_THEME;
+                targetColor.set(theme);
+            }
+            particleMaterial.needsUpdate = true;
+        }
+
+        // --- News ---
         async function initNews() {
             const el = document.getElementById('news-content');
             const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
@@ -415,7 +526,7 @@
             cycle(); setInterval(cycle, 6000);
         }
 
-        // --- Char Display ---
+        // --- Display ---
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
                 if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
@@ -437,10 +548,17 @@
             const char = charDataList[currentIndex];
             imgEl.classList.remove('visible');
             bubbleEl.classList.remove('show');
+
             const nextImgSrc = await resolveImage(char.name, char.image);
-            const theme = char.color || DEFAULT_THEME;
+            const theme = char.color || char.inpThemeColor || DEFAULT_THEME;
+            
             rootStyles.setProperty('--accent-color', theme);
-            targetColor.set(theme);
+            
+            // 白背景モードじゃなければターゲットカラー更新
+            if (!document.body.classList.contains('mode-white')) {
+                targetColor.set(theme);
+            }
+
             let dialogue = char.remarks || char.txtRoleplay || "……。";
             dialogue = dialogue.replace(/<br>/g, "\n");
 
@@ -477,6 +595,7 @@
             const renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
+
             function getTexture() {
                 const c = document.createElement('canvas'); c.width = 32; c.height = 32;
                 const ctx = c.getContext('2d');
@@ -485,17 +604,30 @@
                 ctx.fillStyle = g; ctx.fillRect(0,0,32,32);
                 const tex = new THREE.Texture(c); tex.needsUpdate = true; return tex;
             }
+
             const geometry = new THREE.BufferGeometry();
             const vertices = [];
             for (let i = 0; i < 5000; i++) vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            particleMaterial = new THREE.PointsMaterial({ color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+            
+            particleMaterial = new THREE.PointsMaterial({ 
+                color: new THREE.Color(DEFAULT_THEME), 
+                size: 5, map: getTexture(), 
+                transparent: true, opacity: 0.8, 
+                blending: THREE.AdditiveBlending, depthWrite: false 
+            });
             const points = new THREE.Points(geometry, particleMaterial);
             scene.add(points); camera.position.z = 1000;
+
             function animate() {
                 requestAnimationFrame(animate);
                 points.rotation.x += 0.0003; points.rotation.y += 0.0005;
-                particleMaterial.color.lerp(targetColor, 0.05);
+                
+                // 白モードでなければ色を追従させる
+                if (!document.body.classList.contains('mode-white')) {
+                    particleMaterial.color.lerp(targetColor, 0.05);
+                }
+                
                 renderer.render(scene, camera);
             }
             animate();
