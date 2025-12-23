@@ -413,7 +413,7 @@
         <!-- Right Nav (Added Duo Edit Link) -->
         <nav class="main-nav">
             <div class="nav-btn-group">
-                <span class="btn-label">QUICK EDIT (SOLO)</span>
+                <span class="btn-label">QUICK EDIT</span>
                 <a href="./character/dialogue.html" class="nav-btn">EDIT DIALOGUE</a>
             </div>       
             <div class="nav-btn-group">
@@ -426,11 +426,11 @@
             </div>
             <div class="nav-btn-group">
                 <span class="btn-label">REQUEST MODE</span>
-                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL (SOLO)</a>
+                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL</a>
             </div>
             <div class="nav-btn-group">
                 <span class="btn-label">COMMUNICATION</span>
-                <a href="./character/Mquestionnaire.html" class="nav-btn">PAIR QUESTIONS</a>
+                <a href="./character/Wquestionnaire.html" class="nav-btn">PAIR QUESTIONS</a>
             </div>
         </nav>
     </div>
@@ -720,9 +720,16 @@
         );
 
         window.handleConnect = () => {
-            if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
-            if (!currentUser) login(); else nextChar();
+           if (!currentUser) {
+             // ログイン（CONNECT）時のみBGM再生を試みる
+             if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
+             login();
+           } else {
+             // すでにログインしている（NEXT）時はキャラ送りだけ行う
+             nextChar();
+           }
         };
+        
         window.handleCharClick = () => { if (currentUser) nextChar(); };
         function nextChar() {
             if (charDataList.length <= 1) return;
