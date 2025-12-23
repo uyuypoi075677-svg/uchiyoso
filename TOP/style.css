@@ -192,6 +192,8 @@ body {
 .glass-card:nth-of-type(10) { animation-delay: 1.0s; }
 .glass-card:nth-of-type(11) { animation-delay: 1.1s; }
 
+.area-share { animation-delay: 1.3s; }
+
 /* パーティクル & マスコット */
 .floating-particle {
     position: absolute;
