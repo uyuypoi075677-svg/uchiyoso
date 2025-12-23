@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uchiyoso Maker - Luxe Archive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@100;400;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@100;300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #080808;
-            --accent-color: #00ffcc; /* パーティクルと合わせたネオンミント */
             --text-main: #ffffff;
             --font-en: 'Syncopate', sans-serif;
             --font-jp: 'Noto Sans JP', sans-serif;
+            
+            /* JSで動的に書き換わるテーマカラー（初期値: ミントグリーン） */
+            --accent-color: #00ffcc; 
         }
 
         body, html {
@@ -21,30 +24,36 @@
             color: var(--text-main);
             font-family: var(--font-jp);
             overflow: hidden;
+            transition: background-color 0.5s;
         }
 
-        /* --- お客様の設定されたパーティクル用コンテナ --- */
+        /* --- 1. Background (Three.js Container) --- */
         #canvas-container {
             position: fixed;
             top: 0; left: 0;
             z-index: 0;
-            opacity: 0.5;
+            opacity: 1.0; /* 加算合成を使うため不透明度は1.0でOK */
             pointer-events: none;
         }
 
-        /* --- ニュースバー (デザインを損なわないよう追加) --- */
+        /* --- 2. News Ticker --- */
         #news-ticker {
-            position: fixed; top: 0; left: 0; width: 100%; height: 24px;
-            background: rgba(0, 255, 204, 0.05);
-            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
-            backdrop-filter: blur(2px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 28px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
             z-index: 100;
             display: flex; align-items: center; padding: 0 20px;
             font-family: var(--font-en); font-size: 9px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
         .ticker-label {
-            color: var(--accent-color); font-weight: bold; margin-right: 15px;
+            color: var(--accent-color); font-weight: bold; margin-right: 20px;
             letter-spacing: 0.1em; white-space: nowrap;
+            text-shadow: 0 0 10px var(--accent-color);
+            transition: color 1s, text-shadow 1s;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding-right: 15px;
         }
         .ticker-content {
             color: rgba(255,255,255,0.8); font-family: var(--font-jp); font-weight: 300;
@@ -53,24 +62,24 @@
         }
         .ticker-content.active { opacity: 1; transform: translateY(0); }
 
-
+        /* --- 3. Main Layout --- */
         .viewport {
             position: relative;
             width: 100vw; height: 100vh;
             display: grid;
-            grid-template-columns: 80px 1.2fr 1fr;
-            grid-template-rows: 1fr auto 120px;
+            grid-template-columns: 80px 1fr 400px;
+            grid-template-rows: 60px 1fr 150px;
             z-index: 10;
         }
 
-        /* 左端サブメニュー */
+        /* Left Sub Nav */
         .sub-nav {
             grid-row: 1 / 4;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             gap: 60px;
             border-right: 1px solid rgba(255,255,255,0.08);
-            background: rgba(0,0,0,0.2); /* 視認性のため少しだけ暗く */
+            background: linear-gradient(to right, rgba(0,0,0,0.4), transparent);
         }
 
         .sub-nav-item {
@@ -78,223 +87,225 @@
             font-family: var(--font-en);
             font-size: 9px;
             letter-spacing: 0.6em;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.3);
             text-transform: uppercase;
             cursor: pointer;
             transition: 0.4s;
         }
-
         .sub-nav-item:hover {
             color: var(--accent-color);
-            transform: translateY(-10px);
-            text-shadow: 0 0 10px var(--accent-color);
+            transform: translateY(-8px);
+            text-shadow: 0 0 15px var(--accent-color);
         }
 
-        /* キャラクターエリア */
+        /* Character Area */
         .character-stage {
-            grid-column: 2; grid-row: 1 / 3;
-            display: flex; align-items: flex-end;
-            padding-left: 8%;
+            grid-column: 2; grid-row: 1 / 4;
+            display: flex; align-items: flex-end; justify-content: center; /* 中央寄せ */
             position: relative;
-            /* 画像がはみ出さないように */
             overflow: hidden;
             pointer-events: auto;
             cursor: pointer;
         }
 
         .char-img {
-            /* 
-               【調整】
-               お客様の設定 (height: 90%) を維持しつつ、
-               顔が見切れないように object-position を設定しました。
-            */
-            height: 90%;
-            width: auto;
-            max-width: 100%;
+            /* 顔が見切れないように上基準で配置 */
+            height: 92%; /* 少し大きめに */
+            width: auto; max-width: 100%;
             
-            /* 顔を基準に表示 */
             object-fit: cover;
             object-position: top center;
 
-            mask-image: linear-gradient(to top, transparent, black 15%);
-            -webkit-mask-image: linear-gradient(to top, transparent, black 15%);
+            /* 足元のフェードアウト */
+            mask-image: linear-gradient(to top, transparent 5%, black 25%);
+            -webkit-mask-image: linear-gradient(to top, transparent 5%, black 25%);
             
-            filter: drop-shadow(0 0 50px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 0 40px rgba(0,0,0,0.7));
             
-            /* アニメーション用 */
             opacity: 0;
-            transform: translateY(20px);
-            transition: 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(30px) scale(0.98);
+            transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        .char-img.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
 
+        /* Speech Bubble */
         .speech-bubble {
             position: absolute;
-            top: 30%; left: 45%;
-            font-weight: 100;
-            letter-spacing: 0.1em;
-            background: rgba(10, 10, 10, 0.7); /* 文字が見やすいよう少し濃く */
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            border-left: 1px solid var(--accent-color);
-            max-width: 350px;
-            line-height: 2;
+            bottom: 25%; left: 8%;
+            font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
             color: #fff;
+            background: rgba(10, 10, 10, 0.85);
+            padding: 25px 35px;
+            backdrop-filter: blur(12px);
+            border-left: 3px solid var(--accent-color);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-width: 450px; line-height: 1.8;
             
             opacity: 0; transform: translateX(-20px);
-            transition: all 0.5s ease 0.5s;
+            transition: all 0.5s ease 0.3s, border-color 1s;
         }
         .speech-bubble.show { opacity: 1; transform: translateX(0); }
         
         .char-name-label {
-            display: block; font-family: var(--font-en); font-size: 10px; color: var(--accent-color); margin-bottom: 10px;
+            font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
+            margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
+            transition: color 1s, text-shadow 1s;
         }
         .cursor {
             display: inline-block; width: 2px; height: 1em; background: var(--accent-color);
-            animation: blink 1s infinite; vertical-align: middle;
+            animation: blink 1s infinite; vertical-align: middle; transition: background 1s;
         }
 
-        /* 右下メインメニュー：お客様の作成されたUIデザイン */
+        /* Right Column (Header & Nav) */
+        /* Title */
+        .header-title {
+            grid-column: 3; grid-row: 1;
+            padding: 25px 40px; text-align: right;
+        }
+        .header-title h1 {
+            font-family: var(--font-en); font-size: 26px; margin: 0;
+            color: #fff; letter-spacing: 0.2em;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        .header-sub { font-size: 9px; color: #888; letter-spacing: 0.4em; margin-top: 5px; opacity: 0.7; }
+
+        /* User Status */
+        .user-status {
+            position: absolute; top: 110px; right: 40px;
+            text-align: right;
+            border-right: 1px solid rgba(255,255,255,0.15);
+            padding-right: 20px;
+        }
+        .status-label { font-size: 8px; color: var(--accent-color); letter-spacing: 0.2em; font-family: var(--font-en); transition: color 1s; }
+        .status-name { font-size: 15px; margin-top: 5px; font-weight: 500; letter-spacing: 0.1em; color: #fff; }
+        .connect-btn {
+            background: none; border: 1px solid var(--accent-color); color: var(--accent-color);
+            font-size: 10px; padding: 6px 20px; margin-top: 12px; cursor: pointer;
+            font-family: var(--font-en); transition: 0.3s;
+        }
+        .connect-btn:hover { background: var(--accent-color); color: #000; box-shadow: 0 0 15px var(--accent-color); }
+
+        /* Main Navigation (Vertical Right) */
         .main-nav {
-            grid-column: 2 / 4; grid-row: 3;
-            display: flex; justify-content: flex-end; align-items: center;
-            padding-right: 60px; gap: 20px;
+            grid-column: 3; grid-row: 2 / 4;
+            display: flex; flex-direction: column; 
+            justify-content: flex-end; align-items: flex-end;
+            padding: 0 40px 50px 0; gap: 24px;
         }
 
         .nav-btn-group {
-            position: relative;
             display: flex; flex-direction: column; align-items: flex-end;
         }
-
         .btn-label {
-            font-family: var(--font-en);
-            font-size: 8px; color: var(--accent-color);
-            margin-bottom: 8px; letter-spacing: 0.3em;
-            opacity: 0.7;
+            font-family: var(--font-en); font-size: 8px; color: #888;
+            margin-bottom: 6px; letter-spacing: 0.2em;
         }
 
-        /* お客様のボタンCSS (スライド光沢アニメーション) */
+        /* Improved Button Style */
         .nav-btn {
             display: flex; align-items: center; justify-content: center;
-            width: 180px; height: 45px;
-            background: transparent;
+            width: 230px; height: 50px;
+            background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.15);
             color: #fff; text-decoration: none;
-            font-family: var(--font-en);
-            font-size: 10px; letter-spacing: 0.2em;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            overflow: hidden;
+            font-family: var(--font-en); font-size: 11px; letter-spacing: 0.2em;
+            position: relative; overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
         }
-
+        
+        /* スライドアニメーション用の光沢 */
         .nav-btn::before {
             content: ''; position: absolute;
-            top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg);
             transition: 0.5s;
+        }
+        
+        /* ボーダーのアクセント */
+        .nav-btn::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+            background: var(--accent-color);
+            transform: scaleY(0); transition: transform 0.4s, background-color 1s;
         }
 
         .nav-btn:hover {
-            letter-spacing: 0.4em; /* 文字間隔が広がる演出 */
             border-color: var(--accent-color);
-            background: rgba(0, 255, 204, 0.05);
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            letter-spacing: 0.35em; /* 文字間隔を広げる演出 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.2);
+            text-shadow: 0 0 8px var(--accent-color); /* 文字も光らせる */
         }
-
-        .nav-btn:hover::before { left: 100%; }
-
-        /* タイトル配置 */
-        .header-title {
-            position: absolute; top: 10%; right: 5%; text-align: right;
-        }
-
-        .header-title h1 {
-            font-family: var(--font-en);
-            font-size: 6vw; margin: 0; line-height: 0.8;
-            opacity: 0.2;
-            -webkit-text-stroke: 1px #fff;
-            color: transparent;
-        }
-
-        /* User Status / Connect Button */
-        .user-status {
-            position: absolute; top: 10%; left: 120px;
-        }
-        .status-text { font-family: var(--font-en); font-size: 10px; color: var(--accent-color); }
-        .connect-trigger {
-            background: none; border: 1px solid var(--accent-color); color: #fff;
-            padding: 5px 15px; font-family: var(--font-en); font-size: 10px;
-            margin-top: 5px; cursor: pointer; transition: 0.3s;
-        }
-        .connect-trigger:hover { background: var(--accent-color); color: #000; }
+        
+        .nav-btn:hover::before { left: 150%; transition: 0.7s; }
+        .nav-btn:hover::after { transform: scaleY(1); }
 
         @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <!-- お客様のパーティクルを描画するキャンバス -->
+    <!-- 1. Particle Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- ニュースティッカー (report.json) -->
+    <!-- 2. News Ticker -->
     <div id="news-ticker">
-        <span class="ticker-label">REPORT</span>
-        <span id="news-content" class="ticker-content">Loading System...</span>
+        <span class="ticker-label">LATEST REPORT</span>
+        <span id="news-content" class="ticker-content">System Booting...</span>
     </div>
 
     <div class="viewport">
-        <!-- 左メニュー -->
+        
+        <!-- Left Sub Nav -->
         <nav class="sub-nav">
             <div class="sub-nav-item">System Log</div>
-            <div class="sub-nav-item">Gift Code</div>
+            <div class="sub-nav-item">Archive</div>
             <div class="sub-nav-item">Network</div>
         </nav>
 
-        <!-- ログイン状態表示 -->
-        <div class="user-status">
-            <div id="user-display" class="status-text">GUEST MODE</div>
-            <button id="connect-btn" class="connect-trigger" onclick="handleConnect()">CONNECT</button>
+        <!-- Header Title -->
+        <div class="header-title">
+            <h1>UCHIYOSO<br>ARCHIVE</h1>
+            <div class="header-sub">PREMIUM INTERFACE v2.0</div>
         </div>
 
-        <!-- キャラクターエリア -->
+        <!-- User Status -->
+        <div class="user-status">
+            <div class="status-label">LOGGED IN AS</div>
+            <div id="user-display" class="status-name">GUEST</div>
+            <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
+        </div>
+
+        <!-- Character Stage -->
         <section class="character-stage" onclick="handleCharClick()">
-            <!-- 顔が見切れないようCSS調整済み -->
-            <img id="char-img" class="char-img" src="" alt="">
-            
+            <img id="char-img" class="char-img" src="" alt="Character">
             <div class="speech-bubble">
                 <span id="char-name-label" class="char-name-label">SYSTEM</span>
                 <span id="typewriter-text"></span><span class="cursor"></span>
             </div>
         </section>
 
-        <!-- 背景タイトル -->
-        <div class="header-title">
-            <h1>UCHIYOSO<br>ARCHIVE</h1>
-            <p style="letter-spacing: 0.8em; font-size: 10px; margin-top: 10px; color: #fff;">PREMIUM INTERFACE v1.0</p>
-        </div>
-
-        <!-- メインメニュー (4つのリンク) -->
+        <!-- Right Main Navigation -->
         <nav class="main-nav">
             <div class="nav-btn-group">
-                <span class="btn-label">DATA</span>
-                <a href="./character/edit.html" class="nav-btn">EDIT</a>
+                <span class="btn-label">DATA ENTRY</span>
+                <a href="./character/edit.html" class="nav-btn">EDIT DATA</a>
             </div>
+
             <div class="nav-btn-group">
-                <span class="btn-label">LIST</span>
-                <a href="./character/list.html" class="nav-btn">MEMBER</a>
+                <span class="btn-label">DATABASE</span>
+                <a href="./character/list.html" class="nav-btn">MEMBER LIST</a>
             </div>
+
             <div class="nav-btn-group">
-                <span class="btn-label">SOLO</span>
-                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL</a>
+                <span class="btn-label">REQUEST MODE</span>
+                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL (SOLO)</a>
             </div>
+
             <div class="nav-btn-group">
-                <span class="btn-label">PAIR</span>
-                <a href="./character/Mquestionnaire.html" class="nav-btn">QUESTIONS</a>
+                <span class="btn-label">COMMUNICATION</span>
+                <a href="./character/Mquestionnaire.html" class="nav-btn">PAIR QUESTIONS</a>
             </div>
         </nav>
     </div>
@@ -302,41 +313,39 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <!-- Logic -->
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
 
-        // 設定
+        // --- Settings ---
         const LOCAL_IMG_BASE = "./images/character/";
-
-        // State
+        const DEFAULT_THEME = "#00ffcc";
+        
+        // --- State ---
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
         let typeWriterTimeout = null;
+        
+        // Three.js Control
+        let particleMaterial;
+        let targetColor = new THREE.Color(DEFAULT_THEME);
 
-        // ダミーデータ
+        // Fallback Data
         const fallbackData = [{
             name: "System",
-            remarks: "アーカイブへようこそ。<br>左上のCONNECTボタンからログインしてください。",
+            inpThemeColor: "#00ffcc",
+            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
             image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
         }];
 
         // ==========================================
-        // 1. Report JSON Loading (Robust)
+        // 1. News Ticker
         // ==========================================
         async function initNews() {
             const el = document.getElementById('news-content');
-            
-            // 複数のパス候補
-            const paths = [
-                './report.json',
-                './TOP/report.json',
-                '../TOP/report.json',
-                '../../TOP/report.json'
-            ];
-
+            const paths = ['./report.json', './TOP/report.json', '../TOP/report.json', '../../TOP/report.json'];
             let data = null;
+
             for (const path of paths) {
                 try {
                     const res = await fetch(`${path}?t=${Date.now()}`);
@@ -365,7 +374,7 @@
         }
 
         // ==========================================
-        // 2. Character Logic
+        // 2. Character Logic & Theme Update
         // ==========================================
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
@@ -382,15 +391,21 @@
         const nameLabel = document.getElementById('char-name-label');
         const textContainer = document.getElementById('typewriter-text');
         const bubbleEl = document.querySelector('.speech-bubble');
+        const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
             const char = charDataList[currentIndex];
 
-            // Exit
             imgEl.classList.remove('visible');
             bubbleEl.classList.remove('show');
 
             const nextImgSrc = await resolveImage(char.name, char.image);
+            const theme = char.inpThemeColor || DEFAULT_THEME;
+            
+            // ★ CSS変数とパーティクル色の更新
+            rootStyles.setProperty('--accent-color', theme);
+            targetColor.set(theme); // Three.jsの色目標値を更新
+
             let dialogue = char.remarks || char.txtRoleplay || "……。";
             dialogue = dialogue.replace(/<br>/g, "\n");
 
@@ -398,10 +413,7 @@
                 imgEl.src = nextImgSrc;
                 imgEl.onload = () => {
                     nameLabel.textContent = char.name.toUpperCase();
-                    
-                    // Enter
                     imgEl.classList.add('visible');
-                    
                     setTimeout(() => {
                         bubbleEl.classList.add('show');
                         startTypewriter(dialogue);
@@ -425,10 +437,85 @@
         }
 
         // ==========================================
-        // 3. Auth
+        // 3. Three.js Particles (Soft & Glowing)
+        // ==========================================
+        function createParticles() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 光のテクスチャをCanvasで動的生成（外部画像不要）
+            function getTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 32; canvas.height = 32;
+                const ctx = canvas.getContext('2d');
+                // 放射状グラデーションで「ぼんやりした丸」を作る
+                const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+                gradient.addColorStop(0, 'rgba(255,255,255,1)');
+                gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');
+                gradient.addColorStop(0.5, 'rgba(255,255,255,0.2)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0,0,32,32);
+                const texture = new THREE.Texture(canvas);
+                texture.needsUpdate = true;
+                return texture;
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            // お客様指定: 5000個
+            for (let i = 0; i < 5000; i++) {
+                vertices.push(
+                    THREE.MathUtils.randFloatSpread(2000), 
+                    THREE.MathUtils.randFloatSpread(2000), 
+                    THREE.MathUtils.randFloatSpread(2000)
+                );
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            
+            // Material: 加算合成(AdditiveBlending)で重なると光る
+            particleMaterial = new THREE.PointsMaterial({ 
+                color: new THREE.Color(DEFAULT_THEME), 
+                size: 4, // ぼかした分少し大きく
+                map: getTexture(),
+                transparent: true, 
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            const points = new THREE.Points(geometry, particleMaterial);
+            scene.add(points);
+            camera.position.z = 1000;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                // お客様指定の回転速度
+                points.rotation.x += 0.0003;
+                points.rotation.y += 0.0005;
+
+                // 色の滑らかな変化 (Lerp)
+                particleMaterial.color.lerp(targetColor, 0.05);
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // ==========================================
+        // 4. Auth
         // ==========================================
         const userDisplay = document.getElementById('user-display');
-        const connectBtn = document.getElementById('connect-btn');
+        const connectBtn = document.getElementById('main-connect-btn');
 
         monitorAuth(
             async (user) => {
@@ -440,14 +527,14 @@
                 if (data && Object.keys(data).length > 0) {
                     charDataList = Object.values(data);
                 } else {
-                    charDataList = [{ name: "No Data", remarks: "データがありません。", image: null }];
+                    charDataList = [{ name: "No Data", remarks: "データがありません。", inpThemeColor: "#555" }];
                 }
                 currentIndex = Math.floor(Math.random() * charDataList.length);
                 updateDisplay();
             },
             () => {
                 currentUser = null;
-                userDisplay.textContent = "GUEST MODE";
+                userDisplay.textContent = "GUEST";
                 connectBtn.textContent = "CONNECT";
                 charDataList = fallbackData;
                 currentIndex = 0;
@@ -463,51 +550,8 @@
             updateDisplay();
         }
 
-
-        // ==========================================
-        // 4. お客様のThree.jsパーティクル (完全復元)
-        // ==========================================
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        // お客様指定: 5000個
-        for (let i = 0; i < 5000; i++) {
-            vertices.push(
-                // お客様指定: randFloatSpread(2000)
-                THREE.MathUtils.randFloatSpread(2000), 
-                THREE.MathUtils.randFloatSpread(2000), 
-                THREE.MathUtils.randFloatSpread(2000)
-            );
-        }
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        
-        // お客様指定: color 0x00ffcc, size 2
-        const material = new THREE.PointsMaterial({ color: 0x00ffcc, size: 2, transparent: true, opacity: 0.8 });
-        const points = new THREE.Points(geometry, material);
-        scene.add(points);
-        camera.position.z = 1000;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            // お客様指定の回転速度
-            points.rotation.x += 0.0003;
-            points.rotation.y += 0.0005;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
         // Init
+        createParticles();
         initNews();
 
     </script>
