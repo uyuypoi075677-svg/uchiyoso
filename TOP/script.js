@@ -31,8 +31,6 @@ function createParticles() {
     wrapper.appendChild(fragment);
 }
 createParticles();
-
-document.addEventListener('DOMContentLoaded', () => {
     
     // 1. キャラクターの歩行制御
     const walker = document.getElementById('pixel-walker');
@@ -150,5 +148,5 @@ document.addEventListener('DOMContentLoaded', () => {
             walker.style.bottom = '35px';
         }
     });
-});
+;
 

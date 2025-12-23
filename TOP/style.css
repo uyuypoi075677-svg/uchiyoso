@@ -17,35 +17,46 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-/* === 修正版：スクロール設定（決定版） === */
+/* === 最終構造：スクロールバー一本化計画 === */
 html {
     width: 100%;
-    overflow-x: hidden;
-    /* 必要な時だけスクロールバーを出す設定に戻します */
-    overflow-y: auto; 
+    height: 100%;         /* 画面の高さいっぱいに固定 */
+    overflow: hidden;     /* 【重要】html側は絶対にスクロールさせない（ロック） */
 }
 
 body {
-    /* body側ではスクロールさせない（二重防止） */
-    overflow-y: visible !important; 
+    width: 100%;
+    height: 100%;         /* htmlの枠いっぱいに広げる */
     
-    overflow-x: hidden;
+    /* スクロール機能はbodyが担当する */
+    overflow-y: auto !important; /* JSが何を言ってもスクロール許可 */
+    overflow-x: hidden;          /* 横スクロールは禁止 */
     
-    /* 既存のデザイン設定 */
+    margin: 0;            /* 余白リセット */
+    
+    /* === 既存のデザイン設定 === */
     font-family: "Zen Maru Gothic", sans-serif;
     background-color: #fce4ec;
     background-image: url('../images/background/fur-texture-pink.jpg');
     background-size: cover;
     background-position: center;
+    /* bodyがスクロールするので、背景を固定して動かないようにする */
+    background-attachment: fixed; 
     
     display: flex;
     flex-direction: column;
+    
+    /* height: 100%にしたので min-height は削除してOKですが、
+       中身が少ない時のために一応残しても無害です */
     min-height: 100vh;
-    width: 100%;
+    
     color: var(--text-main);
     perspective: 1500px;
+    
+    /* ヘッダー・フッターの隙間確保 */
     padding-top: calc(var(--top-bar-height) + 20px);
     padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
+    
     position: relative;
 }
 
