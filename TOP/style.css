@@ -17,52 +17,44 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-/* === 修正完了版：デザイン崩れなし＆揺れ防止 === */
+/* === 揺れ・二重・見切れ 全て解決版 === */
 html {
     width: 100%;
-    /* 高さを固定せず、中身に合わせて伸びるように戻します */
-    height: auto;
+    /* 【重要】「auto」をやめて「scroll」にします */
+    /* 常にレールを表示することで、画面幅が固定され、物理的に揺れなくなります */
+    overflow-y: scroll; 
     
-    /* html側でスクロールを管理（これが一番フッターが安定します） */
-    overflow-y: auto; 
-    overflow-x: hidden; /* 横スクロールは絶対禁止 */
+    overflow-x: hidden;
 }
 
 body {
-    width: 100%;
-    /* 画面より中身が少なくても、最低限画面の高さは確保する */
-    min-height: 100vh;
-    /* 高さは自動で伸びるようにする */
-    height: auto; 
-    
-    /* body側はスクロールバーを出さない（二重防止） */
-    overflow-y: visible !important; 
+    /* bodyからは絶対にスクロールバーを出さない（二重防止） */
+    overflow-y: hidden; /* visibleではなくhiddenで封印します */
     overflow-x: hidden;
     
-    /* 余白リセット（謎の空間防止） */
-    margin: 0;
+    /* 画面高さの確保 */
+    min-height: 100vh;
     
-    /* === 既存のデザイン設定 === */
+    /* === 既存のデザイン === */
     font-family: "Zen Maru Gothic", sans-serif;
     background-color: #fce4ec;
     background-image: url('../images/background/fur-texture-pink.jpg');
     background-size: cover;
     background-position: center;
     
-    /* 背景を固定（スクロールしても背景が動かないようにするならfixed推奨） */
-    background-attachment: scroll; /* もし背景も一緒に動かしたいなら scroll、固定なら fixed */
-    
     display: flex;
     flex-direction: column;
     
+    width: 100%;
     color: var(--text-main);
     perspective: 1500px;
     
-    /* ヘッダー・フッターの隙間確保 */
+    /* ヘッダー・フッターの隙間 */
     padding-top: calc(var(--top-bar-height) + 20px);
     padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
     
     position: relative;
+    margin: 0;
 }
 
 /* === 右端パーツの「見切れ」防止調整 === */
