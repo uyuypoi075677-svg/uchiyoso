@@ -37,9 +37,9 @@
             --bg-color: #f0f0f0; 
             --text-main: #111111; 
             --text-sub: #555555;
-            --ui-border: rgba(0, 0, 0, 0.15);
+            --ui-border: rgba(0, 0, 0, 0.15); /* 枠線を見やすく */
             --ui-bg: rgba(0, 0, 0, 0.03);
-            --canvas-blend: normal;
+            --canvas-blend: normal; /* 白背景では通常合成で黒っぽい粒子を表示 */
             --canvas-opacity: 0.6;
         }
         
@@ -73,7 +73,7 @@
         /* --- News Ticker --- */
         #news-ticker {
             position: fixed; top: 0; left: 0; width: 100%; height: 32px;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.9); /* 常に黒背景で視認性確保 */
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(4px); z-index: 100;
             display: flex; align-items: center; padding: 0 20px;
@@ -99,26 +99,28 @@
         .viewport {
             position: relative; width: 100vw; height: 100vh;
             display: grid;
-            /* Grid Layout: 左ナビ80px, メイン可変, 右メニュー350px */
+            /* 
+               Grid Layout 調整:
+               左: 80px固定
+               中: 残りのスペース (1fr)
+               右: 350px固定 (見切れ防止のため固定幅に)
+            */
             grid-template-columns: 80px 1fr 350px;
             grid-template-rows: 60px 1fr 120px;
             z-index: 10;
-            padding-top: 32px;
+            padding-top: 32px; /* Ticker分下げる */
         }
 
-        /* --- Left Nav (Category Frame) --- */
+        /* --- Left Nav --- */
         .sub-nav {
             grid-row: 1 / 4; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             border-right: 1px solid var(--ui-border);
             background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
             transition: border-color 0.5s;
-            z-index: 10; /* コンテンツより下、オーバーレイより下 */
         }
         .sub-nav-content {
             display: flex; flex-direction: column; align-items: center; gap: 50px;
-            /* 下部のオーバーレイと被らないように少し上にマージンを取る */
-            margin-bottom: 100px;
         }
         .sub-nav-item {
             writing-mode: vertical-rl; font-family: var(--font-en); font-size: 9px; letter-spacing: 0.6em;
@@ -130,36 +132,23 @@
             transform: translateY(-8px); text-shadow: 0 0 15px var(--accent-color);
         }
         
-        /* --- Bottom Left Overlay Controls (Position & Volume) --- */
-        /* ★変更点: 左枠を無視して上に重なる形で固定配置 */
-        .bottom-overlays {
-            position: fixed; 
-            bottom: 30px; 
-            left: 20px; /* 左端から少し離す */
-            z-index: 200; /* 枠線(.sub-nav)より上に表示 */
-            display: flex; 
-            flex-direction: row; /* 横並び */
-            align-items: center; 
-            gap: 20px;
-        }
-
-        /* Display Mode Button (Horizontal) */
+        /* Display Mode Button (Vertical) */
         .bg-trigger {
-            /* 縦書き解除 */
-            writing-mode: horizontal-tb;
-            font-family: var(--font-en); font-size: 10px; letter-spacing: 0.1em;
+            writing-mode: vertical-rl;
+            font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             color: var(--text-main); border: 1px solid var(--ui-border);
-            padding: 8px 16px; cursor: pointer; transition: 0.3s;
-            background: rgba(0,0,0,0.5); /* 視認性向上のため背景追加 */
-            backdrop-filter: blur(5px);
+            padding: 15px 5px; cursor: pointer; transition: 0.3s;
+            background: var(--ui-bg);
         }
         .bg-trigger:hover { 
             background: var(--accent-color); color: #000; border-color: var(--accent-color); 
         }
 
-        /* Sound Control (Horizontal) */
-        .sound-control-group {
-            display: flex; flex-direction: row; align-items: center; gap: 10px;
+        /* --- BGM Player (Stylish) --- */
+        .sound-control {
+            position: fixed; bottom: 25px; left: 15px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            z-index: 101;
         }
         .sound-icon {
             color: var(--text-main); font-size: 20px; cursor: pointer;
@@ -168,88 +157,53 @@
         .sound-icon:hover { opacity: 1; color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
         .sound-icon.playing { color: var(--accent-color); opacity: 1; }
         
-        /* Horizontal Range Slider */
+        /* Stylish Range Slider */
         .volume-bar {
             -webkit-appearance: none; appearance: none;
-            width: 80px; height: 4px; /* 横向き */
+            width: 3px; height: 50px; /* 縦向きに見せる */
             background: var(--ui-border);
             outline: none; border-radius: 2px; cursor: pointer;
-            /* 回転解除 */
-            transform: none; 
-            margin: 0;
+            writing-mode: bt-lr; /* IE/Edge */
         }
         .volume-bar::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none;
-            width: 10px; height: 10px;
+            width: 9px; height: 9px;
             background: var(--accent-color);
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 5px var(--accent-color);
         }
 
-
         /* --- Character Stage --- */
         .character-stage {
             grid-column: 2; grid-row: 1 / 4;
-            display: flex; align-items: flex-end; justify-content: center; /* 中央寄せに変更 */
-            position: relative; overflow: hidden;
+            display: flex; align-items: flex-end; justify-content: flex-start;
+            padding-left: 8%; position: relative; overflow: hidden;
             pointer-events: auto; cursor: pointer;
-            width: 100%; height: 100%;
         }
-
-        /* 画像コンテナ: 1人/2人切り替え用 */
-        .char-container {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            width: 100%; height: 100%;
-            position: relative;
-        }
-
         .char-img {
+            /* 修正: 90%ほどの高さ、透過マスク削除、影削除 */
             height: 90%; width: auto; max-width: 100%;
             object-fit: cover; object-position: top center;
+            
+            /* ホバー時の動き用 */
             transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.6s ease, opacity 1s;
             transform-origin: center bottom;
+            
+            /* 初期状態 */
             opacity: 0; transform: translateY(30px) scale(0.98);
-            position: absolute; bottom: 0;
-            z-index: 1;
+        }
+        .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
+        
+        /* ホバー時の「かわいい動き」 */
+        .char-img.visible:hover {
+            transform: translateY(-5px) scale(1.02);
+            filter: brightness(1.1);
         }
 
-        /* Solo Mode (Default) */
-        .char-img.solo {
-            left: 10%; /* 左寄せ気味 */
-        }
-        .char-img.solo.visible { opacity: 1; transform: translateY(0) scale(1); }
-        .char-img.solo.visible:hover { transform: translateY(-5px) scale(1.02); filter: brightness(1.1); }
-
-        /* Pair Mode */
-        .char-img.pair-left, .char-img.pair-right {
-            max-width: 55%; /* 重なりを考慮 */
-            height: 85%; /* 少し小さく */
-        }
-        .char-img.pair-left {
-            left: -5%; /* 左端 */
-            transform: translateY(30px) translateX(-20px);
-            z-index: 1;
-        }
-        .char-img.pair-right {
-            right: -5%; /* 右端 */
-            transform: translateY(30px) translateX(20px);
-            z-index: 2; /* 右側を手前に */
-        }
-
-        /* Pair Visible State */
-        .mode-pair .char-img.pair-left.visible {
-            opacity: 1; transform: translateY(0) translateX(0);
-        }
-        .mode-pair .char-img.pair-right.visible {
-            opacity: 1; transform: translateY(0) translateX(0);
-        }
-
-        /* Speech Bubble (Design Unchanged) */
+        /* Speech Bubble */
         .speech-bubble {
-            position: absolute; 
+            position: absolute; bottom: 25%; left: 2%;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
             color: #fff; background: rgba(10, 10, 10, 0.85);
             padding: 25px 35px; backdrop-filter: blur(12px);
@@ -257,48 +211,22 @@
             border-top: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             max-width: 450px; line-height: 1.8;
-            opacity: 0; 
+            opacity: 0; transform: translateX(-20px);
             transition: all 0.5s ease 0.3s, border-color 1s;
             pointer-events: none;
-            z-index: 10;
         }
-
-        /* Solo Position */
-        .speech-bubble.solo-pos {
-            bottom: 25%; left: 2%;
-            transform: translateX(-20px);
-        }
-        .speech-bubble.solo-pos.show { opacity: 1; transform: translateX(0); }
-
-        /* Pair Position (Center Stacked) */
-        /* ★変更点: 2人モード時は真ん中に配置 */
-        .speech-bubble.pair-pos {
-            left: 50%; 
-            transform: translateX(-50%) translateY(20px);
-            width: 400px;
-            text-align: left;
-        }
-        .speech-bubble.pair-pos.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* 2つ目の吹き出し（2人モード用） */
-        #bubble-1.pair-pos { bottom: 45%; } /* 上段 */
-        #bubble-2.pair-pos { bottom: 20%; } /* 下段 */
-
-
+        .speech-bubble.show { opacity: 1; transform: translateX(0); }
         .char-name-label {
             font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
             margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
         }
         .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent-color); animation: blink 1s infinite; vertical-align: middle; }
 
-
         /* --- Right Column --- */
         .header-title {
             grid-column: 3; grid-row: 1;
             padding: 20px 40px 0 0; text-align: right;
+            /* 文字が見切れないように調整 */
             white-space: nowrap; 
         }
         .header-title h1 {
@@ -326,9 +254,7 @@
         .main-nav {
             grid-column: 3; grid-row: 2 / 4;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
-            /* ★変更点: 少し上にずらす (padding-bottomを増やす) */
-            padding: 0 40px 100px 0; 
-            gap: 24px;
+            padding: 0 40px 50px 0; gap: 24px;
         }
         .nav-btn-group { display: flex; flex-direction: column; align-items: flex-end; }
         .btn-label { font-family: var(--font-en); font-size: 8px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 0.2em; }
@@ -403,6 +329,7 @@
             <div class="bg-grid" id="bg-grid">
                 <div class="bg-option bg-black" onclick="setBgMode('black')">BLACK</div>
                 <div class="bg-option bg-white" onclick="setBgMode('white')">WHITE</div>
+                <!-- JSで写真ボタン追加 -->
             </div>
             <button class="close-modal" onclick="toggleBgModal()">CLOSE</button>
         </div>
@@ -415,25 +342,21 @@
     </div>
 
     <div class="viewport">
-        <!-- Left Nav (Category Only) -->
+        <!-- Left Nav -->
         <nav class="sub-nav">
             <div class="sub-nav-content">
                 <div class="sub-nav-item">System Log</div>
                 <div class="sub-nav-item">Archive</div>
-                <!-- Controls removed from here -->
+                <div class="bg-trigger" onclick="toggleBgModal()">DISPLAY</div>
             </div>
         </nav>
         
-        <!-- Bottom Left Overlays (New Location) -->
-        <div class="bottom-overlays">
-            <!-- 音量調整 (横書き) -->
-            <div class="sound-control-group">
-                <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
-                <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
-                       oninput="changeVolume(this.value)">
-            </div>
-            <!-- ディスプレイボタン (横書き) -->
-            <div class="bg-trigger" onclick="toggleBgModal()">DISPLAY</div>
+        <!-- BGM (Bottom Left) -->
+        <div class="sound-control">
+            <!-- 縦型のボリュームバー -->
+            <input type="range" class="volume-bar" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
+                   oninput="changeVolume(this.value)" style="transform: rotate(-90deg); width: 60px; margin-bottom: 20px;">
+            <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
         </div>
 
         <!-- Header -->
@@ -446,29 +369,14 @@
             <div class="status-label">LOGGED IN AS</div>
             <div id="user-display" class="status-name">GUEST</div>
             <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
-            <button class="connect-btn" onclick="togglePairMode()" style="margin-left:5px; border-color:#666; color:#666;">TEST: PAIR MODE</button>
         </div>
 
         <!-- Character Stage -->
-        <section class="character-stage" id="char-stage" onclick="handleCharClick()">
-            <div class="char-container">
-                <!-- 1人目 (デフォルト) -->
-                <img id="char-img" class="char-img solo" src="" alt="Character">
-                
-                <!-- 2人目 (ペアモード用) -->
-                <img id="char-img-2" class="char-img pair-right" src="" alt="Character 2" style="display:none;">
-            </div>
-
-            <!-- 吹き出し 1 -->
-            <div class="speech-bubble solo-pos" id="bubble-1">
+        <section class="character-stage" onclick="handleCharClick()">
+            <img id="char-img" class="char-img" src="" alt="Character">
+            <div class="speech-bubble">
                 <span id="char-name-label" class="char-name-label">SYSTEM</span>
                 <span id="typewriter-text"></span><span class="cursor"></span>
-            </div>
-
-            <!-- 吹き出し 2 (ペアモード用) -->
-            <div class="speech-bubble pair-pos" id="bubble-2" style="display:none; opacity:0;">
-                <span id="char-name-label-2" class="char-name-label">PARTNER</span>
-                <span id="typewriter-text-2"></span>
             </div>
         </section>
 
@@ -510,11 +418,9 @@
         let currentIndex = 0;
         let typeWriterTimeout = null;
         
-        // PAIR MODE STATE
-        let isPairMode = false;
-        
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
+        let currentBlendMode = THREE.AdditiveBlending; // 初期は加算合成
 
         const fallbackData = [{
             name: "System",
@@ -522,21 +428,6 @@
             remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
             image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
         }];
-
-        // --- Mock Pair Data for Demo ---
-        const pairData = {
-            char1: {
-                name: "Agent A",
-                color: "#ff0055",
-                remarks: "2人モードのテストだ。<br>吹き出しの位置を確認してくれ。",
-                image: "https://via.placeholder.com/800x1200/331111/ff5555?text=AGENT+A"
-            },
-            char2: {
-                name: "Agent B",
-                remarks: "了解。<br>デザインは変えず、真ん中に配置されています。",
-                image: "https://via.placeholder.com/800x1200/111133/5555ff?text=AGENT+B"
-            }
-        };
 
         // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
@@ -559,11 +450,13 @@
 
         // --- BG Modal ---
         window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
+
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
             body.className = "";
             document.documentElement.style.setProperty('--bg-image-url', 'none');
             
+            // 背景モード設定とパーティクル設定
             if (mode === 'black') {
                 body.classList.add('mode-black');
                 updateParticlesForBg('dark');
@@ -573,7 +466,7 @@
             } else if (mode === 'photo') {
                 body.classList.add('mode-photo');
                 document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
-                updateParticlesForBg('dark');
+                updateParticlesForBg('dark'); // 写真の上は加算合成が良い
             }
             toggleBgModal();
         };
@@ -587,20 +480,50 @@
             bgGrid.appendChild(div);
         }
 
+        // --- Update Particles based on BG ---
         function updateParticlesForBg(type) {
             if (type === 'light') {
+                // 白背景用: 色を濃く、通常合成に
                 particleMaterial.blending = THREE.NormalBlending;
+                // 色目標を少し暗めに上書きするロジックが必要だが、
+                // 簡易的に透明度を下げて対応
                 particleMaterial.opacity = 0.4;
-                particleMaterial.color.setHex(0x555555);
+                particleMaterial.color.setHex(0x555555); // 一時的にグレー
                 targetColor.setHex(0x555555);
             } else {
+                // 黒/写真用: 加算合成で光らせる
                 particleMaterial.blending = THREE.AdditiveBlending;
                 particleMaterial.opacity = 0.8;
+                // 色はキャラ色に戻す（次のupdateで反映）
                 const char = charDataList[currentIndex];
                 const theme = char ? (char.color || char.inpThemeColor || DEFAULT_THEME) : DEFAULT_THEME;
                 targetColor.set(theme);
             }
             particleMaterial.needsUpdate = true;
+        }
+
+        // --- News ---
+        async function initNews() {
+            const el = document.getElementById('news-content');
+            const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
+            let data = null;
+            for (const path of paths) {
+                try {
+                    const res = await fetch(`${path}?t=${Date.now()}`);
+                    if (res.ok) { data = await res.json(); break; }
+                } catch (e) {}
+            }
+            if (!data || !data.length) {
+                el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return;
+            }
+            const cycle = () => {
+                el.classList.remove('active');
+                setTimeout(() => {
+                    el.textContent = data[Math.floor(Math.random() * data.length)];
+                    el.classList.add('active');
+                }, 500);
+            };
+            cycle(); setInterval(cycle, 6000);
         }
 
         // --- Display ---
@@ -616,94 +539,22 @@
         }
 
         const imgEl = document.getElementById('char-img');
-        const imgEl2 = document.getElementById('char-img-2');
-        const bubble1 = document.getElementById('bubble-1');
-        const bubble2 = document.getElementById('bubble-2');
         const nameLabel = document.getElementById('char-name-label');
         const textContainer = document.getElementById('typewriter-text');
+        const bubbleEl = document.querySelector('.speech-bubble');
         const rootStyles = document.documentElement.style;
 
-        // ★ Pair Mode Toggle Function
-        window.togglePairMode = () => {
-            isPairMode = !isPairMode;
-            const stage = document.getElementById('char-stage');
-            
-            // Reset animations
-            imgEl.classList.remove('visible');
-            imgEl2.classList.remove('visible');
-            bubble1.classList.remove('show');
-            bubble2.classList.remove('show');
-
-            if (isPairMode) {
-                // Switch classes for Pair
-                stage.classList.add('mode-pair');
-                imgEl.className = 'char-img pair-left';
-                imgEl2.style.display = 'block';
-                
-                bubble1.className = 'speech-bubble pair-pos';
-                bubble2.style.display = 'block';
-                
-                // Show Pair Data
-                updateDisplayPair();
-            } else {
-                // Switch classes for Solo
-                stage.classList.remove('mode-pair');
-                imgEl.className = 'char-img solo';
-                imgEl2.style.display = 'none';
-                
-                bubble1.className = 'speech-bubble solo-pos';
-                bubble2.style.display = 'none';
-
-                // Show Solo Data
-                updateDisplay();
-            }
-        };
-
-        async function updateDisplayPair() {
-            // Mock Data for Pair
-            const c1 = pairData.char1;
-            const c2 = pairData.char2;
-
-            const nextImgSrc1 = await resolveImage(c1.name, c1.image);
-            const nextImgSrc2 = await resolveImage(c2.name, c2.image);
-            
-            rootStyles.setProperty('--accent-color', c1.color);
-            targetColor.set(c1.color);
-
-            setTimeout(() => {
-                imgEl.src = nextImgSrc1;
-                imgEl2.src = nextImgSrc2;
-
-                // Load handling
-                imgEl.onload = () => { imgEl.classList.add('visible'); };
-                imgEl2.onload = () => { imgEl2.classList.add('visible'); };
-
-                // Text
-                nameLabel.textContent = c1.name.toUpperCase();
-                document.getElementById('char-name-label-2').textContent = c2.name.toUpperCase();
-
-                document.getElementById('typewriter-text-2').innerHTML = c2.remarks;
-                
-                setTimeout(() => {
-                    bubble1.classList.add('show');
-                    bubble2.classList.add('show');
-                    startTypewriter(c1.remarks.replace(/<br>/g, "\n"));
-                }, 500);
-
-            }, 600);
-        }
-
         async function updateDisplay() {
-            if(isPairMode) return; // Guard
-
             const char = charDataList[currentIndex];
             imgEl.classList.remove('visible');
-            bubble1.classList.remove('show');
+            bubbleEl.classList.remove('show');
 
             const nextImgSrc = await resolveImage(char.name, char.image);
             const theme = char.color || char.inpThemeColor || DEFAULT_THEME;
             
             rootStyles.setProperty('--accent-color', theme);
+            
+            // 白背景モードじゃなければターゲットカラー更新
             if (!document.body.classList.contains('mode-white')) {
                 targetColor.set(theme);
             }
@@ -717,7 +568,7 @@
                     nameLabel.textContent = char.name.toUpperCase();
                     imgEl.classList.add('visible');
                     setTimeout(() => {
-                        bubble1.classList.add('show');
+                        bubbleEl.classList.add('show');
                         startTypewriter(dialogue);
                     }, 400);
                 };
@@ -737,16 +588,13 @@
             type();
         }
 
-        // --- Particles (Standard) ---
+        // --- Particles ---
         function createParticles() {
-            const container = document.getElementById('canvas-container');
-            if(!container) return;
-            
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             function getTexture() {
                 const c = document.createElement('canvas'); c.width = 32; c.height = 32;
@@ -774,18 +622,16 @@
             function animate() {
                 requestAnimationFrame(animate);
                 points.rotation.x += 0.0003; points.rotation.y += 0.0005;
+                
+                // 白モードでなければ色を追従させる
                 if (!document.body.classList.contains('mode-white')) {
                     particleMaterial.color.lerp(targetColor, 0.05);
                 }
+                
                 renderer.render(scene, camera);
             }
             animate();
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-        }
-
-        async function initNews() {
-            const el = document.getElementById('news-content');
-            if(el) { el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); }
         }
 
         // --- Auth ---
@@ -801,12 +647,11 @@
                 if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
                 else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
                 currentIndex = Math.floor(Math.random() * charDataList.length);
-                if(!isPairMode) updateDisplay();
+                updateDisplay();
             },
             () => {
                 currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
-                charDataList = fallbackData; currentIndex = 0; 
-                if(!isPairMode) updateDisplay();
+                charDataList = fallbackData; currentIndex = 0; updateDisplay();
             }
         );
 
@@ -816,7 +661,6 @@
         };
         window.handleCharClick = () => { if (currentUser) nextChar(); };
         function nextChar() {
-            if(isPairMode) return; // ペアモード中は切り替え無効化（デモ用）
             if (charDataList.length <= 1) return;
             currentIndex = (currentIndex + 1) % charDataList.length;
             updateDisplay();
