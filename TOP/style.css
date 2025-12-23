@@ -443,3 +443,25 @@ body {
     body.ribbon-hidden .floating-mascot { transform: translateY(30px); }
     body.ribbon-hidden .pixel-walker { bottom: 5px; }
 }
+
+/* style.css の末尾などに追加 */
+
+.trigger-link {
+    /* 1. 色が青くなったり下線が出たりするのを防ぐ */
+    color: inherit; 
+    text-decoration: none;
+    
+    /* 2. マウスを乗せたときに指のマークにする */
+    cursor: pointer; 
+    
+    /* 3. クリックの反応を良くする（重要） */
+    pointer-events: auto; 
+    position: relative;
+    z-index: 10;
+}
+
+/* ホバーした時の演出（お好みで） */
+.trigger-link:hover {
+    filter: brightness(1.2); /* 少し明るくする */
+    transition: 0.3s;
+}
