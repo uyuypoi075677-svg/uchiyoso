@@ -2,10 +2,9 @@
 
 /* === 基本設定（水色テーマ） === */
 :root {
-    /* 色変更: ブラウン→ネイビー系、ピンク→水色系 */
     --text-main: #1f3c58;
     --text-sub: #507ea4;
-    --accent-pink: #89c3eb; /* 日本の伝統色「勿忘草色」のような水色 */
+    --accent-pink: #89c3eb;
     --accent-gradient: linear-gradient(135deg, #89c3eb 0%, #bce2e8 100%);
     --glass-bg: rgba(255, 255, 255, 0.15);
     --glass-border: rgba(255, 255, 255, 0.4);
@@ -18,29 +17,38 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-html { width: 100%; overflow-x: hidden; overflow-y: scroll; }
+/* ▼▼▼ 修正: スクロールバーはbodyに任せる ▼▼▼ */
+html { width: 100%; }
 
 body {
     font-family: "Zen Maru Gothic", sans-serif;
     background-color: #e3f2fd;
-    /* 背景画像を青バージョンに変更 */
     background-image: url('../images/background/fur-texture-blue.png');
     background-size: cover;
     background-position: center;
-    min-height: 100vh;
+    
+    /* ▼▼▼ 修正: 常時スクロールバー表示でガタつき防止 ▼▼▼ */
+    min-height: 101vh;
+    
     display: flex;
     justify-content: center;
     align-items: center;
     color: var(--text-main);
     perspective: 1500px;
-    padding-top: var(--top-bar-height);
+    
+    /* ▼▼▼ 修正: 余白調整 ▼▼▼ */
+    padding-top: 80px;
     padding-bottom: calc(var(--bottom-ribbon-height) + 20px);
+    
+    /* ▼▼▼ 修正: 横スクロール防止 ▼▼▼ */
     overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    position: relative;
 }
 
 .ambient-light {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    /* 少し寒色寄りの光に */
     background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(10,30,60,0.1) 100%);
     pointer-events: none; z-index: 0;
 }
@@ -94,7 +102,6 @@ body {
 .profile-header { display: flex; align-items: center; gap: 24px; margin-bottom: 24px; transform: translateZ(20px); }
 .avatar {
     width: 90px; height: 90px; border-radius: 50%; background-color: #eee;
-    /* 背景画像を青バージョンに変更 */
     background-image: url('../images/background/fur-texture-blue.png');
     background-size: cover; border: 4px solid rgba(255,255,255,0.8);
     box-shadow: 0 8px 20px rgba(0,0,0,0.15); flex-shrink: 0;
@@ -106,7 +113,6 @@ body {
 .area-ticker {
     grid-column: span 2; padding: 0; position: relative;
     background: rgba(255, 255, 255, 0.25); overflow: hidden;
-    /* 影の色調整 */
     box-shadow: var(--glass-shadow), inset 0 0 20px rgba(137, 195, 235, 0.1);
 }
 .ticker-wrap {
@@ -121,10 +127,23 @@ body {
     color: var(--accent-pink); text-transform: uppercase; letter-spacing: 0.1em;
     animation: dance 3s ease-in-out infinite;
 }
-/* 色違いアニメーション調整 */
 .ticker-item:nth-child(even) { animation-name: dance-reverse; animation-delay: -1.5s; color: #bce2e8; }
 .ticker-item.hollow { color: transparent; -webkit-text-stroke: 2px rgba(31, 60, 88, 0.4); opacity: 0.8; }
 .ticker-item span { margin-right: 8px; }
+
+/* ▼▼▼ 修正: リンク用スタイル ▼▼▼ */
+.ticker-item.trigger-link {
+    cursor: pointer;
+    position: relative;
+    z-index: 100;
+    text-decoration: none;
+    pointer-events: auto;
+}
+.ticker-item.trigger-link:hover {
+    color: var(--text-main);
+    -webkit-text-stroke: 0;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
 
 /* ツールボタン */
 .area-tool { grid-column: span 1; aspect-ratio: 1 / 1; cursor: pointer; text-align: center; }
@@ -155,7 +174,7 @@ body {
 }
 .btn-share-pill:hover { background: #fff; color: var(--accent-pink); transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 40px rgba(137, 195, 235, 0.3); }
 
-/* アニメーション（共通） */
+/* アニメーション */
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 @keyframes dance { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-6px) rotate(-3deg); } 75% { transform: translateY(2px) rotate(2deg); } }
 @keyframes dance-reverse { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(6px) rotate(3deg); } 75% { transform: translateY(-2px) rotate(-2deg); } }
@@ -171,8 +190,9 @@ body {
 .glass-card:nth-of-type(7) { animation-delay: 0.7s; } 
 .area-share { animation-delay: 0.9s; }
 
+/* ▼▼▼ 修正: パーティクル固定 ▼▼▼ */
 .floating-particle {
-    position: fixed; /* 修正適用 */
+    position: fixed; 
     border-radius: 50%; filter: blur(8px); opacity: 0.6; animation: floatUp 15s linear infinite; z-index: -1; pointer-events: none; will-change: transform;
 }
 @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } }
@@ -203,7 +223,7 @@ body {
 .top-news-bar {
     position: fixed; top: 0; left: 0;
     width: 100%; height: var(--top-bar-height);
-    background: #f0f8ff; /* 白っぽい青 */
+    background: #f0f8ff; 
     border-bottom: 2px solid var(--accent-pink);
     z-index: 999;
     display: flex; align-items: center;
@@ -300,7 +320,7 @@ body {
     body {
         display: block; overflow-y: auto; overflow-x: hidden;
         height: auto; perspective: none;
-        padding-top: calc(var(--top-bar-height) + 20px);
+        padding-top: calc(var(--top-bar-height) + 30px);
         padding-bottom: 120px; 
     }
     
