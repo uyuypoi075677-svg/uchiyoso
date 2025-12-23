@@ -76,10 +76,12 @@
         <!-- 左メモ：Global Answers -->
         <div class="memo-paper memo-global">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-blue-200 opacity-70 rotate-1 shadow-sm"></div>
-            <h4 class="font-bold text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center">
+            <!-- 修正: px-2を追加して左端の余白調整 -->
+            <h4 class="font-bold text-blue-900 mb-2 border-b border-blue-300 pb-1 flex items-center px-2">
                 <i class="fa-solid fa-earth-americas mr-2"></i>Global Voices
             </h4>
-            <div class="h-64 overflow-y-auto pr-1 custom-scrollbar">
+            <!-- 修正: h-64->h-60, px-2を追加 -->
+            <div class="h-60 overflow-y-auto px-2 custom-scrollbar">
                 <div v-if="!selectedGlobalQuestion" class="text-sm text-gray-500 leading-snug">
                     <p>アンケートの「<i class="fa-solid fa-eye text-amber-600"></i>」ボタンで、他のキャラクターの回答を表示します。</p>
                 </div>
@@ -179,15 +181,18 @@
                 </div>
 
                 <div class="pl-2">
-                    <div v-for="(q, index) in displayedQuestions" :key="q.id" class="question-block group">
+                    <!-- 修正: .slice(0, 5)で初期5問に制限 -->
+                    <div v-for="(q, index) in displayedQuestions.slice(0, 5)" :key="q.id" class="question-block group">
                         <div class="question-header">
                             <span class="q-badge">Q.{{ index + 1 }}</span>
-                            <span class="q-text">{{ q.text }}</span>
+                            <!-- 修正: text-smでフォントを小さく -->
+                            <span class="q-text text-sm">{{ q.text }}</span>
                             <button @click="showGlobalAnswers(q)" class="ml-3 text-amber-600 opacity-0 group-hover:opacity-100 transition text-sm" title="みんなの回答を見る">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
-                        <textarea v-model="answers[q.id]" rows="1" class="input-line" placeholder="(回答を記述...)"></textarea>
+                        <!-- 修正: rows="2"と!h-autoで2行表示対応 -->
+                        <textarea v-model="answers[q.id]" rows="2" class="input-line !h-auto" placeholder="(回答を記述...)"></textarea>
                     </div>
                 </div>
 
@@ -211,18 +216,19 @@
             </div>
         </div>
 
-<!-- 右メモ：History -->
+        <!-- 右メモ：History -->
         <div class="memo-paper memo-history">
             <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-amber-200 opacity-70 -rotate-2 shadow-sm"></div>
-            <h4 class="font-bold text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center">
+            <!-- 修正: px-2を追加して左端の余白調整 -->
+            <h4 class="font-bold text-amber-900 mb-2 border-b border-amber-300 pb-1 flex items-center px-2">
                 <i class="fa-solid fa-clock-rotate-left mr-2"></i>History
             </h4>
-            <div class="h-64 overflow-y-auto pr-1 custom-scrollbar">
+            <!-- 修正: h-64->h-60, px-2を追加 -->
+            <div class="h-60 overflow-y-auto px-2 custom-scrollbar">
                 <div v-if="history.length === 0" class="text-center text-gray-400 text-sm mt-10 italic">
                     No history found...
                 </div>
                 <ul v-else class="space-y-4">
-                    <!-- @click イベントを追加 -->
                     <li v-for="rec in history" :key="rec.timestamp" 
                         @click="loadSurveyFromHistory(rec)"
                         class="relative pl-3 border-l-4 border-amber-400/50 cursor-pointer hover:bg-yellow-100 transition p-1 rounded">
