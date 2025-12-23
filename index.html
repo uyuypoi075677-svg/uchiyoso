@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <!-- 上部ニュース＆レポートバー -->
+    <!-- ▼▼▼ 新設：上部ニュース＆レポートバー ▼▼▼ -->
     <div class="top-news-bar">
         <div class="news-label-badge">
             <span class="material-symbols-rounded">campaign</span> NEWS
@@ -25,7 +25,11 @@
         </div>
 
         <div class="header-right-area">
-            <div class="honobono-report" id="report-text"></div>
+            <!-- レポート（はみ出しOK） -->
+            <div class="honobono-report" id="report-text">
+                <!-- ここに report.json の内容が表示されます -->
+            </div>
+            <!-- 時計 -->
             <a href="character/list.html" class="digital-clock" id="digital-clock" style="text-decoration: none; color: inherit; display: inline-block; cursor: pointer;">00:00</a>
         </div>
     </div>
@@ -59,145 +63,148 @@
                     <div class="ticker-item"><span>★</span>DREAM</div>
                     <div class="ticker-item hollow">STORY</div>
                     <div class="ticker-item"><span>♦</span>RELATION</div>
-                    
-                    <!-- ▼▼▼ 修正：確実に飛ぶようにaタグに変更 ▼▼▼ -->
-                    <a href="ura.html" class="ticker-item hollow trigger-link">UCHIYOSO</a>
-                    <!-- ▲▲▲ -->
+                    <!-- ▼▼▼ リンク設定ここから ▼▼▼ -->
+                    <div class="ticker-item hollow trigger-link" onclick="location.href='ura.html'">UCHIYOSO</div>
+                    <!-- ▲▲▲ リンク設定ここまで ▲▲▲ -->
                     
                     <div class="ticker-item"><span>♥</span>LOVE</div>
                     <div class="ticker-item hollow">CREATION</div>
                     <div class="ticker-item"><span>★</span>DREAM</div>
                     <div class="ticker-item hollow">STORY</div>
                     <div class="ticker-item"><span>♦</span>RELATION</div>
-                    
-                    <!-- ▼▼▼ 修正：ループ用もaタグに変更 ▼▼▼ -->
-                    <a href="ura.html" class="ticker-item hollow trigger-link">UCHIYOSO</a>
-                    <!-- ▲▲▲ -->
+                    <!-- ▼▼▼ リンク設定ここから(ループ用) ▼▼▼ -->
+                    <div class="ticker-item hollow trigger-link" onclick="location.href='ura.html'">UCHIYOSO</div>
+                    <!-- ▲▲▲ リンク設定ここまで(ループ用) ▲▲▲ -->
                 </div>
             </div>
         </div>
 
-            <!-- ツールリンク群 -->
-            <a href="bunpumaker/index.html" class="glass-card area-tool area-tool-wide">
-                <span class="badge">Update</span>
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">bar_chart</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">分布図を作る</div>
-                    <div class="tool-sub">探索者を分布分けしよう</div>
-                </div>
-            </a>
-
-            <a href="snsmaker/index.html" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">image</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">SNSメーカー</div>
-                    <div class="tool-sub">会話画面風</div>
-                </div>  
-            </a>
-
-            <a href="screenpanel/index.html" class="glass-card area-tool">
-                <span class="badge" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">NEW</span>
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">dashboard</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">パネル生成</div>
-                    <div class="tool-sub">セッション素材</div>
-                </div>
-            </a>
-
-            <a href="#" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">edit_note</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">SSエディタ</div>
-                    <div class="tool-sub">文庫本スタイル</div>
-                </div>
-            </a>
-
-            <a href="loglog/index.html" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">receipt_long</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">ログ変換</div>
-                    <div class="tool-sub">チャットをお洒落に</div>
-                </div>
-            </a>
-
-            <a href="colorchanger/index.html" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">palette</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">色変更</div>
-                    <div class="tool-sub">テーマカラー調整</div>
-                </div>
-            </a>
-
-            <a href="labelmaker/index.html" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">style</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">ラベル</div>
-                    <div class="tool-sub">整理用タグ</div>
-                </div>
-            </a>
-
-            <a href="backclear/index.html" class="glass-card area-tool">
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">layers_clear</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">背景除去</div>
-                    <div class="tool-sub">立ち絵加工</div>
-                </div>
-            </a>
-
-            <a href="calendarmaker/index.html" class="glass-card area-tool">
-                <span class="badge" style="background: linear-gradient(135deg, #ffe082 0%, #ffca28 100%); color: #5a3d35;">NEW</span>
-                <div class="icon-circle">
-                    <span class="material-symbols-rounded">calendar_month</span>
-                </div>
-                <div class="tool-info">
-                    <div class="tool-label">カレンダー</div>
-                    <div class="tool-sub">記念日記録</div>
-                </div>
-            </a>
-
-            <div class="area-share">
-                <a href="#" class="btn-share-pill">
-                    <span class="material-symbols-rounded">share</span>
-                    ページをシェアする
-                </a>
+        <!-- ツールリンク群 -->
+        <a href="bunpumaker/index.html" class="glass-card area-tool area-tool-wide">
+            <span class="badge">Update</span>
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">bar_chart</span>
             </div>
-        </div>
+            <div class="tool-info">
+                <div class="tool-label">分布図を作る</div>
+                <div class="tool-sub">探索者を分布分けしよう</div>
+            </div>
+        </a>
 
+        <a href="snsmaker/index.html" class="glass-card area-tool">
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">image</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">SNSメーカー</div>
+                <div class="tool-sub">会話画面風</div>
+            </div>  
+        </a>
+
+        <a href="#" class="glass-card area-tool">
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">edit_note</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">SSエディタ</div>
+                <div class="tool-sub">文庫本スタイル</div>
+            </div>
+        </a>
+
+        <a href="labelmaker/index.html" class="glass-card area-tool">
+            <span class="badge" style="background: linear-gradient(135deg, #a8cce8 0%, #8ec5fc 100%);">NEW</span>
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">style</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">ラベル</div>
+                <div class="tool-sub">整理用タグ</div>
+            </div>
+        </a>
+
+        <a href="backclear/index.html" class="glass-card area-tool">
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">layers_clear</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">背景除去</div>
+                <div class="tool-sub">立ち絵加工</div>
+            </div>
+        </a>
+
+        <a href="calendarmaker/index.html" class="glass-card area-tool">
+            <span class="badge" style="background: linear-gradient(135deg, #ffe082 0%, #ffca28 100%); color: #5a3d35;">NEW</span>
+            <div class="icon-circle">
+                <span class="material-symbols-rounded">calendar_month</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">カレンダー</div>
+                <div class="tool-sub">記念日記録</div>
+            </div>
+        </a>
+
+        <a href="screenpanel/index.html" class="glass-card area-tool">
+            <span class="badge" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">NEW</span>
+            <div class="icon-circle">
+              <span class="material-symbols-rounded">dashboard</span>
+            </div>
+            <div class="tool-info">
+               <div class="tool-label">パネル生成</div>
+               <div class="tool-sub">セッション素材</div>
+            </div>
+        </a>
+
+       <a href="loglog/index.html" class="glass-card area-tool">
+            <div class="icon-circle">
+             <span class="material-symbols-rounded">receipt_long</span>
+            </div>
+            <div class="tool-info">
+                <div class="tool-label">ログ変換</div>
+                <div class="tool-sub">チャットをお洒落に</div>
+          </div>
+       </a>
+
+       <a href="colorchanger/index.html" class="glass-card area-tool">
+           <div class="icon-circle">
+               <span class="material-symbols-rounded">palette</span>
+           </div>
+           <div class="tool-info">
+              <div class="tool-label">色変更</div>
+              <div class="tool-sub">テーマカラー調整</div>
+          </div>
+       </a>
+
+
+        <div class="area-share">
+            <a href="#" class="btn-share-pill">
+                <span class="material-symbols-rounded">share</span>
+                ページをシェアする
+            </a>
+        </div>
     </div>
 
+    <!-- ぬいぐるみリンク -->
     <a href="badohuro/index.html" class="floating-mascot">
         <img src="images/icons/nui1.png" alt="Mascot">
     </a>
 
+    <!-- ピクセルウォーカー -->
     <a href="mahiruheya/index.html" target="_blank" id="pixel-walker" class="pixel-walker" data-facing="right">
         <div class="sprite"></div>
     </a>
 
+    <!-- ▼▼▼ 下部リボン（ドット絵用・収納可能） ▼▼▼ -->
     <div class="bottom-ribbon-container" id="bottom-ribbon">
         <div class="ribbon-bar">
             <div class="ribbon-stitch"></div>
+            <!-- 中身は空っぽ -->
         </div>
+        <!-- 収納ボタン -->
         <button class="ribbon-toggle-btn" id="ribbon-toggle" title="リボンを隠す">
             <span class="material-symbols-rounded">keyboard_arrow_down</span>
         </button>
-    </div> 
-    
+    </div>
+
     <script src="TOP/script.js"></script>
 
 </body>
