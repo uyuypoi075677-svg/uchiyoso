@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChocolatMer | Ethereal Motion</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,500&family=Zen+Old+Mincho:wght@400;600;900&family=Jost:wght@200;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --glass-surface: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #1A237E; /* 深い青 */
+            --text-secondary: #546E7A;
+            --accent-glow: rgba(129, 212, 250, 0.8);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: #F0F4F8;
+            font-family: 'Jost', 'Zen Old Mincho', serif;
+            color: var(--text-primary);
+            position: relative;
+            cursor: default; /* カスタムカーソルを入れたいところですが、今回は標準で */
+        }
+
+        /* --- 1. Dynamic Background Layers --- */
+        
+        /* グラデーション背景 */
+        .ambient-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #E1F5FE 0%, #ECEFF1 100%);
+            z-index: 0;
+        }
+
+        /* オーロラのような揺らめく光 */
+        .aurora {
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(129, 212, 250, 0.2), transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(206, 147, 216, 0.15), transparent 30%);
+            animation: auroraRotate 30s linear infinite;
+            filter: blur(60px);
+            z-index: 1;
+        }
+
+        /* Canvas (パーティクル用) */
+        #particle-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none; /* クリックを通す */
+        }
+
+        /* ノイズテクスチャ */
+        .noise-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJnoiPjgoBmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjY1IiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjAzIi8+PC9zdmc+');
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0.4;
+        }
+
+        /* --- 2. Typography Layer --- */
+        .background-typo {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16vw;
+            font-style: italic;
+            font-weight: 100;
+            color: rgba(255,255,255, 0.6);
+            white-space: nowrap;
+            z-index: 4;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            transition: transform 0.1s ease-out; /* マウスパララックス用 */
+        }
+
+        /* --- 3. Main Interface --- */
+        #interface-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: 120px 1fr 380px;
+            grid-template-rows: 100px 1fr 120px;
+        }
+
+        /* Logo Area */
+        .logo-area {
+            grid-column: 1; grid-row: 1;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Cormorant Garamond';
+            font-weight: bold;
+            font-size: 1.5rem;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+            opacity: 0; animation: fadeIn 1s ease 0.5s forwards;
+        }
+
+        /* Navigation Rail */
+        .nav-rail {
+            grid-column: 1; grid-row: 2;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            gap: 3rem;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .nav-item {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'Jost', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            padding: 10px 0;
+            opacity: 0;
+            animation: slideInLeft 0.8s ease forwards;
+        }
+        /* Stagger animation delays */
+        .nav-item:nth-child(1) { animation-delay: 0.6s; }
+        .nav-item:nth-child(2) { animation-delay: 0.7s; }
+        .nav-item:nth-child(3) { animation-delay: 0.8s; }
+        .nav-item:nth-child(4) { animation-delay: 0.9s; }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-primary);
+            font-weight: 500;
+            text-shadow: 0 0 10px rgba(129, 212, 250, 0.5);
+            transform: translateY(-5px);
+        }
+        .nav-item.active::before {
+            content: ''; position: absolute; top: 50%; right: -20px;
+            width: 40px; height: 1px; background: var(--text-primary);
+        }
+
+        /* --- Character Stage --- */
+        .char-container {
+            grid-column: 2 / 3;
+            grid-row: 1 / 4;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            perspective: 1000px; /* 3D効果用 */
+            cursor: pointer;
+        }
+        
+        .char-img {
+            height: 105%;
+            width: auto;
+            object-fit: contain;
+            /* 影を色付きにすることで透明感を出す */
+            filter: drop-shadow(0 30px 50px rgba(129, 212, 250, 0.3));
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            
+            opacity: 0; /* JS制御でフェードイン */
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            
+            /* 呼吸アニメーション（JS読み込み後にclass付与） */
+        }
+        .char-img.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        .char-img.breathing {
+            animation: floatingBreathe 6s ease-in-out infinite;
+        }
+
+        /* Dialogue Card with Glassmorphism */
+        .dialogue-wrapper {
+            position: absolute;
+            bottom: 15%; left: 5%;
+            width: 450px;
+            perspective: 1000px;
+        }
+        .dialogue-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 2.5rem;
+            border-radius: 4px; /* あえて角を少し立ててモダンに */
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.05),
+                inset 0 0 0 1px rgba(255,255,255,0.5);
+            
+            transform-origin: left bottom;
+            transform: rotateX(10deg) rotateY(5deg) translateY(20px);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .dialogue-card.show {
+            opacity: 1;
+            transform: rotateX(0) rotateY(0) translateY(0);
+        }
+
+        .char-name {
+            font-family: 'Zen Old Mincho', serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+            display: inline-block;
+            position: relative;
+        }
+        /* 名前の下に伸びるラインアニメーション */
+        .char-name::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 0%; height: 6px;
+            background: rgba(129, 212, 250, 0.5);
+            z-index: -1;
+            transition: width 0.8s ease 0.3s;
+        }
+        .dialogue-card.show .char-name::after { width: 100%; }
+
+        .char-text {
+            font-size: 1rem;
+            line-height: 1.9;
+            color: var(--text-secondary);
+            font-feature-settings: "palt"; /* 文字詰め */
+        }
+
+        /* --- Right Info Panel --- */
+        .info-panel {
+            grid-column: 3; grid-row: 1 / 4;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex; flex-direction: column;
+            padding: 3rem 2.5rem;
+            justify-content: space-between;
+            
+            transform: translateX(100%);
+            animation: slideInRight 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
+        }
+
+        .date-display {
+            text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 1rem;
+        }
+        .day { font-size: 3rem; font-family: 'Cormorant Garamond'; font-weight: 300; line-height: 1; }
+        .month { font-size: 1rem; letter-spacing: 0.2em; text-transform: uppercase; }
+
+        .menu-list {
+            display: flex; flex-direction: column; gap: 2rem;
+            margin: auto 0;
+        }
+        .menu-btn {
+            display: flex; align-items: baseline; justify-content: space-between;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-family: 'Zen Old Mincho', serif;
+            font-size: 1.3rem;
+            cursor: pointer;
+            position: relative;
+            padding-bottom: 5px;
+            transition: transform 0.3s;
+        }
+        .menu-btn:hover { transform: translateX(-10px); }
+        .menu-btn::before {
+            content: ''; position: absolute; bottom: 0; right: 0;
+            width: 0; height: 1px; background: var(--text-primary);
+            transition: width 0.3s;
+        }
+        .menu-btn:hover::before { width: 100%; }
+        
+        .menu-meta { font-family: 'Jost'; font-size: 0.7rem; color: var(--text-secondary); letter-spacing: 0.1em; }
+
+        /* Talk Button with Pulse */
+        .action-btn {
+            margin-top: 2rem;
+            background: #fff;
+            color: var(--text-primary);
+            border: none;
+            padding: 1.5rem;
+            font-family: 'Jost'; letter-spacing: 0.2em; font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(176, 190, 197, 0.2);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(129,212,250,0.4) 0%, transparent 60%);
+            opacity: 0; transform: scale(0); transition: 0.5s;
+        }
+        .action-btn:active::after { opacity: 1; transform: scale(2); }
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(129, 212, 250, 0.4);
+        }
+
+        /* --- Keyframes --- */
+        @keyframes auroraRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 0.6; transform: translateX(0); } }
+        @keyframes slideInRight { to { transform: translateX(0); } }
+        @keyframes floatingBreathe {
+            0%, 100% { transform: translateY(0) scale(1); filter: brightness(1) drop-shadow(0 30px 50px rgba(129, 212, 250, 0.3)); }
+            50% { transform: translateY(-10px) scale(1.01); filter: brightness(1.05) drop-shadow(0 40px 60px rgba(129, 212, 250, 0.5)); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Layer 0: Background Effects -->
+    <div class="ambient-bg"></div>
+    <div class="aurora"></div>
+    <canvas id="particle-canvas"></canvas>
+    <div class="noise-overlay"></div>
+
+    <!-- Layer 1: Typography -->
+    <div class="background-typo">CHOCOLAT MER</div>
+
+    <!-- Layer 2: Main Interface -->
+    <div id="interface-layer">
+        
+        <!-- Logo -->
+        <div class="logo-area">
+            CM
+        </div>
+
+        <!-- Left Nav -->
+        <nav class="nav-rail">
+            <div class="nav-item active">HOME</div>
+            <div class="nav-item">NOTIFICATIONS</div>
+            <div class="nav-item">ARCHIVES</div>
+            <div class="nav-item">SYSTEM</div>
+        </nav>
+
+        <!-- Character & Dialogue -->
+        <main class="char-container" onclick="nextCharacter()">
+            <img id="char-img" class="char-img" src="" alt="Character">
+            
+            <div class="dialogue-wrapper">
+                <div class="dialogue-card">
+                    <span id="char-name" class="char-name">...</span>
+                    <p id="char-text" class="char-text">Loading...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Info Panel -->
+        <aside class="info-panel">
+            <div class="date-display">
+                <div class="month">DECEMBER</div>
+                <div class="day">23</div>
+            </div>
+
+            <div class="menu-list">
+                <a href="#" class="menu-btn" onclick="alert('Manage')">
+                    <span class="menu-meta">01 / EDIT</span>
+                    <span>Character</span>
+                </a>
+                <a href="#" class="menu-btn" onclick="alert('Log')">
+                    <span class="menu-meta">02 / VIEW</span>
+                    <span>Daily Log</span>
+                </a>
+                <a href="#" class="menu-btn" onclick="alert('Poll')">
+                    <span class="menu-meta">03 / VOTE</span>
+                    <span>Art Polls</span>
+                </a>
+            </div>
+
+            <button class="action-btn" onclick="nextCharacter()">
+                TAP TO INTERACT
+            </button>
+        </aside>
+
+    </div>
+
+    <script>
+        // --- 1. DATA ---
+        // プレースホルダーですが、より美しい配色URLにしています
+        const characters = [
+            {
+                name: "Alice / アリス",
+                text: "おかえりなさい。<br>この水槽のような部屋で、あなたを待っていたの。<br>今日はどんなお話を聞かせてくれる？",
+                img: "https://placehold.co/800x1200/81D4FA/ffffff?text=Alice"
+            },
+            {
+                name: "Ren / レン",
+                text: "よお、来たな。<br>外は随分と騒がしいみたいだけど、<br>ここは静かで悪くないだろ？",
+                img: "https://placehold.co/800x1200/FFCCBC/ffffff?text=Ren"
+            },
+            {
+                name: "Ciel / シエル",
+                text: "ふふっ、波の音が聞こえませんか？<br>……心の耳を澄ませば、きっと聞こえるはずです。<br>ゆっくりしていってくださいね。",
+                img: "https://placehold.co/800x1200/E1BEE7/ffffff?text=Ciel"
+            }
+        ];
+
+        let currentIndex = 0;
+        
+        // DOM Elements
+        const imgEl = document.getElementById('char-img');
+        const nameEl = document.getElementById('char-name');
+        const textEl = document.getElementById('char-text');
+        const cardEl = document.querySelector('.dialogue-card');
+        const typoEl = document.querySelector('.background-typo');
+
+        // --- 2. LOGIC (Character & Text Animation) ---
+
+        function updateCharacter() {
+            const char = characters[currentIndex];
+
+            // 1. Exit Animation
+            imgEl.classList.remove('visible', 'breathing');
+            cardEl.classList.remove('show');
+            
+            setTimeout(() => {
+                // 2. Data Update
+                // 名前はタイプライター風にするための準備
+                nameEl.textContent = char.name;
+                textEl.innerHTML = char.text;
+                
+                // 画像ロード待ち
+                const tempImg = new Image();
+                tempImg.src = char.img;
+                tempImg.onload = () => {
+                    imgEl.src = char.img;
+                    
+                    // 3. Enter Animation
+                    // 少し遅らせて画像表示 -> 呼吸開始
+                    imgEl.classList.add('visible');
+                    setTimeout(() => {
+                        imgEl.classList.add('breathing');
+                        cardEl.classList.add('show');
+                    }, 400);
+                };
+            }, 500); // フェードアウトにかかる時間
+        }
+
+        function nextCharacter() {
+            // 背景文字を一瞬拡大させる演出
+            typoEl.style.transform = "translate(-50%, -50%) scale(1.1)";
+            setTimeout(() => {
+                typoEl.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 300);
+
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateCharacter();
+        }
+
+        // --- 3. PARTICLE SYSTEM (Canvas) ---
+        
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        
+        // マウス位置
+        let mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+            
+            // マウスパララックス（背景文字と画像を少し動かす）
+            const moveX = (window.innerWidth / 2 - e.x) * 0.02;
+            const moveY = (window.innerHeight / 2 - e.y) * 0.02;
+            typoEl.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+        });
+
+        // リサイズ対応
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 3 + 0.5; // サイズのバラつき
+                this.speedX = Math.random() * 1 - 0.5; // ゆっくり横移動
+                this.speedY = Math.random() * 1 - 0.5; // ゆっくり縦移動
+                this.life = Math.random() * 100; // 点滅周期用
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life++;
+
+                // マウスが近くに来たら少し逃げる（インタラクション）
+                if (mouse.x != null) {
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let distance = Math.sqrt(dx*dx + dy*dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.03;
+                        this.y -= dy * 0.03;
+                    }
+                }
+
+                // 画面外に出たら反対側から戻す
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+                if (this.y > height) this.y = 0;
+                if (this.y < 0) this.y = height;
+            }
+            
+            draw() {
+                // きらめき効果（sin波で透明度変化）
+                const blink = Math.abs(Math.sin(this.life * 0.02));
+                const currentOpacity = this.opacity * blink;
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // パーティクル初期化
+        function initParticles() {
+            particles = [];
+            const particleCount = 100; // 粒子の数
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // アニメーションループ
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+        
+        // 初期実行
+        window.onload = updateCharacter;
+
+    </script>
+</body>
+</html>
