@@ -6,6 +6,7 @@
     <title>Edit Dialogue - Uchiyoso Archive</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;500&display=swap" rel="stylesheet">
     <style>
+        /* 既存のスタイルを維持しつつ、リスト用のスタイルを追加 */
         body {
             background: #080808; color: #fff; font-family: 'Noto Sans JP', sans-serif;
             display: flex; flex-direction: column; align-items: center; 
@@ -20,14 +21,12 @@
         h2 { font-family: 'Syncopate'; margin-bottom: 10px; letter-spacing: 0.1em; color: #00ffcc; text-align: center; }
         .sub-title { text-align: center; font-size: 10px; color: #888; margin-bottom: 30px; letter-spacing: 0.2em; font-family: 'Syncopate'; }
         
-        /* Select */
         select {
             width: 100%; height: 45px; background: #111; color: #fff; 
             border: 1px solid #00ffcc; padding: 0 15px; margin-bottom: 30px; 
             font-size: 14px; outline: none; border-radius: 4px;
         }
 
-        /* Form Group */
         .form-group { margin-bottom: 25px; }
         .label {
             display: block; font-size: 11px; color: #00ffcc; margin-bottom: 8px;
@@ -36,27 +35,47 @@
         }
         .desc { font-size: 10px; color: #888; margin-bottom: 5px; display: block; }
 
-        textarea {
-            width: 100%; height: 80px; background: rgba(0,0,0,0.3); 
-            color: #eee; border: 1px solid #444;
-            padding: 10px; font-size: 13px; line-height: 1.6;
-            resize: vertical; box-sizing: border-box; border-radius: 4px;
-            transition: 0.3s;
+        textarea, input[type="text"] {
+            background: rgba(0,0,0,0.3); color: #eee; border: 1px solid #444;
+            padding: 10px; font-size: 13px; border-radius: 4px; transition: 0.3s;
+            box-sizing: border-box;
         }
-        textarea:focus { border-color: #00ffcc; background: rgba(0,0,0,0.5); }
+        textarea { width: 100%; height: 80px; resize: vertical; line-height: 1.6; }
+        input[type="text"] { height: 40px; }
+        
+        textarea:focus, input[type="text"]:focus { border-color: #00ffcc; background: rgba(0,0,0,0.5); }
 
-        /* Save Button */
-        button {
+        /* --- Pair List Styles --- */
+        .pair-row {
+            display: grid; grid-template-columns: 1fr 2fr 40px; gap: 10px;
+            margin-bottom: 10px; align-items: start;
+            padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid #333;
+        }
+        .pair-row input { width: 100%; }
+        .pair-row textarea { height: 60px; }
+        .del-btn {
+            height: 100%; background: #333; color: #fff; border: none; cursor: pointer;
+            font-size: 18px; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .del-btn:hover { background: #ff4444; }
+
+        .add-btn {
+            width: 100%; padding: 10px; background: transparent; border: 1px dashed #555;
+            color: #888; cursor: pointer; font-size: 12px; letter-spacing: 0.1em;
+            transition: 0.2s; margin-top: 5px;
+        }
+        .add-btn:hover { border-color: #00ffcc; color: #00ffcc; }
+
+        button.save-btn {
             width: 100%; padding: 15px; background: #00ffcc; border: none; font-weight: bold;
-            letter-spacing: 0.2em; cursor: pointer; transition: 0.3s; margin-top: 20px;
+            letter-spacing: 0.2em; cursor: pointer; transition: 0.3s; margin-top: 30px;
             color: #000; font-family: 'Syncopate';
         }
-        button:hover { background: #fff; box-shadow: 0 0 15px #00ffcc; }
+        button.save-btn:hover { background: #fff; box-shadow: 0 0 15px #00ffcc; }
         
         .back-link { display: block; text-align: center; margin-top: 30px; color: #888; text-decoration: none; font-size: 11px; font-family: 'Syncopate'; }
         .back-link:hover { color: #fff; }
-
-        /* Status */
         #auth-status { text-align:center; margin-bottom:20px; font-size:10px; letter-spacing: 0.1em; color:#555; font-family: 'Syncopate'; }
     </style>
 </head>
@@ -64,7 +83,7 @@
 
     <div class="container">
         <h2>EDIT DIALOGUE</h2>
-        <div class="sub-title">MULTI-PATTERN RESPONSE SYSTEM</div>
+        <div class="sub-title">RELATIONSHIP & RESPONSE SYSTEM</div>
         
         <div id="auth-status">INITIALIZING...</div>
 
@@ -72,41 +91,51 @@
             <option value="">-- SELECT CHARACTER --</option>
         </select>
 
-        <!-- 1. 常時 (DEFAULT) -->
+        <!-- 特定ペア会話 (Specific Partners) -->
         <div class="form-group">
-            <span class="label">DEFAULT (ALWAYS)</span>
-            <span class="desc">基本の挨拶。条件に当てはまらない場合に表示されます。</span>
-            <textarea id="txtDialogueDefault" placeholder="……。"></textarea>
+            <span class="label">PAIR SPECIFIC (UCHIYOSO)</span>
+            <span class="desc">特定の相手が隣に来た時の専用台詞です。<br>相手の名前（NAME）は完全一致である必要があります。</span>
+            
+            <div id="pair-list">
+                <!-- ここにJSで枠が追加されます -->
+            </div>
+            <button type="button" class="add-btn" onclick="addPairRow()">+ ADD PARTNER RESPONSE</button>
         </div>
 
-        <!-- 2. 時間帯別 (TIME) -->
+        <!-- その他 (Others) -->
         <div class="form-group">
-            <span class="label">MORNING (05:00 - 10:59)</span>
-            <textarea id="txtDialogueMorning" placeholder="おはようございます。"></textarea>
-        </div>
-        <div class="form-group">
-            <span class="label">DAY (11:00 - 17:59)</span>
-            <textarea id="txtDialogueDay" placeholder="こんにちは。"></textarea>
-        </div>
-        <div class="form-group">
-            <span class="label">NIGHT (18:00 - 04:59)</span>
-            <textarea id="txtDialogueNight" placeholder="こんばんは。"></textarea>
+            <span class="label">DEFAULT / TIME / CONDITION</span>
+            <span class="desc">基本の台詞設定</span>
+            
+            <div style="margin-bottom:15px;">
+                <span class="desc">DEFAULT (常時)</span>
+                <textarea id="txtDialogueDefault" placeholder="……。"></textarea>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <div>
+                    <span class="desc">MORNING</span>
+                    <textarea id="txtDialogueMorning" style="height:60px;"></textarea>
+                </div>
+                <div>
+                    <span class="desc">NIGHT</span>
+                    <textarea id="txtDialogueNight" style="height:60px;"></textarea>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <span class="desc">GENERIC DUO (汎用2人)</span>
+                    <textarea id="txtDialogueDuo" style="height:60px;" placeholder="特定相手以外への反応"></textarea>
+                </div>
+                <div>
+                    <span class="desc">LOW SANITY (発狂)</span>
+                    <textarea id="txtDialogueLowSan" style="height:60px;"></textarea>
+                </div>
+            </div>
         </div>
 
-        <!-- 3. 特殊条件 (SPECIAL) -->
-        <div class="form-group">
-            <span class="label">DUO MODE (PAIR)</span>
-            <span class="desc">「DUO」モードで2人表示されている時に優先されます。相手への呼びかけなど。</span>
-            <textarea id="txtDialogueDuo" placeholder="隣に誰かいるな……。"></textarea>
-        </div>
-
-        <div class="form-group">
-            <span class="label">LOW SANITY (CRITICAL)</span>
-            <span class="desc">SAN値が低い場合（例: 20以下）に優先されます。</span>
-            <textarea id="txtDialogueLowSan" placeholder="あ……あ……。"></textarea>
-        </div>
-
-        <button onclick="saveDialogue()">SAVE UPDATE</button>
+        <button class="save-btn" onclick="saveDialogue()">SAVE UPDATE</button>
 
         <a href="../zo.html" class="back-link">← RETURN TO SYSTEM</a>
     </div>
@@ -117,21 +146,11 @@
         let allData = {};
         let currentUser = null;
 
-        // 定義したフィールドIDのリスト
-        const DIALOGUE_IDS = [
-            'txtDialogueDefault',
-            'txtDialogueMorning',
-            'txtDialogueDay',
-            'txtDialogueNight',
-            'txtDialogueDuo',
-            'txtDialogueLowSan'
-        ];
-
-        // キーとのマッピング (schema.jsに合わせたキー名)
+        // ペア会話以外の固定フィールド
+        const FIXED_IDS = ['txtDialogueDefault', 'txtDialogueMorning', 'txtDialogueNight', 'txtDialogueDuo', 'txtDialogueLowSan'];
         const KEY_MAP = {
             'txtDialogueDefault': 'dialogue_default',
             'txtDialogueMorning': 'dialogue_morning',
-            'txtDialogueDay':     'dialogue_day',
             'txtDialogueNight':   'dialogue_night',
             'txtDialogueDuo':     'dialogue_duo',
             'txtDialogueLowSan':  'dialogue_lowsan'
@@ -147,7 +166,6 @@
             } else {
                 statusEl.textContent = "DISCONNECTED - CLICK TO LOGIN";
                 statusEl.style.color = "#ff4444";
-                statusEl.style.cursor = "pointer";
                 statusEl.onclick = login;
             }
         });
@@ -159,7 +177,6 @@
 
             const select = document.getElementById('char-select');
             select.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
-            
             Object.values(data).forEach(char => {
                 const opt = document.createElement('option');
                 opt.value = char.name;
@@ -168,49 +185,76 @@
             });
         }
 
+        // 行を追加する関数 (Global Scope)
+        window.addPairRow = (targetName = "", text = "") => {
+            const container = document.getElementById('pair-list');
+            const div = document.createElement('div');
+            div.className = 'pair-row';
+            div.innerHTML = `
+                <input type="text" class="pair-target" placeholder="Partner Name" value="${targetName}">
+                <textarea class="pair-text" placeholder="Dialogue for this partner">${text}</textarea>
+                <button type="button" class="del-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(div);
+        };
+
         window.loadCharData = () => {
             const name = document.getElementById('char-select').value;
-            
+            const container = document.getElementById('pair-list');
+            container.innerHTML = ""; // クリア
+
             if (name && allData[name]) {
                 const char = allData[name];
                 
-                // 各フィールドに値をセット
-                DIALOGUE_IDS.forEach(id => {
+                // 1. 固定フィールドの読み込み
+                FIXED_IDS.forEach(id => {
                     const key = KEY_MAP[id];
-                    // データが無ければ空文字、なければ既存のremarks等をフォールバックにするか？
-                    // ここでは明確に分けるため、remarksはDefaultのフォールバックとしてのみ使用
-                    if (id === 'txtDialogueDefault' && !char[key]) {
-                        document.getElementById(id).value = char.remarks || char.txtRoleplay || "";
-                    } else {
-                        document.getElementById(id).value = char[key] || "";
+                    document.getElementById(id).value = char[key] || "";
+                    if(id === 'txtDialogueDefault' && !char[key]) {
+                        document.getElementById(id).value = char.remarks || "";
                     }
                 });
+
+                // 2. ペア会話データの読み込み (配列: dialogue_pairs)
+                if (char.dialogue_pairs && Array.isArray(char.dialogue_pairs)) {
+                    char.dialogue_pairs.forEach(pair => {
+                        window.addPairRow(pair.target, pair.text);
+                    });
+                } else {
+                    // データがなくても空の枠を1つ出しておくかはお好みで
+                    // window.addPairRow(); 
+                }
+
             } else {
-                DIALOGUE_IDS.forEach(id => document.getElementById(id).value = "");
+                FIXED_IDS.forEach(id => document.getElementById(id).value = "");
             }
         };
 
         window.saveDialogue = async () => {
-            if (!currentUser) { alert("Please login first."); return; }
+            if (!currentUser) { alert("Login required."); return; }
             const name = document.getElementById('char-select').value;
+            if (!name || !allData[name]) { alert("Character not selected."); return; }
 
-            if (!name || !allData[name]) {
-                alert("Please select a character.");
-                return;
-            }
-
-            // 更新対象のキャラデータ
             const charData = allData[name];
 
-            // フォームから値を回収してオブジェクト更新
-            DIALOGUE_IDS.forEach(id => {
-                const val = document.getElementById(id).value;
-                const key = KEY_MAP[id];
-                charData[key] = val;
+            // 1. 固定フィールド保存
+            FIXED_IDS.forEach(id => {
+                charData[KEY_MAP[id]] = document.getElementById(id).value;
             });
-            
-            // 互換性のため、remarks にはDefaultを入れておく
+            // 互換性
             charData.remarks = document.getElementById('txtDialogueDefault').value;
+
+            // 2. ペア会話保存
+            const pairRows = document.querySelectorAll('.pair-row');
+            const newPairs = [];
+            pairRows.forEach(row => {
+                const tName = row.querySelector('.pair-target').value.trim();
+                const tText = row.querySelector('.pair-text').value;
+                if (tName && tText) {
+                    newPairs.push({ target: tName, text: tText });
+                }
+            });
+            charData.dialogue_pairs = newPairs;
 
             await saveToCloud(charData);
         };
