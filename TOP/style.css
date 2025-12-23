@@ -19,9 +19,8 @@
 
 /* 修正: 二重スクロールバー防止 */
 html {
-    width: 100%;
-    height: 100%;
     overflow-x: hidden;
+    scrollbar-gutter: stable; /* スクロールバーの有無によるガタつきを防止 */
 }
 
 body {
