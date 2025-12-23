@@ -2,22 +2,20 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- スマホでもPCレイアウトを維持するためのビューポート設定 -->
     <meta name="viewport" content="width=1366, user-scalable=no">
     <title>Uchiyoso Maker - Luxe Archive</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
-            /* Default Colors */
             --bg-color: #080808;
             --text-main: #ffffff;
             --text-sub: #8899a6;
-            --ui-border: rgba(255, 255, 255, 0.15);
+            --ui-border: rgba(255, 255, 255, 0.2);
             --ui-bg: rgba(255, 255, 255, 0.05);
             --font-en: 'Syncopate', sans-serif;
             --font-jp: 'Noto Sans JP', sans-serif;
-            --accent-color: #00ffcc; /* JSで書き換え */
+            --accent-color: #00ffcc;
             --bg-image-url: none;
             
             /* Particle Setting */
@@ -28,15 +26,15 @@
         /* --- Mode Definitions --- */
         body.mode-black { 
             --bg-color: #080808; --text-main: #ffffff; --text-sub: #8899a6;
-            --ui-border: rgba(255, 255, 255, 0.15);
+            --ui-border: rgba(255, 255, 255, 0.2);
             --canvas-blend: screen;
         }
         body.mode-white { 
             --bg-color: #f4f4f4; --text-main: #1a1a1a; --text-sub: #555555;
-            --ui-border: rgba(0, 0, 0, 0.15); 
+            --ui-border: rgba(0, 0, 0, 0.2); 
             --ui-bg: rgba(0, 0, 0, 0.05);
             --canvas-blend: normal; /* 白背景用: 通常合成 */
-            --canvas-opacity: 0.8;
+            --canvas-opacity: 0.6;
         }
         body.mode-photo {
             --bg-color: #000000; --text-main: #ffffff;
@@ -46,7 +44,7 @@
         }
         body.mode-photo::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); z-index: -1; pointer-events: none;
+            background: rgba(0, 0, 0, 0.5); z-index: -1; pointer-events: none;
         }
 
         body, html {
@@ -56,7 +54,6 @@
             transition: background-color 0.5s, color 0.5s;
         }
 
-        /* --- Canvas --- */
         #canvas-container {
             position: fixed; top: 0; left: 0; z-index: 0;
             opacity: var(--canvas-opacity); 
@@ -67,101 +64,100 @@
 
         /* --- News Ticker --- */
         #news-ticker {
-            position: fixed; top: 0; left: 0; width: 100%; height: 32px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 36px;
             background: rgba(0, 0, 0, 0.9);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(4px); z-index: 100;
+            border-bottom: 1px solid var(--accent-color);
+            z-index: 100;
             display: flex; align-items: center; padding: 0 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
         }
         .ticker-label {
-            font-family: var(--font-en); font-size: 10px;
-            color: var(--accent-color); font-weight: bold; margin-right: 20px;
-            letter-spacing: 0.1em; white-space: nowrap;
-            text-shadow: 0 0 10px var(--accent-color);
-            border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px;
+            font-family: var(--font-en); font-size: 11px;
+            color: #000; background: var(--accent-color); 
+            font-weight: bold; margin-right: 20px;
+            letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px;
         }
         .ticker-content {
             font-family: var(--font-jp); font-weight: 500; font-size: 14px;
-            color: #eee; width: 100%;
+            color: #fff; width: 100%;
             opacity: 0; transform: translateY(5px); transition: all 0.5s;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .ticker-content.active { opacity: 1; transform: translateY(0); }
 
-        /* --- Main Grid Layout --- */
+        /* --- Main Layout --- */
         .viewport {
             position: relative; width: 100%; height: 100%;
             display: grid;
-            /* 左80px | キャラエリア(可変) | 右300px */
-            grid-template-columns: 80px 1fr 300px;
+            grid-template-columns: 250px 1fr 300px; /* 左メニュー幅を確保 */
             grid-template-rows: 60px 1fr 100px;
             z-index: 10;
-            padding-top: 32px;
+            padding-top: 36px;
         }
 
-        /* --- Left Side --- */
+        /* --- Left Side (System & Tools) --- */
         .sub-nav {
             grid-row: 1 / 4; display: flex; flex-direction: column;
-            justify-content: space-between; /* 上下に分散 */
-            align-items: center;
+            justify-content: space-between;
+            padding: 40px 30px;
             border-right: 1px solid var(--ui-border);
             background: linear-gradient(to right, rgba(0,0,0,0.2), transparent);
-            padding: 40px 0;
         }
-        .sub-nav-content {
-            display: flex; flex-direction: column; align-items: center; gap: 50px;
-            margin-top: 50px;
+        
+        .system-logs {
+            display: flex; flex-direction: column; gap: 40px; align-items: flex-start;
         }
         .sub-nav-item {
-            writing-mode: vertical-rl; font-family: var(--font-en); font-size: 9px; letter-spacing: 0.6em;
-            color: var(--text-main); opacity: 0.4;
-            text-transform: uppercase; cursor: pointer; transition: 0.4s;
+            /* 縦書き廃止・横書きへ */
+            font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
+            color: var(--text-sub); text-transform: uppercase; 
+            cursor: pointer; transition: 0.3s; border-left: 2px solid transparent;
+            padding-left: 10px;
         }
         .sub-nav-item:hover {
-            color: var(--accent-color); opacity: 1;
-            transform: translateY(-8px); text-shadow: 0 0 15px var(--accent-color);
+            color: var(--accent-color); border-left-color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-color);
         }
-        /* Display Mode Button (Horizontal at bottom) */
+
+        /* Bottom Left Controls (Horizontal) */
+        .bottom-controls {
+            display: flex; flex-direction: column; gap: 20px; width: 100%;
+        }
+        
+        /* BGM Player (Horizontal Stylish) */
+        .sound-control {
+            display: flex; align-items: center; gap: 15px;
+            padding: 10px; border: 1px solid var(--ui-border);
+            background: var(--ui-bg); border-radius: 4px;
+        }
+        .sound-icon {
+            color: var(--text-main); font-size: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .sound-icon:hover, .sound-icon.playing { color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
+        
+        .volume-bar {
+            -webkit-appearance: none; appearance: none;
+            width: 100px; height: 4px; background: var(--ui-border);
+            outline: none; border-radius: 2px; cursor: pointer;
+        }
+        .volume-bar::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 12px; height: 12px; background: var(--accent-color);
+            border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px var(--accent-color);
+        }
+
+        /* Display Mode Button */
         .bg-trigger {
-            font-family: var(--font-en); font-size: 9px; letter-spacing: 0.1em;
+            font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em;
             color: var(--text-main); border: 1px solid var(--ui-border);
-            padding: 8px 10px; cursor: pointer; transition: 0.3s;
-            margin-bottom: 20px; text-align: center; white-space: nowrap;
-            background: rgba(0,0,0,0.3);
+            padding: 12px; text-align: center; cursor: pointer; transition: 0.3s;
+            background: var(--ui-bg); width: 100%;
         }
         .bg-trigger:hover { 
             background: var(--accent-color); color: #000; border-color: var(--accent-color); 
         }
 
-        /* --- BGM Player (Easier to control) --- */
-        .sound-control {
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            margin-top: 20px;
-        }
-        .sound-icon {
-            color: var(--text-main); font-size: 24px; cursor: pointer;
-            opacity: 0.6; transition: 0.3s;
-        }
-        .sound-icon:hover { opacity: 1; color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
-        .sound-icon.playing { color: var(--accent-color); opacity: 1; }
-        
-        .volume-wrapper {
-            position: relative; width: 4px; height: 60px;
-            background: var(--ui-border); border-radius: 2px;
-        }
-        .volume-level {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 30%;
-            background: var(--accent-color); border-radius: 2px;
-            transition: height 0.2s; pointer-events: none;
-        }
-        .volume-slider {
-            position: absolute; bottom: 0; left: -10px; width: 24px; height: 60px;
-            opacity: 0; cursor: pointer;
-            -webkit-appearance: slider-vertical; /* 縦型スライダー */
-        }
-
-        /* --- Character Stage (Dual Mode) --- */
+        /* --- Character Stage --- */
         .character-stage {
             grid-column: 2; grid-row: 1 / 4;
             display: flex; align-items: flex-end; justify-content: center;
@@ -169,64 +165,82 @@
             pointer-events: auto; cursor: pointer;
         }
         
-        /* 2人並べるためのコンテナ */
-        .char-wrapper {
+        /* SOLO MODE: Center */
+        .char-wrapper-solo {
             display: flex; justify-content: center; align-items: flex-end;
             width: 100%; height: 100%;
-            position: relative;
         }
-
-        .char-img {
-            /* 2人並ぶので少し幅を制限 */
-            height: 85%; width: auto; max-width: 45%;
+        .char-img-solo {
+            height: 95%; width: auto; max-width: 80%;
             object-fit: cover; object-position: top center;
-            
-            /* ホバー演出 */
-            transition: transform 0.5s ease, filter 0.5s ease, opacity 0.8s;
-            transform-origin: center bottom;
-            
-            opacity: 0; transform: translateY(30px) scale(0.95);
-            margin: 0 -2%; /* 少し重ねる */
-            z-index: 10;
+            transition: all 0.8s ease; opacity: 0; transform: translateY(30px);
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.3));
         }
-        .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
         
-        /* カーソル合わせると可愛く反応 */
-        .char-img.visible:hover {
-            transform: translateY(-10px) scale(1.03);
-            filter: brightness(1.1);
-            z-index: 20;
+        /* PAIR MODE: Side by Side */
+        .char-wrapper-pair {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            width: 90%; height: 100%; padding-bottom: 0;
+        }
+        .char-img-pair {
+            height: 85%; width: auto; max-width: 48%;
+            object-fit: cover; object-position: top center;
+            transition: all 0.8s ease; opacity: 0;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.3));
+        }
+        .char-left { transform: translateX(-30px); }
+        .char-right { transform: translateX(30px); }
+
+        .visible { opacity: 1; transform: translateY(0) translateX(0); }
+        .visible:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        /* Bubbles (Separate) */
+        .bubble-container {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            pointer-events: none;
         }
 
-        /* Speech Bubble (Center) */
+        /* Common Bubble Style */
         .speech-bubble {
-            position: absolute; 
-            top: 25%; left: 50%; transform: translateX(-50%) translateY(20px);
+            position: absolute;
             font-family: var(--font-jp); font-weight: 500; letter-spacing: 0.05em;
-            color: #fff; background: rgba(10, 10, 10, 0.9);
-            padding: 20px 30px; backdrop-filter: blur(15px);
+            color: #fff; background: rgba(20, 20, 20, 0.9);
+            padding: 20px 25px; backdrop-filter: blur(10px);
             border: 1px solid var(--accent-color);
-            border-radius: 4px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            max-width: 500px; min-width: 300px; line-height: 1.8;
-            opacity: 0; transition: all 0.5s ease 0.3s;
-            z-index: 30;
-            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 350px; min-width: 200px; line-height: 1.6;
+            opacity: 0; transition: all 0.5s ease;
+            z-index: 50;
         }
-        .speech-bubble::after {
-            content: ''; position: absolute; bottom: -10px; left: 50%;
-            width: 15px; height: 15px; background: rgba(10, 10, 10, 0.9);
-            border-bottom: 1px solid var(--accent-color);
-            border-right: 1px solid var(--accent-color);
-            transform: translateX(-50%) rotate(45deg);
+        .speech-bubble.show { opacity: 1; }
+
+        /* Solo Bubble: Center Bottom */
+        .bubble-solo {
+            bottom: 10%; left: 50%; transform: translateX(-50%) translateY(20px);
+            border-left: 4px solid var(--accent-color);
         }
-        .speech-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        
+        .bubble-solo.show { transform: translateX(-50%) translateY(0); }
+
+        /* Pair Bubble 1: Left Upper */
+        .bubble-left {
+            top: 25%; left: 15%; 
+            transform: translateX(-20px);
+            border-left: 4px solid var(--accent-color);
+        }
+        .bubble-left.show { transform: translateX(0); }
+
+        /* Pair Bubble 2: Right Lower */
+        .bubble-right {
+            bottom: 25%; right: 15%; 
+            transform: translateX(20px);
+            border-right: 4px solid var(--accent-color); text-align: right;
+        }
+        .bubble-right.show { transform: translateX(0); }
+
         .char-name-label {
-            font-family: var(--font-en); font-size: 10px; color: var(--accent-color);
-            margin-bottom: 8px; display: block; font-weight: bold; letter-spacing: 0.2em;
+            display: block; font-family: var(--font-en); font-size: 10px; color: var(--accent-color);
+            margin-bottom: 5px; font-weight: bold; letter-spacing: 0.1em;
         }
-        .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent-color); animation: blink 1s infinite; vertical-align: middle; }
 
         /* --- Right Column --- */
         .header-title {
@@ -238,7 +252,7 @@
             color: var(--text-main); letter-spacing: 0.1em;
             text-shadow: 0 0 20px rgba(255,255,255,0.1);
         }
-        .header-sub { font-size: 9px; color: var(--text-sub); letter-spacing: 0.4em; margin-top: 5px; opacity: 0.7; }
+        .header-sub { font-size: 9px; color: var(--text-sub); letter-spacing: 0.4em; margin-top: 5px; }
 
         .user-status {
             position: absolute; top: 120px; right: 40px; text-align: right;
@@ -253,13 +267,10 @@
         }
         .connect-btn:hover { background: var(--accent-color); color: #000; box-shadow: 0 0 15px var(--accent-color); }
 
-        /* Right Nav (Higher Position) */
         .main-nav {
             grid-column: 3; grid-row: 2 / 4;
-            display: flex; flex-direction: column; 
-            justify-content: center; /* 中央より少し下くらいに配置 */
-            align-items: flex-end;
-            padding: 0 40px 100px 0; gap: 20px;
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
+            padding: 0 40px 50px 0; gap: 18px;
         }
         .nav-btn-group { display: flex; flex-direction: column; align-items: flex-end; }
         .btn-label { font-family: var(--font-en); font-size: 8px; color: var(--text-sub); margin-bottom: 4px; letter-spacing: 0.2em; }
@@ -272,6 +283,7 @@
             font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             position: relative; overflow: hidden;
             transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            cursor: pointer;
         }
         .nav-btn::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
@@ -282,7 +294,7 @@
             content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
             background: var(--accent-color); transform: scaleY(0); transition: transform 0.4s;
         }
-        .nav-btn:hover {
+        .nav-btn:hover, .nav-btn.active {
             border-color: var(--accent-color); background: rgba(128,128,128, 0.1);
             letter-spacing: 0.35em; box-shadow: 0 0 20px rgba(0,0,0,0.2);
             text-shadow: 0 0 8px var(--accent-color);
@@ -304,16 +316,14 @@
             text-align: center;
         }
         .modal-title { font-family: var(--font-en); color: #fff; margin-bottom: 20px; letter-spacing: 0.1em; }
-        .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; }
+        .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
         .bg-option {
             aspect-ratio: 16/9; border: 2px solid #444; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            font-family: var(--font-en); font-size: 12px; color: #fff;
             background-size: cover; background-position: center; transition: 0.2s;
         }
         .bg-option:hover { border-color: var(--accent-color); transform: scale(1.05); }
         .bg-black { background: #000; }
-        .bg-white { background: #fff; color: #000; }
+        .bg-white { background: #fff; }
         .close-modal { margin-top: 20px; background: none; border: 1px solid #555; color: #aaa; padding: 8px 20px; cursor: pointer; transition: 0.2s; }
         .close-modal:hover { color: #fff; border-color: #fff; }
 
@@ -328,13 +338,14 @@
 
     <div id="canvas-container"></div>
     
+    <!-- BG Select Modal -->
     <div id="bg-modal">
         <div class="modal-content">
             <h3 class="modal-title">SELECT BACKGROUND</h3>
             <div class="bg-grid" id="bg-grid">
-                <div class="bg-option bg-black" onclick="setBgMode('black')">BLACK</div>
-                <div class="bg-option bg-white" onclick="setBgMode('white')">WHITE</div>
-                <!-- Photo Buttons (No Text) -->
+                <div class="bg-option bg-black" onclick="setBgMode('black')"></div>
+                <div class="bg-option bg-white" onclick="setBgMode('white')"></div>
+                <!-- Photo Buttons (Generated by JS) -->
             </div>
             <button class="close-modal" onclick="toggleBgModal()">CLOSE</button>
         </div>
@@ -349,28 +360,26 @@
     <div class="viewport">
         <!-- Left Nav -->
         <nav class="sub-nav">
-            <div class="sub-nav-content">
+            <div class="system-logs">
                 <div class="sub-nav-item">System Log</div>
                 <div class="sub-nav-item">Archive</div>
-                
-                <!-- BGM Control -->
-                <div class="sound-control">
-                    <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
-                    <div class="volume-wrapper">
-                        <div id="volume-level" class="volume-level" style="height:30%;"></div>
-                        <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="0.3" 
-                               oninput="changeVolume(this.value)">
-                    </div>
-                </div>
+                <div class="sub-nav-item">Network</div>
             </div>
             
-            <!-- Display Mode Button (Bottom) -->
-            <div class="bg-trigger" onclick="toggleBgModal()">DISPLAY MODE</div>
+            <div class="bottom-controls">
+                <!-- BGM Control (Horizontal) -->
+                <div class="sound-control">
+                    <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
+                    <input type="range" class="volume-bar" min="0" max="1" step="0.1" value="0.3" oninput="changeVolume(this.value)">
+                </div>
+                <!-- BG Select Button -->
+                <div class="bg-trigger" onclick="toggleBgModal()">DISPLAY SETTING</div>
+            </div>
         </nav>
         
         <div class="header-title">
             <h1>UCHIYOSO<br>ARCHIVE</h1>
-            <div class="header-sub">PREMIUM INTERFACE v2.3</div>
+            <div class="header-sub">PREMIUM INTERFACE v3.0</div>
         </div>
 
         <div class="user-status">
@@ -379,21 +388,44 @@
             <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
         </div>
 
-        <!-- Character Stage (2人表示) -->
+        <!-- Character Stage -->
         <section class="character-stage" onclick="handleCharClick()">
-            <div class="char-wrapper">
-                <img id="char-img-1" class="char-img" src="" alt="Char1">
-                <img id="char-img-2" class="char-img" src="" alt="Char2" style="display:none;">
-            </div>
             
-            <div class="speech-bubble">
-                <span id="char-name-label" class="char-name-label">SYSTEM</span>
-                <span id="typewriter-text"></span><span class="cursor"></span>
+            <!-- Solo Mode View -->
+            <div id="view-solo" class="char-wrapper-solo">
+                <img id="char-img-solo" class="char-img-solo" src="">
+                <div id="bubble-solo" class="speech-bubble bubble-solo">
+                    <span id="name-solo" class="char-name-label"></span>
+                    <span id="text-solo"></span>
+                </div>
             </div>
+
+            <!-- Pair Mode View -->
+            <div id="view-pair" class="char-wrapper-pair" style="display:none;">
+                <img id="char-img-left" class="char-img-pair char-left" src="">
+                <div id="bubble-left" class="speech-bubble bubble-left">
+                    <span id="name-left" class="char-name-label"></span>
+                    <span id="text-left"></span>
+                </div>
+
+                <img id="char-img-right" class="char-img-pair char-right" src="">
+                <div id="bubble-right" class="speech-bubble bubble-right">
+                    <span id="name-right" class="char-name-label"></span>
+                    <span id="text-right"></span>
+                </div>
+            </div>
+
         </section>
 
         <!-- Right Nav -->
         <nav class="main-nav">
+            
+            <!-- Mode Switch -->
+            <div class="nav-btn-group">
+                <span class="btn-label">VIEW MODE</span>
+                <div class="nav-btn" onclick="toggleMode()">MODE SWITCH</div>
+            </div>
+
             <div class="nav-btn-group">
                 <span class="btn-label">QUICK EDIT</span>
                 <a href="./character/dialogue.html" class="nav-btn">EDIT DIALOGUE</a>
@@ -407,8 +439,8 @@
                 <a href="./character/list.html" class="nav-btn">MEMBER LIST</a>
             </div>
             <div class="nav-btn-group">
-                <span class="btn-label">REQUEST MODE</span>
-                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL (SOLO)</a>
+                <span class="btn-label">REQUEST</span>
+                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL</a>
             </div>
             <div class="nav-btn-group">
                 <span class="btn-label">COMMUNICATION</span>
@@ -427,94 +459,76 @@
         
         let currentUser = null;
         let charDataList = [];
-        let currentIndex = 0; // 今回はランダム選出ロジックで使用しないが念のため
-        let typeWriterTimeout = null;
-        let particleMaterial;
-        let targetColor = new THREE.Color(DEFAULT_THEME);
+        let isPairMode = false; // Initial Mode
+        let particleMaterial, targetColor = new THREE.Color(DEFAULT_THEME);
 
-        // ★ コンビ会話の定義リスト (名前の組み合わせで台詞を変える)
-        // ここに追加していくことで台詞が変わります
-        const COMBO_DIALOGUES = [
-            { chars: ["朝日奈 結愛", "柊"], text: "結愛「ねえ、ゲームしよ？」<br>柊「……負けないからな。」" },
-            { chars: ["アリス", "ボブ"], text: "アリス「いい天気だね！」<br>ボブ「散歩日和だ。」" }
+        // ★ コンビ会話設定 (キャラ1, キャラ2, 台詞1, 台詞2)
+        const COMBO_DATA = [
+            { 
+                p1: "朝日奈 結愛", p2: "柊", 
+                t1: "ねえ、ゲームしよ？", t2: "……負けないからな。" 
+            },
+            { 
+                p1: "アリス", p2: "ボブ", 
+                t1: "いい天気だね！", t2: "散歩日和だ。" 
+            }
         ];
 
         const fallbackData = [{
-            name: "System",
-            color: "#00ffcc",
-            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
-            image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
+            name: "System", color: "#00ffcc", remarks: "アーカイブへようこそ。", image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
         }];
 
-        // --- BGM Logic ---
+        // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
         const playBtn = document.getElementById('btn-play');
-        const volLevel = document.getElementById('volume-level');
         bgmPlayer.volume = 0.3;
-
         window.toggleBGM = () => {
             if (bgmPlayer.paused) {
-                bgmPlayer.play().then(() => {
-                    playBtn.textContent = 'pause'; playBtn.classList.add('playing');
-                }).catch(e => console.log("User interaction required"));
+                bgmPlayer.play().then(() => { playBtn.textContent = 'pause'; playBtn.classList.add('playing'); }).catch(e=>{});
             } else {
                 bgmPlayer.pause(); playBtn.textContent = 'play_arrow'; playBtn.classList.remove('playing');
             }
         };
-        window.changeVolume = (v) => { 
-            bgmPlayer.volume = v; 
-            volLevel.style.height = (v * 100) + '%';
-        };
+        window.changeVolume = (v) => { bgmPlayer.volume = v; };
 
         // --- BG Modal ---
         window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
-
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
-            body.className = "";
-            document.documentElement.style.setProperty('--bg-image-url', 'none');
-            
-            if (mode === 'black') {
-                body.classList.add('mode-black');
-                updateParticlesForBg('dark');
-            } else if (mode === 'white') {
-                body.classList.add('mode-white');
-                updateParticlesForBg('light');
-            } else if (mode === 'photo') {
+            body.className = ""; document.documentElement.style.setProperty('--bg-image-url', 'none');
+            if (mode === 'black') { body.classList.add('mode-black'); updateParticlesForBg('dark'); }
+            else if (mode === 'white') { body.classList.add('mode-white'); updateParticlesForBg('light'); }
+            else if (mode === 'photo') {
                 body.classList.add('mode-photo');
                 document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
                 updateParticlesForBg('dark');
             }
             toggleBgModal();
         };
-
+        
         const bgGrid = document.getElementById('bg-grid');
         for (let i = 1; i <= 5; i++) {
             const div = document.createElement('div');
             div.className = 'bg-option';
             div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
-            // No Text inside div for cleaner look
             div.onclick = () => window.setBgMode('photo', i);
             bgGrid.appendChild(div);
         }
 
-        // --- Update Particles based on BG ---
         function updateParticlesForBg(type) {
             if (type === 'light') {
-                // 白背景: 色彩のある濃い色、通常合成
                 particleMaterial.blending = THREE.NormalBlending;
-                particleMaterial.opacity = 0.6;
-                // 色は白背景用に少し暗くしたテーマカラーにしたいが、簡易的にグレー+色味
-                targetColor.offsetHSL(0, 0, -0.3); 
+                particleMaterial.opacity = 0.5;
+                targetColor.setHex(0x555555); // 白背景ではグレー系
             } else {
                 particleMaterial.blending = THREE.AdditiveBlending;
                 particleMaterial.opacity = 0.8;
-                // 元の色に戻す処理は updateDisplay で行われる
+                // 色は次のupdateDisplayでキャラ色に戻る
             }
             particleMaterial.needsUpdate = true;
         }
 
-        // --- News Ticker ---
+        // --- News ---
         async function initNews() {
             const el = document.getElementById('news-content');
             const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
@@ -525,9 +539,7 @@
                     if (res.ok) { data = await res.json(); break; }
                 } catch (e) {}
             }
-            if (!data || !data.length) {
-                el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return;
-            }
+            if (!data || !data.length) { el.textContent = "Welcome to Archive."; el.classList.add('active'); return; }
             const cycle = () => {
                 el.classList.remove('active');
                 setTimeout(() => {
@@ -538,7 +550,7 @@
             cycle(); setInterval(cycle, 6000);
         }
 
-        // --- Display Logic (Dual Char) ---
+        // --- Display Logic ---
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
                 if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
@@ -550,98 +562,114 @@
             });
         }
 
-        const imgEl1 = document.getElementById('char-img-1');
-        const imgEl2 = document.getElementById('char-img-2');
-        const nameLabel = document.getElementById('char-name-label');
-        const bubbleEl = document.querySelector('.speech-bubble');
+        // Elements
+        const viewSolo = document.getElementById('view-solo');
+        const viewPair = document.getElementById('view-pair');
+        
+        // Solo Elements
+        const soloImg = document.getElementById('char-img-solo');
+        const soloBubble = document.getElementById('bubble-solo');
+        const soloName = document.getElementById('name-solo');
+        const soloText = document.getElementById('text-solo');
+
+        // Pair Elements
+        const leftImg = document.getElementById('char-img-left');
+        const rightImg = document.getElementById('char-img-right');
+        const leftBubble = document.getElementById('bubble-left');
+        const rightBubble = document.getElementById('bubble-right');
+        const leftName = document.getElementById('name-left');
+        const rightName = document.getElementById('name-right');
+        const leftText = document.getElementById('text-left');
+        const rightText = document.getElementById('text-right');
+
         const rootStyles = document.documentElement.style;
 
+        // Toggle Function
+        window.toggleMode = () => {
+            isPairMode = !isPairMode;
+            updateDisplay();
+        };
+
         async function updateDisplay() {
-            // Exit
-            imgEl1.classList.remove('visible');
-            imgEl2.classList.remove('visible');
-            bubbleEl.classList.remove('show');
+            // Reset visibility
+            soloImg.classList.remove('visible'); soloBubble.classList.remove('show');
+            leftImg.classList.remove('visible'); leftBubble.classList.remove('show');
+            rightImg.classList.remove('visible'); rightBubble.classList.remove('show');
 
-            // 2人をランダム選出 (同じキャラにならないように)
+            if (!charDataList.length) return;
+
+            // Pick Main Character
             let c1 = charDataList[Math.floor(Math.random() * charDataList.length)];
-            let c2 = null;
-            if (charDataList.length > 1) {
-                do {
-                    c2 = charDataList[Math.floor(Math.random() * charDataList.length)];
-                } while (c2.name === c1.name);
-            }
-
-            // 画像パス解決
-            const src1 = await resolveImage(c1.name, c1.image);
-            const src2 = c2 ? await resolveImage(c2.name, c2.image) : null;
-
-            // テーマカラー (c1優先)
+            
+            // Theme Update
             const theme = c1.color || c1.inpThemeColor || DEFAULT_THEME;
             rootStyles.setProperty('--accent-color', theme);
-            if (!document.body.classList.contains('mode-white')) {
-                targetColor.set(theme);
-            } else {
-                // 白背景なら少し暗く
-                const c = new THREE.Color(theme);
-                c.offsetHSL(0, 0, -0.2);
-                targetColor.set(c);
-            }
+            if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
-            // 台詞決定 (コンビ判定)
-            let dialogue = "";
-            let labelName = c1.name;
-            
-            if (c2) {
-                labelName = `${c1.name} & ${c2.name}`;
-                // コンビ会話検索
-                const combo = COMBO_DIALOGUES.find(c => 
-                    (c.chars.includes(c1.name) && c.chars.includes(c2.name))
+            if (!isPairMode) {
+                // --- SOLO MODE ---
+                viewSolo.style.display = 'flex';
+                viewPair.style.display = 'none';
+                
+                const src = await resolveImage(c1.name, c1.image);
+                let txt = c1.remarks || "……。";
+
+                setTimeout(() => {
+                    soloImg.src = src;
+                    soloImg.onload = () => {
+                        soloName.textContent = c1.name.toUpperCase();
+                        soloText.innerHTML = txt;
+                        soloImg.classList.add('visible');
+                        setTimeout(() => soloBubble.classList.add('show'), 400);
+                    };
+                }, 600);
+
+            } else {
+                // --- PAIR MODE ---
+                viewSolo.style.display = 'none';
+                viewPair.style.display = 'flex';
+
+                let c2 = c1;
+                if (charDataList.length > 1) {
+                    do { c2 = charDataList[Math.floor(Math.random() * charDataList.length)]; } while (c2.name === c1.name);
+                }
+
+                const src1 = await resolveImage(c1.name, c1.image);
+                const src2 = await resolveImage(c2.name, c2.image);
+
+                // Find Combo Dialogue
+                let t1 = c1.remarks || "……";
+                let t2 = c2.remarks || "……";
+                
+                // 組み合わせチェック（順不同）
+                const combo = COMBO_DATA.find(c => 
+                    (c.p1 === c1.name && c.p2 === c2.name) || (c.p1 === c2.name && c.p2 === c1.name)
                 );
                 if (combo) {
-                    dialogue = combo.text;
-                } else {
-                    // なければランダム or 結合
-                    dialogue = `${c1.name}「${c1.remarks || "……"}」<br>${c2.name}「${c2.remarks || "……"}」`;
+                    if (combo.p1 === c1.name) { t1 = combo.t1; t2 = combo.t2; }
+                    else { t1 = combo.t2; t2 = combo.t1; }
                 }
-            } else {
-                dialogue = c1.remarks || "……。";
+
+                setTimeout(() => {
+                    leftImg.src = src1;
+                    rightImg.src = src2;
+                    
+                    // Left Load
+                    leftImg.onload = () => {
+                        leftName.textContent = c1.name.toUpperCase();
+                        leftText.innerHTML = t1;
+                        leftImg.classList.add('visible');
+                        setTimeout(() => leftBubble.classList.add('show'), 400);
+                    };
+                    // Right Load
+                    rightImg.onload = () => {
+                        rightName.textContent = c2.name.toUpperCase();
+                        rightText.innerHTML = t2;
+                        rightImg.classList.add('visible');
+                        setTimeout(() => rightBubble.classList.add('show'), 600);
+                    };
+                }, 600);
             }
-            dialogue = dialogue.replace(/<br>/g, "\n");
-
-            // 表示処理
-            setTimeout(() => {
-                imgEl1.src = src1;
-                imgEl1.onload = () => {
-                    imgEl1.classList.add('visible');
-                    
-                    if (c2 && src2) {
-                        imgEl2.style.display = "block";
-                        imgEl2.src = src2;
-                        imgEl2.onload = () => imgEl2.classList.add('visible');
-                    } else {
-                        imgEl2.style.display = "none";
-                    }
-
-                    nameLabel.textContent = labelName.toUpperCase();
-                    
-                    setTimeout(() => {
-                        bubbleEl.classList.add('show');
-                        startTypewriter(dialogue);
-                    }, 400);
-                };
-            }, 600);
-        }
-
-        function startTypewriter(text) {
-            const container = document.getElementById('typewriter-text');
-            container.innerHTML = ""; // use innerHTML for <br> support in combo text
-            if (typeWriterTimeout) clearTimeout(typeWriterTimeout);
-            
-            let i = 0;
-            // 簡易的なHTMLタグ除去と改行対応は複雑になるため、
-            // 今回は innerHTML で一括表示してからフェードインさせるか、
-            // 純粋なテキストとして流す。ここでは <br> を有効にするため一括表示風にする
-            container.innerHTML = text; 
         }
 
         // --- Particles ---
@@ -658,12 +686,11 @@
                 g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = g; ctx.fillRect(0,0,32,32); return new THREE.Texture(c);
             }
-            const texture = getTexture(); texture.needsUpdate = true;
             const geometry = new THREE.BufferGeometry();
             const vertices = [];
             for (let i = 0; i < 5000; i++) vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            particleMaterial = new THREE.PointsMaterial({ color: new THREE.Color(DEFAULT_THEME), size: 5, map: texture, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+            particleMaterial = new THREE.PointsMaterial({ color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
             const points = new THREE.Points(geometry, particleMaterial);
             scene.add(points); camera.position.z = 1000;
             function animate() {
@@ -684,7 +711,7 @@
             async (user) => {
                 currentUser = user;
                 userDisplay.textContent = (user.displayName || "MEMBER").toUpperCase();
-                connectBtn.textContent = "NEXT PAIR";
+                connectBtn.textContent = "NEXT";
                 const data = await loadFromCloud();
                 if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
                 else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
