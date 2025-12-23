@@ -2,8 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uchiyoso Maker - Luxe Archive v2</title>
+    <!-- スマホでもPCの幅(1280px)で強制表示させる設定 -->
+    <meta name="viewport" content="width=1280">
+    <title>Uchiyoso Maker - Luxe Archive v2.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -97,7 +98,7 @@
 
         /* --- Layout --- */
         .viewport {
-            position: relative; width: 100vw; height: 100vh;
+            position: relative; width: 100%; height: 100vh;
             display: grid;
             grid-template-columns: 80px 1fr 350px;
             grid-template-rows: 60px 1fr 120px;
@@ -105,44 +106,58 @@
             padding-top: 32px;
         }
 
-        /* --- Left Side Controls (New Layout) --- */
-        /* 既存の縦書きnavを無効化し、装飾だけ残すあるいは透明にする */
+        /* --- Left Nav (Restored) --- */
         .sub-nav {
-            grid-row: 1 / 4; 
+            grid-row: 1 / 4; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
             border-right: 1px solid var(--ui-border);
             background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
             transition: border-color 0.5s;
-            pointer-events: none; /* 下の要素をクリックさせない */
         }
-        
-        /* 左下に浮遊させる新しいコントロール群 */
-        .left-controls-overlay {
-            position: fixed; bottom: 40px; left: 30px;
-            display: flex; flex-direction: column; gap: 25px;
-            align-items: flex-start;
-            z-index: 150;
-            pointer-events: auto;
+        .sub-nav-content {
+            display: flex; flex-direction: column; align-items: center; gap: 50px;
+            /* 新しいコントロールと被らないように少し上にずらす */
+            margin-bottom: 150px; 
+        }
+        .sub-nav-item {
+            writing-mode: vertical-rl; font-family: var(--font-en); font-size: 9px; letter-spacing: 0.6em;
+            color: var(--text-main); opacity: 0.4;
+            text-transform: uppercase; cursor: pointer; transition: 0.4s;
+        }
+        .sub-nav-item:hover {
+            color: var(--accent-color); opacity: 1;
+            transform: translateY(-8px); text-shadow: 0 0 15px var(--accent-color);
         }
 
-        /* Display Button (Horizontal) */
+        /* --- Left Floating Controls (Display & Sound) --- */
+        /* 枠を無視して左下にオーバーレイ配置 */
+        .left-controls-overlay {
+            position: fixed; bottom: 30px; left: 20px;
+            display: flex; flex-direction: column; 
+            align-items: flex-start; /* 左揃え */
+            gap: 20px; /* 上下の間隔 */
+            z-index: 150;
+        }
+
+        /* Display Button (Horizontal Text) */
         .bg-trigger-horiz {
-            font-family: var(--font-en); font-size: 11px; letter-spacing: 0.2em;
+            font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em;
             color: var(--text-main); border: 1px solid var(--ui-border);
-            padding: 8px 20px; cursor: pointer; transition: 0.3s;
+            padding: 8px 16px; cursor: pointer; transition: 0.3s;
             background: var(--ui-bg); text-transform: uppercase;
-            display: flex; align-items: center; justify-content: center;
+            width: 140px; text-align: center;
         }
         .bg-trigger-horiz:hover { 
             background: var(--accent-color); color: #000; border-color: var(--accent-color);
             box-shadow: 0 0 15px var(--accent-color);
         }
 
-        /* Sound Control (Horizontal) */
+        /* Sound Control (Row) */
         .sound-row {
-            display: flex; align-items: center; gap: 15px;
+            display: flex; align-items: center; gap: 10px;
         }
         .sound-icon {
-            color: var(--text-main); font-size: 24px; cursor: pointer;
+            color: var(--text-main); font-size: 20px; cursor: pointer;
             opacity: 0.6; transition: 0.3s;
         }
         .sound-icon:hover { opacity: 1; color: var(--accent-color); text-shadow: 0 0 8px var(--accent-color); }
@@ -157,7 +172,7 @@
         }
         .volume-bar-horiz::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none;
-            width: 10px; height: 10px;
+            width: 8px; height: 8px;
             background: var(--accent-color);
             border-radius: 50%;
             cursor: pointer;
@@ -170,16 +185,16 @@
         .character-stage {
             grid-column: 2; grid-row: 1 / 4;
             display: flex; 
-            /* デフォルトはSOLOモードの配置 */
+            /* デフォルトはSOLO: 左寄せ */
             align-items: flex-end; justify-content: flex-start;
             padding-left: 5%; position: relative; overflow: hidden;
             pointer-events: auto; cursor: pointer;
             transition: all 0.5s ease;
         }
         
-        /* DUOモードの配置変更 */
+        /* DUOモード: 左右配置 */
         .character-stage.duo-mode {
-            justify-content: space-between; /* 左右に配置 */
+            justify-content: space-between;
             padding-left: 0; padding-right: 0;
         }
 
@@ -193,11 +208,11 @@
         }
         /* DUOモード時の画像調整 */
         .duo-mode .char-img {
-            max-width: 45%; /* 2人並べるため幅制限 */
-            height: 85%; /* 少し小さく */
+            max-width: 45%; 
+            height: 85%; 
         }
-        .duo-mode #char-img-1 { margin-left: -5%; } /* 左寄せ調整 */
-        .duo-mode #char-img-2 { margin-right: -5%; } /* 右寄せ調整 */
+        .duo-mode #char-img-1 { margin-left: -2%; } 
+        .duo-mode #char-img-2 { margin-right: -2%; }
 
         .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
         .char-img.visible:hover {
@@ -211,7 +226,7 @@
             pointer-events: none; z-index: 10;
         }
 
-        /* Default Bubble (Solo) */
+        /* Default Bubble (Design Unchanged) */
         .speech-bubble {
             position: absolute;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
@@ -226,25 +241,40 @@
         }
         .speech-bubble.show { opacity: 1; transform: translateX(0) translateY(0); }
 
-        /* SOLO Mode Position */
+        /* SOLO Mode Position (Unchanged) */
         .mode-solo .speech-bubble {
             bottom: 25%; left: 2%; transform: translateX(-20px);
         }
         .mode-solo .speech-bubble.show { transform: translateX(0); }
 
-        /* DUO Mode Position (Center Stacked) */
+        /* DUO Mode Position (Conversational in Center) */
         .mode-duo .speech-bubble {
-            left: 50%; transform: translateX(-50%) translateY(10px);
-            width: 500px; max-width: 90%;
+            /* 2つとも画面中央付近に配置 */
+            width: 450px; max-width: 40vw;
             text-align: left;
         }
-        .mode-duo .speech-bubble.show { transform: translateX(-50%) translateY(0); }
         
-        /* 2人の真ん中に2つ配置するための個別調整 */
-        .mode-duo #bubble-1 { bottom: 35%; }
-        .mode-duo #bubble-2 { bottom: 15%; border-left-color: #fff; /* 2人目は区別のため色変え（任意） */ }
-        .mode-duo #bubble-2.active-accent { border-left-color: var(--accent-color); }
+        /* 左キャラの吹き出し: 中央より少し上・左寄り */
+        .mode-duo #bubble-1 {
+            top: 45%; left: 50%; 
+            transform: translate(-105%, -50%) translateY(10px); /* 中央から左へ */
+            border-left-width: 5px;
+        }
+        .mode-duo #bubble-1.show {
+            transform: translate(-105%, -50%) translateY(0);
+        }
 
+        /* 右キャラの吹き出し: 中央より少し下・右寄り */
+        .mode-duo #bubble-2 {
+            top: 55%; left: 50%;
+            transform: translate(5%, -50%) translateY(10px); /* 中央から右へ */
+            border-left-width: 5px;
+            /* 色はJSで制御するが初期値設定 */
+        }
+        .mode-duo #bubble-2.show {
+            transform: translate(5%, -50%) translateY(0);
+        }
+        
         .char-name-label {
             font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
             margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
@@ -267,7 +297,7 @@
 
         /* Mode Toggle (Top Right) */
         .mode-toggle-container {
-            position: absolute; top: 120px; right: 280px; /* Statusの左側あたりに配置 */
+            position: absolute; top: 120px; right: 280px; 
             z-index: 120;
         }
         .mode-switch-btn {
@@ -299,8 +329,7 @@
         .main-nav {
             grid-column: 3; grid-row: 2 / 4;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
-            /* パディング下を増やして全体を上に押し上げる */
-            padding: 0 40px 100px 0; 
+            padding: 0 40px 100px 0; /* 上にずらす */
             gap: 24px;
         }
         .nav-btn-group { display: flex; flex-direction: column; align-items: flex-end; }
@@ -362,7 +391,7 @@
         @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
-<body class="mode-black mode-solo"> <!-- 初期はSoloモード -->
+<body class="mode-black mode-solo">
 
     <audio id="bgm-player" loop>
         <source src="./sound/aoren.mp3" type="audio/mpeg">
@@ -388,16 +417,21 @@
     </div>
 
     <div class="viewport">
-        <!-- Left Area (Empty Frame) -->
-        <nav class="sub-nav"></nav>
+        <!-- Left Nav (Original Items Restored) -->
+        <nav class="sub-nav">
+            <div class="sub-nav-content">
+                <div class="sub-nav-item">System Log</div>
+                <div class="sub-nav-item">Archive</div>
+            </div>
+        </nav>
         
-        <!-- Left Floating Controls (New Request) -->
+        <!-- Left Floating Controls (Display & Sound, Horizontal Text, Stacked Vertically) -->
         <div class="left-controls-overlay">
-            <!-- DISPLAY (Horizontal) -->
+            <!-- DISPLAY -->
             <div class="bg-trigger-horiz" onclick="toggleBgModal()">
                 DISPLAY
             </div>
-            <!-- VOLUME (Horizontal) -->
+            <!-- VOLUME -->
             <div class="sound-row">
                 <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
                 <input type="range" class="volume-bar-horiz" id="volume-slider" min="0" max="1" step="0.1" value="0.3" 
@@ -411,7 +445,7 @@
             <div class="header-sub">PREMIUM INTERFACE v2.2</div>
         </div>
 
-        <!-- Mode Toggle Switch (New) -->
+        <!-- Mode Toggle Switch -->
         <div class="mode-toggle-container">
             <button id="btn-solo" class="mode-switch-btn active" onclick="setMode('solo')">SOLO</button>
             <button id="btn-duo" class="mode-switch-btn" onclick="setMode('duo')">DUO</button>
@@ -485,8 +519,7 @@
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         
-        // Mode State
-        let isDuo = false;
+        let isDuo = false; // Mode check
 
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
@@ -522,7 +555,6 @@
 
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
-            // 既存のクラスから mode-solo/mode-duo 以外を削除する必要があるが簡略化
             body.classList.remove('mode-black', 'mode-white', 'mode-photo');
             document.documentElement.style.setProperty('--bg-image-url', 'none');
             
@@ -634,33 +666,26 @@
         const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
-            // Char 1 Data
             const char1 = charDataList[currentIndex];
-            // Char 2 Data (Next in list or wrap around)
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
-            // Reset UI
             imgEl1.classList.remove('visible');
             if (isDuo) imgEl2.classList.remove('visible');
             bubble1.classList.remove('show');
             bubble2.classList.remove('show');
 
-            // Resolve Images
             const src1 = await resolveImage(char1.name, char1.image);
             let src2 = null;
             if (isDuo) src2 = await resolveImage(char2.name, char2.image);
 
-            // Theme (Use Char 1 for main accent)
             const theme = char1.color || char1.inpThemeColor || DEFAULT_THEME;
             rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
-            // Dialogue Prep
             let text1 = char1.remarks || char1.txtRoleplay || "……。";
             text1 = text1.replace(/<br>/g, "\n");
             
-            // Char 2 Dialogue (Mock logic: using their own remarks)
             let text2 = "";
             if (isDuo) {
                 text2 = char2.remarks || char2.txtRoleplay || "……。";
@@ -668,7 +693,6 @@
             }
 
             setTimeout(() => {
-                // Update Img 1
                 imgEl1.src = src1;
                 imgEl1.onload = () => {
                     imgEl1.classList.add('visible');
@@ -679,20 +703,17 @@
                     }, 400);
                 };
 
-                // Update Img 2 (If Duo)
                 if (isDuo) {
                     imgEl2.src = src2;
                     imgEl2.onload = () => {
                         imgEl2.classList.add('visible');
                         nameLabel2.textContent = char2.name.toUpperCase();
-                        // 2人目は少しずらして表示
+                        
                         setTimeout(() => {
                             bubble2.classList.add('show');
-                            // 2人目の吹き出し枠色をそのキャラの色にする
                             const theme2 = char2.color || char2.inpThemeColor || "#fff";
                             bubble2.style.borderLeftColor = theme2;
                             nameLabel2.style.color = theme2;
-                            
                             startTypewriter(text2, textContainer2, 2);
                         }, 800);
                     };
@@ -704,7 +725,6 @@
             container.textContent = "";
             let timerVar = (id === 1) ? typeWriterTimeout1 : typeWriterTimeout2;
             if (timerVar) clearTimeout(timerVar);
-            
             let i = 0;
             function type() {
                 if (i < text.length) {
@@ -787,7 +807,6 @@
         window.handleCharClick = () => { if (currentUser) nextChar(); };
         function nextChar() {
             if (charDataList.length <= 1) return;
-            // DUOモードなら2人ずつ進めるなどのロジックも可。今回は1人ずつシフト。
             currentIndex = (currentIndex + 1) % charDataList.length;
             updateDisplay();
         }
