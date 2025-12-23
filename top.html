@@ -198,51 +198,39 @@
             position: absolute; width: 100%; height: 100%; top: 0; left: 0;
             pointer-events: none; z-index: 10;
         }
-        
         .speech-bubble {
             position: absolute;
-            /* おしゃれデザイン: ガラス風 + ネオンアクセント */
-            background: rgba(10, 15, 20, 0.75); /* 少し青みがかった黒の半透明 */
-            backdrop-filter: blur(12px);         /* 背景をぼかす */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-left: 4px solid var(--accent-color); /* アクセントカラー強調 */
-            border-radius: 4px 12px 12px 12px; /* 角を少し丸く */
-            
-            padding: 25px 35px;
-            color: #fff;
-            font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em; line-height: 1.8;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* 影をリッチに */
-            
-            max-width: 450px; 
-            opacity: 0; 
-            /* アニメーション設定 */
-            transition: opacity 0.5s, transform 0.5s;
-            
-            /* ドラッグ操作用 */
-            pointer-events: auto; /* マウス操作を有効化 */
-            cursor: grab;         /* 掴めるアイコン */
-            user-select: none;    /* テキスト選択防止（ドラッグしやすくする） */
-            touch-action: none;   /* スマホでのスクロール干渉防止 */
+            font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
+            color: #fff; background: rgba(10, 10, 10, 0.85);
+            padding: 25px 35px; backdrop-filter: blur(12px);
+            border-left: 3px solid var(--accent-color);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-width: 450px; line-height: 1.8;
+            opacity: 0; transition: all 0.5s ease 0.3s, border-color 1s;
         }
-        
-        .speech-bubble:active {
-            cursor: grabbing;     /* 掴んでいる最中のアイコン */
-            transition: none;     /* ドラッグ中は遅延なしで追従 */
+        .speech-bubble.show { opacity: 1; transform: translateX(0) translateY(0); }
+
+        /* SOLO Mode Position */
+        .mode-solo .speech-bubble { bottom: 25%; left: 2%; transform: translateX(-20px); }
+        .mode-solo .speech-bubble.show { transform: translateX(0); }
+
+        /* DUO Mode Position */
+        .mode-duo .speech-bubble { width: 450px; max-width: 40vw; text-align: left; }
+        .mode-duo #bubble-1 {
+            top: 45%; left: 50%; transform: translate(-105%, -50%) translateY(10px); border-left-width: 5px;
         }
-
-        .speech-bubble.show { opacity: 1; transform: translateY(0); }
-
-        /* 初期位置 (SOLO) */
-        .mode-solo .speech-bubble { bottom: 25%; left: 5%; transform: translateY(20px); }
-        .mode-solo .speech-bubble.show { transform: translateY(0); }
-
-        /* 初期位置 (DUO) */
-        .mode-duo .speech-bubble { width: 420px; max-width: 40vw; transform: translateY(20px); }
-        .mode-duo .speech-bubble.show { transform: translateY(0); }
+        .mode-duo #bubble-1.show { transform: translate(-105%, -50%) translateY(0); }
+        .mode-duo #bubble-2 {
+            top: 55%; left: 50%; transform: translate(5%, -50%) translateY(10px); border-left-width: 5px;
+        }
+        .mode-duo #bubble-2.show { transform: translate(5%, -50%) translateY(0); }
         
-        /* DUO配置: 重ならないように少しずらす */
-        .mode-duo #bubble-1 { top: 40%; left: 20%; }
-        .mode-duo #bubble-2 { top: 60%; left: 50%; }
+        .char-name-label {
+            font-family: var(--font-en); font-size: 11px; color: var(--accent-color);
+            margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em;
+        }
+        .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent-color); animation: blink 1s infinite; vertical-align: middle; }
 
         /* --- Right Column --- */
         .header-title {
@@ -454,7 +442,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
 
@@ -462,16 +449,12 @@
         const PHOTO_BASE = "./images/photo/";
         const DEFAULT_THEME = "#00ffcc";
         
-        // --- 設定 ---
-        const AUTO_PLAY_INTERVAL = 15000; // 自動切替の間隔 (ミリ秒 = 15秒)
-
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         let isDuo = false; 
-        let autoPlayTimer = null; // 自動再生用タイマー
 
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
@@ -479,100 +462,59 @@
         const fallbackData = [{
             name: "System",
             color: "#00ffcc",
-            remarks: "アーカイブへようこそ。",
+            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
             image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
         }];
 
-        // --- Drag Functionality (New!) ---
-        function enableDrag(elId) {
-            const el = document.getElementById(elId);
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
+        // --- BGM ---
+        const bgmPlayer = document.getElementById('bgm-player');
+        const playBtn = document.getElementById('btn-play');
+        bgmPlayer.volume = 0.3;
 
-            const startDrag = (e) => {
-                isDragging = true;
-                el.style.zIndex = 1000; // 最前面へ
-                // マウス位置またはタッチ位置を取得
-                const clientX = e.clientX || e.touches[0].clientX;
-                const clientY = e.clientY || e.touches[0].clientY;
-                startX = clientX;
-                startY = clientY;
-                
-                // 現在の位置を取得 (CSSで設定された位置をピクセルに変換)
-                const rect = el.getBoundingClientRect();
-                // 親要素(viewport)基準の座標計算
-                initialLeft = el.offsetLeft;
-                initialTop = el.offsetTop;
-            };
-
-            const doDrag = (e) => {
-                if (!isDragging) return;
-                e.preventDefault(); // スクロール防止
-                
-                const clientX = e.clientX || e.touches[0].clientX;
-                const clientY = e.clientY || e.touches[0].clientY;
-                
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-
-                // 位置更新
-                el.style.left = `${initialLeft + dx}px`;
-                el.style.top = `${initialTop + dy}px`;
-                el.style.bottom = 'auto'; // CSSのbottom指定を解除
-                el.style.right = 'auto';
-            };
-
-            const stopDrag = () => {
-                isDragging = false;
-                el.style.zIndex = '';
-            };
-
-            el.addEventListener('mousedown', startDrag);
-            el.addEventListener('touchstart', startDrag, {passive: false});
-            
-            window.addEventListener('mousemove', doDrag);
-            window.addEventListener('touchmove', doDrag, {passive: false});
-            
-            window.addEventListener('mouseup', stopDrag);
-            window.addEventListener('touchend', stopDrag);
-        }
-
-        // --- Auto Play Logic (New!) ---
-        function resetAutoPlay() {
-            if (autoPlayTimer) clearInterval(autoPlayTimer);
-            // キャラクターが2人以上いる場合のみ自動再生
-            if (charDataList.length > 1) {
-                autoPlayTimer = setInterval(() => {
-                    nextChar();
-                }, AUTO_PLAY_INTERVAL);
+        window.toggleBGM = () => {
+            if (bgmPlayer.paused) {
+                bgmPlayer.play().then(() => {
+                    playBtn.textContent = 'pause'; playBtn.classList.add('playing');
+                }).catch(e => console.log("User interaction required"));
+            } else {
+                bgmPlayer.pause(); playBtn.textContent = 'play_arrow'; playBtn.classList.remove('playing');
             }
-        }
+        };
+        window.changeVolume = (v) => { bgmPlayer.volume = v; };
 
-        // --- Screen Fit ---
-        function fitContent() {
-            const content = document.getElementById('content-body');
-            const winW = window.innerWidth, winH = window.innerHeight;
-            const baseW = 1280, baseH = 720;
+        // --- BG Modal ---
+        window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
 
-            if (winH > winW) { // Portrait
-                content.style.width = `${baseW}px`; content.style.height = `${baseH}px`;
-                content.style.transform = `rotate(90deg) translateY(-100%) scale(${winH / baseW})`;
-                content.style.transformOrigin = "top left";
-            } else { // Landscape
-                const scale = Math.min(winW / baseW, winH / baseH);
-                content.style.width = `${baseW}px`; content.style.height = `${baseH}px`;
-                content.style.transform = `scale(${scale})`;
-                content.style.transformOrigin = "top left";
-                content.style.left = `${(winW - baseW * scale) / 2}px`;
-                content.style.top = `${(winH - baseH * scale) / 2}px`;
+        window.setBgMode = (mode, photoIdx) => {
+            const body = document.body;
+            body.classList.remove('mode-black', 'mode-white', 'mode-photo');
+            document.documentElement.style.setProperty('--bg-image-url', 'none');
+            
+            if (mode === 'black') {
+                body.classList.add('mode-black'); updateParticlesForBg('dark');
+            } else if (mode === 'white') {
+                body.classList.add('mode-white'); updateParticlesForBg('light');
+            } else if (mode === 'photo') {
+                body.classList.add('mode-photo');
+                document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
+                updateParticlesForBg('dark');
             }
-        }
-        window.addEventListener('resize', fitContent);
-        window.addEventListener('load', fitContent);
+            toggleBgModal();
+        };
 
-        // --- Dialogue Logic ---
+        const bgGrid = document.getElementById('bg-grid');
+        for (let i = 1; i <= 5; i++) {
+            const div = document.createElement('div');
+            div.className = 'bg-option';
+            div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
+            div.onclick = () => window.setBgMode('photo', i);
+            bgGrid.appendChild(div);
+        }
+
+        // --- Logic: Dialogue Selection ---
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
+            // 1. Char1の中に Char2 との会話データがあるか
             if (char1.duo_conversations) {
                 const pairData = char1.duo_conversations.find(p => p.partner === char2.name);
                 if (pairData && pairData.scripts && pairData.scripts.length > 0) {
@@ -580,11 +522,12 @@
                     return { text1: script.a, text2: script.b };
                 }
             }
+            // 2. Char2の中に Char1 との会話データがあるか (逆)
             if (char2.duo_conversations) {
                 const pairData = char2.duo_conversations.find(p => p.partner === char1.name);
                 if (pairData && pairData.scripts && pairData.scripts.length > 0) {
                     const script = pairData.scripts[Math.floor(Math.random() * pairData.scripts.length)];
-                    return { text1: script.b, text2: script.a };
+                    return { text1: script.b, text2: script.a }; // 左右反転
                 }
             }
             return null;
@@ -603,6 +546,7 @@
             return selfChar.dialogue_default || selfChar.remarks || selfChar.txtRoleplay || "……。";
         }
 
+        // --- Display ---
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
                 if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
@@ -614,7 +558,6 @@
             });
         }
 
-        // --- Main Update ---
         const imgEl1 = document.getElementById('char-img-1');
         const imgEl2 = document.getElementById('char-img-2');
         const bubble1 = document.getElementById('bubble-1');
@@ -643,6 +586,7 @@
             rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
+            // Determine Texts
             let text1 = "", text2 = "";
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
@@ -659,10 +603,10 @@
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
-            // Display Logic
+            // Display Execution (Corrected: No onload locking)
             imgEl1.src = src1;
             imgEl1.onload = () => imgEl1.classList.add('visible');
-            
+
             nameLabel1.textContent = char1.name.toUpperCase();
             setTimeout(() => {
                 bubble1.classList.add('show');
@@ -672,7 +616,7 @@
             if (isDuo) {
                 imgEl2.src = src2;
                 imgEl2.onload = () => imgEl2.classList.add('visible');
-                
+
                 nameLabel2.textContent = char2.name.toUpperCase();
                 setTimeout(() => {
                     bubble2.classList.add('show');
@@ -685,11 +629,9 @@
         }
 
         function startTypewriter(text, container, id) {
-            if (!text) text = "……。";
             container.textContent = "";
             let timerVar = (id === 1) ? typeWriterTimeout1 : typeWriterTimeout2;
             if (timerVar) clearTimeout(timerVar);
-            
             let i = 0;
             function type() {
                 if (i < text.length) {
@@ -701,49 +643,13 @@
             type();
         }
 
-        // --- Other Systems ---
-        const bgmPlayer = document.getElementById('bgm-player');
-        window.toggleBGM = () => {
-            const btn = document.getElementById('btn-play');
-            if (bgmPlayer.paused) { 
-                bgmPlayer.play().then(()=>{ btn.textContent='pause'; btn.classList.add('playing'); }).catch(e=>console.log(e)); 
-            } else { 
-                bgmPlayer.pause(); btn.textContent='play_arrow'; btn.classList.remove('playing'); 
-            }
-        };
-        window.changeVolume = (v) => { bgmPlayer.volume = v; };
-        
-        window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
-        window.setBgMode = (mode, photoIdx) => {
-            const body = document.body;
-            body.classList.remove('mode-black', 'mode-white', 'mode-photo');
-            document.documentElement.style.setProperty('--bg-image-url', 'none');
-            if (mode === 'black') { body.classList.add('mode-black'); updateParticlesForBg('dark'); }
-            else if (mode === 'white') { body.classList.add('mode-white'); updateParticlesForBg('light'); }
-            else if (mode === 'photo') { 
-                body.classList.add('mode-photo'); 
-                document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
-                updateParticlesForBg('dark');
-            }
-            toggleBgModal();
-        };
-        const bgGrid = document.getElementById('bg-grid');
-        for (let i = 1; i <= 5; i++) {
-            const div = document.createElement('div'); div.className = 'bg-option';
-            div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
-            div.onclick = () => window.setBgMode('photo', i);
-            bgGrid.appendChild(div);
-        }
-
-        // Particles
+        // --- Particles ---
         function createParticles() {
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, 1280/720, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ alpha: true });
-            renderer.setSize(1280, 720);
-            const container = document.getElementById('canvas-container');
-            container.appendChild(renderer.domElement);
-            renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             function getTexture() {
                 const c = document.createElement('canvas'); c.width = 32; c.height = 32;
@@ -771,20 +677,10 @@
                 renderer.render(scene, camera);
             }
             animate();
-        }
-        function updateParticlesForBg(type) {
-            if (type === 'light') {
-                particleMaterial.blending = THREE.NormalBlending; particleMaterial.opacity = 0.4;
-                particleMaterial.color.setHex(0x555555); targetColor.setHex(0x555555);
-            } else {
-                particleMaterial.blending = THREE.AdditiveBlending; particleMaterial.opacity = 0.8;
-                const char = charDataList[currentIndex];
-                const theme = char ? (char.color || char.inpThemeColor || DEFAULT_THEME) : DEFAULT_THEME;
-                targetColor.set(theme);
-            }
-            particleMaterial.needsUpdate = true;
+            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         }
 
+        // --- News ---
         async function initNews() {
             const el = document.getElementById('news-content');
             const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
@@ -821,9 +717,7 @@
                 if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
                 else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
                 currentIndex = Math.floor(Math.random() * charDataList.length);
-                
                 updateDisplay();
-                resetAutoPlay(); // 自動再生開始
             },
             () => {
                 currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
@@ -833,20 +727,9 @@
 
         window.handleConnect = () => {
             if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
-            if (!currentUser) login(); 
-            else { 
-                nextChar(); 
-                resetAutoPlay(); // クリックしたらタイマーリセット
-            }
+            if (!currentUser) login(); else nextChar();
         };
-        
-        window.handleCharClick = () => { 
-            if (currentUser) {
-                nextChar();
-                resetAutoPlay(); // クリックしたらタイマーリセット
-            }
-        };
-        
+        window.handleCharClick = () => { if (currentUser) nextChar(); };
         function nextChar() {
             if (charDataList.length <= 1) return;
             currentIndex = (currentIndex + 1) % charDataList.length;
@@ -868,12 +751,7 @@
                 document.getElementById('bubble-2').classList.remove('show');
             }
             updateDisplay();
-            resetAutoPlay(); // モード切替でもリセット
         };
-
-        // Enable Dragging
-        enableDrag('bubble-1');
-        enableDrag('bubble-2');
 
         createParticles(); initNews();
     </script>
