@@ -337,8 +337,6 @@
         .prev { left: 40px; } .next { right: 40px; }
         .loading { font-family: 'Teko'; font-size: 2.5rem; color: var(--accent); letter-spacing: 0.2em; text-shadow: 0 0 10px var(--accent); }
         
-        .btn-edit { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 400; cursor: pointer; color:#000; }
-        .char-unit:hover .btn-edit { opacity: 1; }
         .click-layer { position: absolute; inset: 0; z-index: 40; cursor: pointer; }
     </style>
 </head>
@@ -567,16 +565,10 @@
                         <div class="real-shadow"></div>
                     </div>
 
-                    <div class="btn-edit">📷</div>
+                    
                     <div class="click-layer"></div>
                 `;
 
-                const edit = unit.querySelector('.btn-edit');
-                edit.onclick = (e) => {
-                    e.stopPropagation();
-                    const newUrl = prompt('画像URL:', char.image || "");
-                    if(newUrl) { char.image = newUrl; saveToCloud(char).then(() => renderCharacterList(data)); }
-                };
                 
                 enableDrag(unit.querySelector('.ui-san-container'));
                 enableDrag(unit.querySelector('.ui-stats-container'));
