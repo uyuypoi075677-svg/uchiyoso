@@ -184,44 +184,30 @@
         };
 
         // --- SOLO LOGIC ---
-
         function renderSoloForms() {
             const container = document.getElementById('solo-forms-container');
             container.innerHTML = "";
-            
             const categories = {};
             DIALOGUE_MAPPING.forEach(item => {
                 const cat = item.category || "その他";
                 if (!categories[cat]) categories[cat] = [];
                 categories[cat].push(item);
             });
-
             for (const [catName, items] of Object.entries(categories)) {
                 const section = document.createElement('div');
                 section.className = "form-section";
-                
                 const title = document.createElement('div');
                 title.className = "section-title";
                 title.textContent = catName;
                 section.appendChild(title);
-
                 const grid = document.createElement('div');
                 grid.className = "auto-grid";
-                
                 items.forEach(item => {
                     const group = document.createElement('div');
                     group.className = "input-group";
-                    
-                    // ★プレースホルダー（薄い文字）を変更して、改行できることをアピール
-                    // ★style="height:100px" にして少し縦長にしました
-                    group.innerHTML = `
-                        <label>${item.label}</label>
-                        <textarea id="${item.id}" style="height:100px;" 
-                            placeholder="${item.label} の台詞...\n(改行で複数パターン登録できます)"></textarea>
-                    `;
+                    group.innerHTML = `<label>${item.label}</label><textarea id="${item.id}" placeholder="${item.label}..."></textarea>`;
                     grid.appendChild(group);
                 });
-                
                 section.appendChild(grid);
                 container.appendChild(section);
             }
