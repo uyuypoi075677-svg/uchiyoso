@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
-    <title>Uchiyoso Maker - Luxe Archive v2.7</title>
+    <title>Uchiyoso Maker - Luxe Archive v2.8</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
+        /* CSSは変更なしのため省略。以前のデザインをそのまま維持します */
         :root {
             --bg-color: #080808; --text-main: #ffffff; --text-sub: #8899a6;
             --ui-border: rgba(255, 255, 255, 0.15); --ui-bg: rgba(255, 255, 255, 0.03);
@@ -49,7 +50,6 @@
         .char-img.visible:hover { transform: translateY(-5px) scale(1.02); filter: brightness(1.1); }
         .bubbles-layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 10; }
         
-        /* 吹き出しのスタイル（ドラッグ対応） */
         .speech-bubble {
             position: absolute;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
@@ -61,29 +61,18 @@
             min-width: 300px; max-width: 500px;
             line-height: 1.8; 
             opacity: 0; 
-            
-            /* 可動式の設定 */
-            cursor: grab;
-            pointer-events: auto; /* ドラッグ操作のために必要 */
-            user-select: none; /* テキスト選択防止 */
-            touch-action: none;
-            
-            /* transitionからtop/left/transformを除外しないとドラッグ時に遅延する */
+            cursor: grab; pointer-events: auto; user-select: none; touch-action: none;
             transition: opacity 0.5s ease; 
         }
         .speech-bubble:active { cursor: grabbing; }
 
         #text-1, #text-2 { white-space: pre-wrap; }
-        .speech-bubble.show { opacity: 1; } /* TransformはJSまたは初期CSSで管理 */
-
-        /* 初期位置設定 (JSで上書き可) */
+        .speech-bubble.show { opacity: 1; }
         .mode-solo .speech-bubble { bottom: 25%; left: 2%; transform: translateX(-20px); }
         .mode-solo .speech-bubble.show { transform: translateX(0); }
-        
         .mode-duo .speech-bubble { text-align: left; }
         .mode-duo #bubble-1 { top: 45%; left: 50%; transform: translate(-105%, -50%) translateY(10px); border-left-width: 5px; }
         .mode-duo #bubble-1.show { transform: translate(-105%, -50%) translateY(0); }
-        
         .mode-duo #bubble-2 { top: 55%; left: 50%; transform: translate(5%, -50%) translateY(10px); border-left-width: 5px; }
         .mode-duo #bubble-2.show { transform: translate(5%, -50%) translateY(0); }
 
@@ -110,75 +99,38 @@
         .nav-btn:hover::before { left: 150%; transition: 0.7s; }
         .nav-btn:hover::after { transform: scaleY(1); }
         
-        /* モーダル共通 */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 200; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .modal-overlay.open { opacity: 1; pointer-events: auto; }
         .modal-content { background: rgba(20,20,20,0.9); border: 1px solid var(--accent-color); padding: 40px; border-radius: 4px; max-width: 600px; width: 90%; text-align: center; display: flex; flex-direction: column; align-items: center; max-height: 80vh; }
         .modal-title { font-family: var(--font-en); color: #fff; margin-bottom: 20px; letter-spacing: 0.1em; width: 100%; text-align: center; }
-        
-        /* BG Grid */
         .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; width: 100%; margin-bottom: 20px;}
         .bg-option { aspect-ratio: 16/9; border: 2px solid #444; cursor: pointer; display: flex; justify-content: center; align-items: center; font-family: var(--font-en); font-size: 12px; color: #fff; background-size: cover; background-position: center; transition: 0.2s; }
         .bg-option:hover { border-color: var(--accent-color); transform: scale(1.05); }
         .bg-black { background: #000; }
         .bg-white { background: #fff; color: #000; }
-
-        /* Music List Style */
         .scrollable-list { width: 100%; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding-right: 5px; }
         .scrollable-list::-webkit-scrollbar { width: 5px; }
         .scrollable-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         .scrollable-list::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 2px; }
-
-        .list-item { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--ui-border); 
-            padding: 12px 20px; text-align: left; cursor: pointer; transition: 0.2s;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .list-item { background: rgba(255,255,255,0.05); border: 1px solid var(--ui-border); padding: 12px 20px; text-align: left; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .list-item:hover, .list-item.selected { border-color: var(--accent-color); background: rgba(255,255,255,0.1); color: var(--accent-color); }
-        .list-text { font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em; } /* 音楽リストは英語フォントで統一 */
-
-        /* Character Grid Style */
-        .char-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-            gap: 20px; 
-            width: 100%; 
-            max-height: 400px; 
-            overflow-y: auto; 
-            padding: 10px; 
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
+        .list-text { font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em; }
+        .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 20px; width: 100%; max-height: 400px; overflow-y: auto; padding: 10px; box-sizing: border-box; margin-bottom: 20px; }
         .char-grid::-webkit-scrollbar { width: 5px; }
         .char-grid::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 2px; }
-
-        .char-select-item {
-            display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; position: relative;
-        }
-        .char-select-thumb {
-            width: 80px; height: 80px; object-fit: cover; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.2); transition: 0.3s;
-        }
-        .char-select-item:hover .char-select-thumb, .char-select-item.selected .char-select-thumb {
-            border-color: var(--accent-color);
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(0,255,204, 0.3);
-        }
-        .char-select-name {
-            font-size: 10px; font-family: var(--font-jp); color: var(--text-sub); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
-        }
+        .char-select-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; position: relative; }
+        .char-select-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); transition: 0.3s; object-position: top center; }
+        .char-select-item:hover .char-select-thumb, .char-select-item.selected .char-select-thumb { border-color: var(--accent-color); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,255,204, 0.3); }
+        .char-select-name { font-size: 10px; font-family: var(--font-jp); color: var(--text-sub); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
         .char-select-item.selected .char-select-name { color: var(--accent-color); }
-        
         .toggle-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 20px; padding: 0 10px; box-sizing: border-box; }
         .toggle-label { font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em; color: var(--text-sub); }
         .toggle-switch { position: relative; width: 40px; height: 20px; background: #333; border-radius: 10px; cursor: pointer; transition: 0.3s; }
         .toggle-switch.active { background: var(--accent-color); }
         .toggle-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: 0.3s; }
         .toggle-switch.active .toggle-knob { left: 22px; background: #000; }
-
         .close-modal { margin-top: 10px; background: none; border: 1px solid #555; color: #aaa; padding: 8px 20px; cursor: pointer; transition: 0.2s; font-family: var(--font-en); font-size: 10px; letter-spacing: 0.2em; }
         .close-modal:hover { color: #fff; border-color: #fff; }
-        
         @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
@@ -190,7 +142,7 @@
 
     <div id="canvas-container"></div>
     
-    <!-- BG Modal -->
+    <!-- Modals -->
     <div id="bg-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 class="modal-title">SELECT BACKGROUND</h3>
@@ -202,45 +154,35 @@
         </div>
     </div>
 
-    <!-- Music Modal -->
     <div id="music-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 class="modal-title">SELECT MUSIC</h3>
-            <div class="scrollable-list" id="music-list">
-                <!-- JSにより生成 -->
-            </div>
+            <div class="scrollable-list" id="music-list"></div>
             <button class="close-modal" onclick="closeAllModals()">CLOSE</button>
         </div>
     </div>
 
-    <!-- Character Modal -->
     <div id="char-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 class="modal-title">SELECT CHARACTER</h3>
-            
             <div class="toggle-row">
                 <span class="toggle-label">AUTO ROTATION</span>
                 <div id="rotation-toggle" class="toggle-switch active" onclick="toggleAutoRotation()">
                     <div class="toggle-knob"></div>
                 </div>
             </div>
-
-            <!-- リスト形式からグリッド形式に変更 -->
-            <div class="char-grid" id="char-list">
-                <!-- JSにより生成 -->
-            </div>
+            <div class="char-grid" id="char-list"></div>
             <button class="close-modal" onclick="closeAllModals()">CLOSE</button>
         </div>
     </div>
 
-    <!-- News Ticker -->
+    <!-- UI Components -->
     <div id="news-ticker">
         <span class="ticker-label">LATEST REPORT</span>
         <span id="news-content" class="ticker-content">Initializing System...</span>
     </div>
 
     <div class="viewport">
-        <!-- Left Nav -->
         <nav class="sub-nav">
             <div class="sub-nav-content">
                 <div class="sub-nav-item">System Log</div>
@@ -248,25 +190,21 @@
             </div>
         </nav>
         
-        <!-- Left Controls -->
         <div class="left-controls-overlay">
             <div class="bg-trigger-horiz" onclick="openCharModal()">CHARACTER</div>
             <div class="bg-trigger-horiz" onclick="openMusicModal()">MUSIC</div>
             <div class="bg-trigger-horiz" onclick="openBgModal()">DISPLAY</div>
-            
             <div class="sound-row">
                 <span class="material-icons sound-icon" id="btn-play" onclick="toggleBGM()">play_arrow</span>
                 <input type="range" class="volume-bar-horiz" id="volume-slider" min="0" max="1" step="0.1" value="0.3" oninput="changeVolume(this.value)">
             </div>
         </div>
 
-        <!-- Header -->
         <div class="header-title">
             <h1>UCHIYOSO<br>ARCHIVE</h1>
-            <div class="header-sub">PREMIUM INTERFACE v2.7</div>
+            <div class="header-sub">PREMIUM INTERFACE v2.8</div>
         </div>
 
-        <!-- Mode Toggle -->
         <div class="mode-toggle-container">
             <button id="btn-solo" class="mode-switch-btn active" onclick="setMode('solo')">SOLO</button>
             <button id="btn-duo" class="mode-switch-btn" onclick="setMode('duo')">DUO</button>
@@ -278,15 +216,9 @@
             <button id="main-connect-btn" class="connect-btn" onclick="handleConnect()">CONNECT</button>
         </div>
 
-        <!-- Character Stage -->
         <section id="char-stage" class="character-stage" onclick="handleCharClick()">
-            <!-- Character 1 -->
             <img id="char-img-1" class="char-img" src="" alt="Character 1">
-            
-            <!-- Character 2 -->
             <img id="char-img-2" class="char-img" src="" alt="Character 2" style="display: none;">
-
-            <!-- Bubbles Layer (Draggable) -->
             <div class="bubbles-layer">
                 <div id="bubble-1" class="speech-bubble">
                     <span id="name-label-1" class="char-name-label">SYSTEM</span>
@@ -299,98 +231,61 @@
             </div>
         </section>
 
-        <!-- Right Nav -->
         <nav class="main-nav">
-            <div class="nav-btn-group">
-                <span class="btn-label">QUICK EDIT</span>
-                <a href="./character/dialogue.html" class="nav-btn">EDIT DIALOGUE</a>
-            </div>       
-            <div class="nav-btn-group">
-                <span class="btn-label">DATA ENTRY</span>
-                <a href="./character/edit.html" class="nav-btn">EDIT DATA</a>
-            </div>
-            <div class="nav-btn-group">
-                <span class="btn-label">DATABASE</span>
-                <a href="./character/list.html" class="nav-btn">MEMBER LIST</a>
-            </div>
-            <div class="nav-btn-group">
-                <span class="btn-label">REQUEST MODE</span>
-                <a href="./character/Squestionnaire.html" class="nav-btn">ART POLL</a>
-            </div>
-            <div class="nav-btn-group">
-                <span class="btn-label">COMMUNICATION</span>
-                <a href="./character/Wquestionnaire.html" class="nav-btn">PAIR QUESTIONS</a>
-            </div>
+            <div class="nav-btn-group"><span class="btn-label">QUICK EDIT</span><a href="./character/dialogue.html" class="nav-btn">EDIT DIALOGUE</a></div>       
+            <div class="nav-btn-group"><span class="btn-label">DATA ENTRY</span><a href="./character/edit.html" class="nav-btn">EDIT DATA</a></div>
+            <div class="nav-btn-group"><span class="btn-label">DATABASE</span><a href="./character/list.html" class="nav-btn">MEMBER LIST</a></div>
+            <div class="nav-btn-group"><span class="btn-label">REQUEST MODE</span><a href="./character/Squestionnaire.html" class="nav-btn">ART POLL</a></div>
+            <div class="nav-btn-group"><span class="btn-label">COMMUNICATION</span><a href="./character/Wquestionnaire.html" class="nav-btn">PAIR QUESTIONS</a></div>
         </nav>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
-        // dialogue.jsから表示ロジックを読み込み
         import { getHomeDialogue } from "./character/data/dialogue.js";
 
+        // ★設定定数
         const LOCAL_IMG_BASE = "./images/character/";
         const PHOTO_BASE = "./images/photo/";
         const DEFAULT_THEME = "#00ffcc";
         
-        // ★状態変数
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
-        let lastUpdateTime = 0; // 自動更新タイマー制御用
+        let lastUpdateTime = 0;
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         let isDuo = false; 
+        let isAutoRotate = true;
         
-        // 新機能用変数
-        let isAutoRotate = true; // 自動キャラ変更のON/OFF
-        
-        // 音楽リスト（タイトルのみに修正）
         const musicList = [
-            { title: "Aoren", url: "./sound/aoren.mp3" },
-            // 必要に応じて以下のように追加
-            // { title: "Jazz Night", url: "https://example.com/music.mp3" },
+            { title: "Aoren", url: "./sound/aoren.mp3" }
         ];
 
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
-
-        const fallbackData = [{
-            name: "System",
-            color: "#00ffcc",
-            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
-            image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
-        }];
+        const fallbackData = [{ name: "System", color: "#00ffcc", remarks: "Welcome.", image: "" }];
 
         // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
         const playBtn = document.getElementById('btn-play');
         if(bgmPlayer) bgmPlayer.volume = 0.3;
-
         window.toggleBGM = () => {
             if (bgmPlayer.paused) {
-                bgmPlayer.play().then(() => {
-                    playBtn.textContent = 'pause'; playBtn.classList.add('playing');
-                }).catch(e => console.log("User interaction required"));
+                bgmPlayer.play().then(() => { playBtn.textContent = 'pause'; playBtn.classList.add('playing'); }).catch(e => {});
             } else {
                 bgmPlayer.pause(); playBtn.textContent = 'play_arrow'; playBtn.classList.remove('playing');
             }
         };
         window.changeVolume = (v) => { bgmPlayer.volume = v; };
-
-        // Music Selection Logic
         window.playTrack = (url, index) => {
             bgmPlayer.src = url;
             const items = document.querySelectorAll('#music-list .list-item');
             items.forEach(el => el.classList.remove('selected'));
             if(items[index]) items[index].classList.add('selected');
-            
-            bgmPlayer.play().then(() => {
-                playBtn.textContent = 'pause'; playBtn.classList.add('playing');
-            });
+            bgmPlayer.play().then(() => { playBtn.textContent = 'pause'; playBtn.classList.add('playing'); });
         };
-
         function renderMusicList() {
             const container = document.getElementById('music-list');
             container.innerHTML = '';
@@ -403,177 +298,109 @@
             });
         }
 
-        // --- Draggable Bubbles Logic ---
+        // --- Draggable Bubbles ---
         function makeDraggable(elm) {
-            let isDragging = false;
-            let startX, startY;
-            let initialLeft, initialTop;
-
-            elm.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
-
-            // タッチ対応
-            elm.addEventListener('touchstart', dragStart, {passive: false});
-            document.addEventListener('touchend', dragEnd);
-            document.addEventListener('touchmove', drag, {passive: false});
-
+            let isDragging = false, startX, startY, initialLeft, initialTop;
+            elm.addEventListener('mousedown', dragStart); document.addEventListener('mouseup', dragEnd); document.addEventListener('mousemove', drag);
+            elm.addEventListener('touchstart', dragStart, {passive: false}); document.addEventListener('touchend', dragEnd); document.addEventListener('touchmove', drag, {passive: false});
             function dragStart(e) {
-                if (e.target.closest('.char-name-label')) return; // 名前ラベルなど特定要素を除外したければ記述
-
-                isDragging = true;
-                elm.style.transition = 'none'; // ドラッグ中はアニメーションを無効化
-                
-                // クライアント座標の取得
-                const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-                const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
-
-                startX = clientX;
-                startY = clientY;
-                
-                // 現在の計算された位置を取得 (transformの影響を考慮せず、left/topオフセットとして扱う)
-                const rect = elm.getBoundingClientRect();
-                
-                // 親要素(viewport/bubbles-layer)内での相対位置に変換が必要だが、
-                // 簡易的に現在のstyle.left/topが未設定なら現在の位置を固定する
+                if (e.target.closest('.char-name-label')) return;
+                isDragging = true; elm.style.transition = 'none';
+                const cX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                const cY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+                startX = cX; startY = cY;
                 if(!elm.style.left) elm.style.left = elm.offsetLeft + 'px';
                 if(!elm.style.top) elm.style.top = elm.offsetTop + 'px';
-                
-                // bottom指定がある場合、topに変換して固定する（動きをスムーズにするため）
-                elm.style.bottom = 'auto'; 
-                elm.style.transform = 'none'; // CSSのtransform center配置を解除して絶対配置モードへ
-
-                initialLeft = parseInt(elm.style.left || 0);
-                initialTop = parseInt(elm.style.top || 0);
+                elm.style.bottom = 'auto'; elm.style.transform = 'none';
+                initialLeft = parseInt(elm.style.left || 0); initialTop = parseInt(elm.style.top || 0);
             }
-
             function drag(e) {
-                if (!isDragging) return;
-                e.preventDefault(); // スクロール防止
-
-                const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-                const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
-
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-
-                elm.style.left = (initialLeft + dx) + 'px';
-                elm.style.top = (initialTop + dy) + 'px';
+                if (!isDragging) return; e.preventDefault();
+                const cX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                const cY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+                elm.style.left = (initialLeft + (cX - startX)) + 'px';
+                elm.style.top = (initialTop + (cY - startY)) + 'px';
             }
-
-            function dragEnd() {
-                if (!isDragging) return;
-                isDragging = false;
-                elm.style.transition = 'opacity 0.5s ease'; // アニメーション復帰
-            }
+            function dragEnd() { if(isDragging) { isDragging = false; elm.style.transition = 'opacity 0.5s ease'; } }
         }
+        makeDraggable(document.getElementById('bubble-1')); makeDraggable(document.getElementById('bubble-2'));
 
-        // 初期化時にドラッグ適用
-        makeDraggable(document.getElementById('bubble-1'));
-        makeDraggable(document.getElementById('bubble-2'));
-
-        // --- Modals Logic ---
-        window.closeAllModals = () => {
-            document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
-        };
+        // --- Modals ---
+        window.closeAllModals = () => document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
         window.openBgModal = () => { window.closeAllModals(); document.getElementById('bg-modal').classList.add('open'); };
         window.openMusicModal = () => { window.closeAllModals(); document.getElementById('music-modal').classList.add('open'); };
         window.openCharModal = () => { window.closeAllModals(); document.getElementById('char-modal').classList.add('open'); };
-
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
             body.classList.remove('mode-black', 'mode-white', 'mode-photo');
             document.documentElement.style.setProperty('--bg-image-url', 'none');
-            
-            if (mode === 'black') {
-                body.classList.add('mode-black'); updateParticlesForBg('dark');
-            } else if (mode === 'white') {
-                body.classList.add('mode-white'); updateParticlesForBg('light');
-            } else if (mode === 'photo') {
-                body.classList.add('mode-photo');
-                document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
-                updateParticlesForBg('dark');
-            }
+            if (mode === 'black') { body.classList.add('mode-black'); updateParticlesForBg('dark'); }
+            else if (mode === 'white') { body.classList.add('mode-white'); updateParticlesForBg('light'); }
+            else if (mode === 'photo') { body.classList.add('mode-photo'); document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`); updateParticlesForBg('dark'); }
             window.closeAllModals();
         };
-
         const bgGrid = document.getElementById('bg-grid');
         for (let i = 1; i <= 5; i++) {
-            const div = document.createElement('div');
-            div.className = 'bg-option';
-            div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
-            div.onclick = () => window.setBgMode('photo', i);
-            bgGrid.appendChild(div);
+            const div = document.createElement('div'); div.className = 'bg-option'; div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
+            div.onclick = () => window.setBgMode('photo', i); bgGrid.appendChild(div);
         }
-        
-        // --- Character Select Logic (Icons) ---
+
+        // --- ★ 画像読み出しロジック (高画質/ローカル優先) ---
+        // schema.jsにも同様のロジックを追加し、汎用的に使えるようにします
+        function resolveImage(charName, cloudUrl) {
+            return new Promise((resolve) => {
+                if (!charName) { resolve(cloudUrl || "https://via.placeholder.com/800x1200?text=NO+IMAGE"); return; }
+                const localPath = `${LOCAL_IMG_BASE}${charName}.png`;
+                const img = new Image();
+                img.onload = () => resolve(localPath); // ローカルにあればそれを採用
+                img.onerror = () => resolve(cloudUrl || `https://via.placeholder.com/800x1200?text=${encodeURIComponent(charName)}`); // なければクラウドURL
+                img.src = localPath;
+            });
+        }
+
+        // --- ★ キャラクター選択リスト (d.icon 優先) ---
         async function renderCharList() {
             const container = document.getElementById('char-list');
             container.innerHTML = '';
-            
             for (let i = 0; i < charDataList.length; i++) {
                 const char = charDataList[i];
                 const div = document.createElement('div');
                 div.className = 'char-select-item';
                 if(i === currentIndex) div.classList.add('selected');
                 
-                // アイコン画像の解決（非同期）
-                const imgSrc = await resolveImage(char.name, char.icon || char.image); // iconがあれば優先、なければ立ち絵
+                // ★ iconがあればそれを、なければimage(立ち絵)を、それらもローカルに高画質版があればそちらを優先
+                const imgSrc = await resolveImage(char.name, char.icon || char.image);
                 
                 div.innerHTML = `
                     <img src="${imgSrc}" class="char-select-thumb" alt="${char.name}">
                     <span class="char-select-name">${char.name}</span>
                 `;
-                
                 div.onclick = () => {
-                    currentIndex = i;
-                    updateDisplay();
-                    renderCharList(); // 選択状態更新
-                    // window.closeAllModals(); // 閉じる場合はコメントアウト解除
+                    currentIndex = i; updateDisplay(); renderCharList();
                 };
                 container.appendChild(div);
             }
         }
-
         window.toggleAutoRotation = () => {
             isAutoRotate = !isAutoRotate;
             const toggle = document.getElementById('rotation-toggle');
-            if(isAutoRotate) toggle.classList.add('active');
-            else toggle.classList.remove('active');
+            toggle.classList.toggle('active', isAutoRotate);
         };
 
-        // --- Logic ---
+        // --- Core Logic ---
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
             if (char1.duo_conversations) {
                 const pair = char1.duo_conversations.find(p => p.partner === char2.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) {
-                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
-                    return { text1: script.a, text2: script.b };
-                }
+                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].a, text2: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].b };
             }
             if (char2.duo_conversations) {
                 const pair = char2.duo_conversations.find(p => p.partner === char1.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) {
-                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
-                    return { text1: script.b, text2: script.a }; // 反転
-                }
+                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].b, text2: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].a };
             }
             return null;
         }
 
-        function resolveImage(charName, cloudUrl) {
-            return new Promise((resolve) => {
-                if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
-                const localPath = `${LOCAL_IMG_BASE}${charName}.png`;
-                const img = new Image();
-                img.onload = () => resolve(localPath);
-                img.onerror = () => resolve(cloudUrl || `https://via.placeholder.com/800x1200/111/333?text=${encodeURIComponent(charName)}`);
-                img.src = localPath;
-            });
-        }
-
-        // --- Display ---
         const imgEl1 = document.getElementById('char-img-1');
         const imgEl2 = document.getElementById('char-img-2');
         const bubble1 = document.getElementById('bubble-1');
@@ -582,10 +409,9 @@
         const nameLabel2 = document.getElementById('name-label-2');
         const textContainer1 = document.getElementById('text-1');
         const textContainer2 = document.getElementById('text-2');
-        const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
-            // キャラクター変更時に吹き出しの位置をリセットする
+            // 位置リセット
             bubble1.style.top = ''; bubble1.style.left = ''; bubble1.style.bottom = ''; bubble1.style.transform = '';
             bubble2.style.top = ''; bubble2.style.left = ''; bubble2.style.bottom = ''; bubble2.style.transform = '';
 
@@ -593,60 +419,42 @@
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
-            imgEl1.classList.remove('visible');
-            if (isDuo) imgEl2.classList.remove('visible');
-            bubble1.classList.remove('show');
-            bubble2.classList.remove('show');
+            imgEl1.classList.remove('visible'); if (isDuo) imgEl2.classList.remove('visible');
+            bubble1.classList.remove('show'); bubble2.classList.remove('show');
 
+            // 立ち絵表示: ここではd.image(立ち絵)を優先
             const src1 = await resolveImage(char1.name, char1.image);
-            let src2 = null;
-            if (isDuo) src2 = await resolveImage(char2.name, char2.image);
+            let src2 = null; if (isDuo) src2 = await resolveImage(char2.name, char2.image);
 
             const theme = char1.color || char1.inpThemeColor || DEFAULT_THEME;
-            rootStyles.setProperty('--accent-color', theme);
+            document.documentElement.style.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
             let text1 = "", text2 = "";
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
-                if (convSet) {
-                    text1 = convSet.text1;
-                    text2 = convSet.text2;
-                } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
-                }
-            } else {
-                text1 = getHomeDialogue(char1, {});
-            }
+                if (convSet) { text1 = convSet.text1; text2 = convSet.text2; }
+                else { text1 = getHomeDialogue(char1, {}); text2 = getHomeDialogue(char2, {}); }
+            } else { text1 = getHomeDialogue(char1, {}); }
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
-            imgEl1.src = src1;
-            imgEl1.onload = () => imgEl1.classList.add('visible');
-
+            imgEl1.src = src1; imgEl1.onload = () => imgEl1.classList.add('visible');
             nameLabel1.textContent = char1.name.toUpperCase();
-            setTimeout(() => {
-                bubble1.classList.add('show');
-                startTypewriter(text1, textContainer1, 1);
-            }, 600);
+            setTimeout(() => { bubble1.classList.add('show'); startTypewriter(text1, textContainer1, 1); }, 600);
 
             if (isDuo) {
-                imgEl2.src = src2;
-                imgEl2.onload = () => imgEl2.classList.add('visible');
-
+                imgEl2.src = src2; imgEl2.onload = () => imgEl2.classList.add('visible');
                 nameLabel2.textContent = char2.name.toUpperCase();
                 setTimeout(() => {
                     bubble2.classList.add('show');
                     const theme2 = char2.color || char2.inpThemeColor || "#fff";
-                    bubble2.style.borderLeftColor = theme2;
-                    nameLabel2.style.color = theme2;
+                    bubble2.style.borderLeftColor = theme2; nameLabel2.style.color = theme2;
                     startTypewriter(text2, textContainer2, 2);
                 }, 800);
             }
-            
             lastUpdateTime = Date.now();
-            renderCharList(); // 現在の選択状態を更新
+            renderCharList();
         }
 
         function startTypewriter(text, container, id) {
@@ -655,205 +463,88 @@
             if (timerVar) clearTimeout(timerVar);
             let i = 0;
             function type() {
-                if (i < text.length) {
-                    container.textContent += text.charAt(i); i++;
-                    const next = setTimeout(type, 30);
-                    if (id === 1) typeWriterTimeout1 = next; else typeWriterTimeout2 = next;
-                }
+                if (i < text.length) { container.textContent += text.charAt(i); i++; const next = setTimeout(type, 30); if (id === 1) typeWriterTimeout1 = next; else typeWriterTimeout2 = next; }
             }
             type();
         }
 
-        // --- Particles ---
+        // --- Other Init ---
         function createParticles() {
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
-
             function getTexture() {
-                const c = document.createElement('canvas'); c.width = 32; c.height = 32;
-                const ctx = c.getContext('2d');
-                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-                g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+                const c = document.createElement('canvas'); c.width = 32; c.height = 32; const ctx = c.getContext('2d');
+                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = g; ctx.fillRect(0,0,32,32); return new THREE.Texture(c);
             }
-            const geometry = new THREE.BufferGeometry();
-            const vertices = [];
+            const geometry = new THREE.BufferGeometry(); const vertices = [];
             for (let i = 0; i < 5000; i++) vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            particleMaterial = new THREE.PointsMaterial({ 
-                color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), 
-                transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false 
-            });
-            particleMaterial.map.needsUpdate = true;
-            const points = new THREE.Points(geometry, particleMaterial);
-            scene.add(points); camera.position.z = 1000;
-
-            function animate() {
-                requestAnimationFrame(animate);
-                points.rotation.x += 0.0003; points.rotation.y += 0.0005;
-                if (!document.body.classList.contains('mode-white')) particleMaterial.color.lerp(targetColor, 0.05);
-                renderer.render(scene, camera);
-            }
+            particleMaterial = new THREE.PointsMaterial({ color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+            particleMaterial.map.needsUpdate = true; const points = new THREE.Points(geometry, particleMaterial); scene.add(points); camera.position.z = 1000;
+            function animate() { requestAnimationFrame(animate); points.rotation.x += 0.0003; points.rotation.y += 0.0005; if (!document.body.classList.contains('mode-white')) particleMaterial.color.lerp(targetColor, 0.05); renderer.render(scene, camera); }
             animate();
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-            window.updateParticlesForBg = (mode) => {
-                // Background color change logic helper if needed in future
-            };
+            window.updateParticlesForBg = () => {};
         }
 
-        // --- News ---
         async function initNews() {
             const el = document.getElementById('news-content');
-            const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
             let data = null;
-            for (const path of paths) {
-                try {
-                    const res = await fetch(`${path}?t=${Date.now()}`);
-                    if (res.ok) { data = await res.json(); break; }
-                } catch (e) {}
-            }
-            if (!data || !data.length) {
-                el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return;
-            }
-            const cycle = () => {
-                el.classList.remove('active');
-                setTimeout(() => {
-                    el.textContent = data[Math.floor(Math.random() * data.length)];
-                    el.classList.add('active');
-                }, 500);
-            };
+            try { const res = await fetch(`./report.json?t=${Date.now()}`); if (res.ok) data = await res.json(); } catch (e) {}
+            if (!data || !data.length) { el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return; }
+            const cycle = () => { el.classList.remove('active'); setTimeout(() => { el.textContent = data[Math.floor(Math.random() * data.length)]; el.classList.add('active'); }, 500); };
             cycle(); setInterval(cycle, 6000);
         }
 
-        // --- Auth & Mode ---
-        const userDisplay = document.getElementById('user-display');
-        const connectBtn = document.getElementById('main-connect-btn');
-
         monitorAuth(
             async (user) => {
-                currentUser = user;
-                userDisplay.textContent = (user.displayName || "MEMBER").toUpperCase();
-                connectBtn.textContent = "NEXT";
+                currentUser = user; document.getElementById('user-display').textContent = (user.displayName || "MEMBER").toUpperCase(); document.getElementById('main-connect-btn').textContent = "NEXT";
                 const data = await loadFromCloud();
-                if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
-                else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
-                
-                // データロード後にリスト生成
-                renderCharList();
-                renderMusicList();
-
-                currentIndex = Math.floor(Math.random() * charDataList.length);
-                updateDisplay();
+                if (data && Object.keys(data).length > 0) charDataList = Object.values(data); else charDataList = [{ name: "No Data", color: "#555" }];
+                renderCharList(); renderMusicList();
+                currentIndex = Math.floor(Math.random() * charDataList.length); updateDisplay();
             },
-            () => {
-                currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
-                charDataList = fallbackData; currentIndex = 0; updateDisplay();
-                renderMusicList(); // ゲストでも音楽は再生可能にする
-            }
+            () => { currentUser = null; document.getElementById('user-display').textContent = "GUEST"; document.getElementById('main-connect-btn').textContent = "CONNECT"; charDataList = fallbackData; currentIndex = 0; updateDisplay(); renderMusicList(); }
         );
 
-        window.handleConnect = () => {
-           if (!currentUser) {
-             if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
-             login();
-           } else {
-             nextChar();
-           }
-        };
-        
+        window.handleConnect = () => { if (!currentUser) { if(bgmPlayer.paused) try{toggleBGM()}catch(e){}; login(); } else nextChar(); };
         window.handleCharClick = () => { if (currentUser) nextChar(); };
-        function nextChar() {
-            if (charDataList.length <= 1) return;
-            currentIndex = (currentIndex + 1) % charDataList.length;
-            updateDisplay();
-        }
-
+        function nextChar() { if (charDataList.length <= 1) return; currentIndex = (currentIndex + 1) % charDataList.length; updateDisplay(); }
+        
         window.setMode = (mode) => {
-            // モード切替のフェードアウト演出
-            document.getElementById('bubble-1').classList.remove('show');
-            document.getElementById('bubble-2').classList.remove('show');
-
+            document.getElementById('bubble-1').classList.remove('show'); document.getElementById('bubble-2').classList.remove('show');
             setTimeout(() => {
                 isDuo = (mode === 'duo');
-                document.getElementById('btn-solo').classList.toggle('active', !isDuo);
-                document.getElementById('btn-duo').classList.toggle('active', isDuo);
-                const stage = document.getElementById('char-stage');
-                const body = document.body;
-                
-                if (isDuo) {
-                    stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo');
-                    document.getElementById('char-img-2').style.display = 'block';
-                } else {
-                    stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo');
-                    document.getElementById('char-img-2').style.display = 'none';
-                }
-                
+                document.getElementById('btn-solo').classList.toggle('active', !isDuo); document.getElementById('btn-duo').classList.toggle('active', isDuo);
+                const stage = document.getElementById('char-stage'); const body = document.body;
+                if (isDuo) { stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo'); document.getElementById('char-img-2').style.display = 'block'; }
+                else { stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo'); document.getElementById('char-img-2').style.display = 'none'; }
                 updateDisplay();
             }, 500);
         };
 
         createParticles(); initNews();
 
-        // --- Auto Play Logic ---
-        const DIALOGUE_INTERVAL = 15000; 
-        const CHARACTER_INTERVAL = 45000; 
-
         function refreshDialogueOnly() {
-            if (!charDataList || charDataList.length === 0) return;
-            if (Date.now() - lastUpdateTime < 5000) return;
-
-            const char1 = charDataList[currentIndex];
-            const nextIdx = (currentIndex + 1) % charDataList.length;
-            const char2 = charDataList[nextIdx];
-
+            if (!charDataList || charDataList.length === 0 || Date.now() - lastUpdateTime < 5000) return;
+            const char1 = charDataList[currentIndex]; const nextIdx = (currentIndex + 1) % charDataList.length; const char2 = charDataList[nextIdx];
             let text1 = "", text2 = "";
-
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
-                if (convSet) {
-                    text1 = convSet.text1;
-                    text2 = convSet.text2;
-                } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
-                }
-            } else {
-                text1 = getHomeDialogue(char1, {});
-            }
-            if(text1) text1 = text1.replace(/<br>/g, "\n");
-            if(text2) text2 = text2.replace(/<br>/g, "\n");
-
-            bubble1.classList.remove('show');
-            if(isDuo) bubble2.classList.remove('show');
-
-            setTimeout(() => {
-                bubble1.classList.add('show');
-                startTypewriter(text1, textContainer1, 1);
-            }, 500);
-
-            if(isDuo) {
-                setTimeout(() => {
-                    bubble2.classList.add('show');
-                    startTypewriter(text2, textContainer2, 2);
-                }, 700);
-            }
+                if (convSet) { text1 = convSet.text1; text2 = convSet.text2; } else { text1 = getHomeDialogue(char1, {}); text2 = getHomeDialogue(char2, {}); }
+            } else { text1 = getHomeDialogue(char1, {}); }
+            if(text1) text1 = text1.replace(/<br>/g, "\n"); if(text2) text2 = text2.replace(/<br>/g, "\n");
+            bubble1.classList.remove('show'); if(isDuo) bubble2.classList.remove('show');
+            setTimeout(() => { bubble1.classList.add('show'); startTypewriter(text1, textContainer1, 1); }, 500);
+            if(isDuo) setTimeout(() => { bubble2.classList.add('show'); startTypewriter(text2, textContainer2, 2); }, 700);
             lastUpdateTime = Date.now();
         }
-
-        setInterval(() => {
-            if (currentUser) refreshDialogueOnly();
-        }, DIALOGUE_INTERVAL);
-
-        setInterval(() => {
-            if (currentUser && charDataList.length > 1 && isAutoRotate) {
-                nextChar();
-                lastUpdateTime = Date.now();
-            }
-        }, CHARACTER_INTERVAL);
-        
+        setInterval(() => { if (currentUser) refreshDialogueOnly(); }, 15000);
+        setInterval(() => { if (currentUser && charDataList.length > 1 && isAutoRotate) { nextChar(); lastUpdateTime = Date.now(); } }, 45000);
     </script>
 </body>
 </html>

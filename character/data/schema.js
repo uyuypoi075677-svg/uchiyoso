@@ -51,6 +51,8 @@ export const DIALOGUE_MAPPING = [
     { key: 'dialogue_lowsan',  id: 'txtDialogueLowSan' }   // 低SAN値
 ];
 
+
+
 // --- アンケート保存用ルール ---
 
 /**
@@ -201,4 +203,57 @@ export function collectFormData(currentData = {}, overwriteEmpty = false) {
     }
 
     return newData;
+}
+
+// ■ 画像保存ルールの再確認 (FIELD_MAPPING内に存在することを確認)
+// { key: 'image',     id: 'inpImageBody' }  // 立ち絵用URL (d.image)
+// { key: 'icon',      id: 'inpImageIcon' }  // アイコン用URL (d.icon)
+
+
+// --- ★ 高画質画像読み出し用ユーティリティ ---
+
+// 画像設定の定数
+export const IMG_CONFIG = {
+    localBase: "./images/character/", // ローカル画像の保存先
+    default: "https://via.placeholder.com/800x1200?text=NO+IMAGE"
+};
+
+/**
+ * 高画質画像読み出しメソッド
+ * 
+ * 指定されたキャラクター名の画像ファイル（.png）がローカルにあるか確認し、
+ * 存在すればそのローカルパス（高画質）を返します。
+ * 存在しなければ、データに保存されたクラウドURL（d.icon または d.image）を返します。
+ * 
+ * @param {string} charName - キャラクター名（ファイル名に使用）
+ * @param {string} cloudUrl - クラウドまたは外部URL (d.icon / d.image)
+ * @returns {Promise<string>} - 解決された画像パスまたはURL
+ */
+export function resolveCharacterImage(charName, cloudUrl) {
+    return new Promise((resolve) => {
+        // 名前がない場合はクラウドURLかデフォルト画像を即座に返す
+        if (!charName) {
+            resolve(cloudUrl || IMG_CONFIG.default);
+            return;
+        }
+
+        // ローカルパスの構築 (例: ./images/character/Joker.png)
+        const localPath = `${IMG_CONFIG.localBase}${charName}.png`;
+        
+        // 画像の存在確認用オブジェクト
+        const img = new Image();
+        
+        // 読み込み成功時：ローカルファイルを採用
+        img.onload = () => {
+            resolve(localPath);
+        };
+        
+        // 読み込み失敗時：クラウドURLを採用（なければデフォルト）
+        img.onerror = () => {
+            resolve(cloudUrl || `https://via.placeholder.com/800x1200?text=${encodeURIComponent(charName)}`);
+        };
+        
+        // 読み込み開始
+        img.src = localPath;
+    });
 }
