@@ -1,146 +1,220 @@
+--- START OF FILE dialogue.html ---
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Dialogue - Uchiyoso Archive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;500&display=swap" rel="stylesheet">
+    <title>Dialogue Maker</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --main-color: #ff6b6b; /* POP RED */
+            --sub-color: #4ecdc4;   /* POP TEAL */
+            --accent: #ffe66d;      /* POP YELLOW */
+            --text: #2d3436;
+            --bubble-bg: #ffffff;
+        }
         body {
-            background: #080808; color: #fff; font-family: 'Noto Sans JP', sans-serif;
-            display: flex; flex-direction: column; align-items: center; 
-            min-height: 100vh; margin: 0; padding: 40px 0; box-sizing: border-box;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(var(--sub-color) 1px, transparent 1px);
+            background-size: 20px 20px; /* ドット柄 */
+            color: var(--text);
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            margin: 0; padding: 40px 10px;
+            display: flex; flex-direction: column; align-items: center;
         }
+
         .container {
-            width: 90%; max-width: 700px;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
-            padding: 30px; border-radius: 8px;
+            width: 100%; max-width: 900px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            border: 4px solid var(--text);
         }
-        h2 { font-family: 'Syncopate'; margin-bottom: 20px; letter-spacing: 0.1em; color: #00ffcc; text-align: center; }
-        
-        /* Tab Styles */
-        .tabs { display: flex; justify-content: center; margin-bottom: 30px; border-bottom: 1px solid #333; }
+
+        h2 {
+            text-align: center; font-size: 2rem; color: var(--main-color);
+            text-shadow: 2px 2px 0px var(--text);
+            margin-top: 0; letter-spacing: 0.1em;
+        }
+
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
         .tab-btn {
-            background: transparent; border: none; color: #666; font-family: 'Syncopate';
-            font-size: 12px; padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent;
-            transition: 0.3s;
+            background: var(--text); color: #fff; border: none;
+            padding: 10px 25px; border-radius: 30px; font-weight: bold;
+            cursor: pointer; transition: transform 0.2s;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
         }
-        .tab-btn:hover { color: #fff; }
-        .tab-btn.active { color: #00ffcc; border-bottom-color: #00ffcc; }
+        .tab-btn.active {
+            background: var(--main-color); transform: scale(1.1); box-shadow: 3px 3px 0 var(--text);
+        }
+        .tab-btn:hover { opacity: 0.9; }
 
         /* Panels */
         .panel { display: none; }
-        .panel.active { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .panel.active { display: block; animation: popIn 0.4s; }
+        @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* Form Elements */
-        select, textarea, input[type="text"] {
-            width: 100%; background: #111; color: #fff; border: 1px solid #444;
-            padding: 10px; margin-bottom: 15px; font-size: 14px; box-sizing: border-box;
+        /* Section Headers */
+        .section-header {
+            background: var(--accent); color: var(--text);
+            display: inline-block; padding: 5px 20px; border-radius: 15px;
+            border: 2px solid var(--text); font-weight: bold; margin: 30px 0 15px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
         }
-        select { height: 45px; border-color: #00ffcc; }
-        textarea { height: 70px; resize: vertical; }
 
-        .form-group { margin-bottom: 20px; border-bottom: 1px dashed #333; padding-bottom: 20px; }
-        .label { display: block; color: #00ffcc; font-size: 11px; margin-bottom: 5px; font-family: 'Syncopate'; }
-        
-        /* Duo Edit Specific */
-        .conv-row {
-            display: grid; grid-template-columns: 1fr 1fr 30px; gap: 10px;
-            background: rgba(255,255,255,0.03); padding: 10px; margin-bottom: 10px; border: 1px solid #333;
+        /* Bubble Input Styling */
+        .bubble-group { margin-bottom: 20px; }
+        .bubble-label {
+            font-size: 0.9rem; font-weight: bold; color: var(--sub-color); margin-bottom: 5px; display: block;
+        }
+        .bubble-input {
+            width: 100%; height: 80px;
+            border: 2px solid #ddd; border-radius: 15px;
+            padding: 15px; font-size: 14px; box-sizing: border-box;
+            background: var(--bubble-bg);
+            transition: 0.3s; resize: vertical;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            position: relative;
+        }
+        .bubble-input:focus {
+            border-color: var(--sub-color); outline: none;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+        }
+        /* 吹き出しのしっぽ（装飾） */
+        .bubble-wrapper { position: relative; }
+        .bubble-wrapper::after {
+            content: ''; position: absolute; bottom: -10px; left: 30px;
+            border-width: 10px 10px 0; border-style: solid;
+            border-color: var(--bubble-bg) transparent; display: block; width: 0;
+            z-index: 2;
+        }
+        .bubble-wrapper::before {
+            content: ''; position: absolute; bottom: -13px; left: 28px;
+            border-width: 12px 12px 0; border-style: solid;
+            border-color: #ddd transparent; display: block; width: 0;
+            z-index: 1;
+        }
+        .bubble-input:focus + .bubble-tail::before { border-top-color: var(--sub-color); }
+
+        /* Grid Layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 100%; padding: 15px;
+            background: var(--main-color); color: #fff;
+            border: 3px solid var(--text); border-radius: 10px;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            box-shadow: 5px 5px 0 var(--text);
+            margin-top: 30px; transition: 0.2s;
+        }
+        .action-btn:active { transform: translate(2px, 2px); box-shadow: 3px 3px 0 var(--text); }
+        .add-btn { background: var(--sub-color); margin-bottom: 20px; font-size: 1rem; }
+
+        /* DUO Specific */
+        .duo-row {
+            background: #fff; border: 2px dashed #ccc; border-radius: 10px;
+            padding: 15px; margin-bottom: 15px; position: relative;
+        }
+        .duo-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .situation-select {
+            padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;
         }
         .del-btn {
-            background: #331111; color: #f44; border: none; cursor: pointer; font-size: 18px;
+            background: #ff6b6b; color: white; border: none;
+            width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+            font-weight: bold; line-height: 1;
         }
-        
-        button.action-btn {
-            width: 100%; padding: 15px; background: #00ffcc; border: none; font-weight: bold;
-            letter-spacing: 0.2em; cursor: pointer; transition: 0.3s; margin-top: 10px; color: #000;
+        .duo-grid { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 10px; align-items: center; }
+        .char-icon {
+            width: 30px; height: 30px; background: #ddd; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;
         }
-        button.action-btn:hover { background: #fff; }
 
-        .back-link { display: block; text-align: center; margin-top: 30px; color: #888; text-decoration: none; font-size: 11px; }
-        #auth-status { text-align:center; margin-bottom:20px; font-size:10px; color:#555; }
+        /* Select Box */
+        .big-select {
+            width: 100%; padding: 12px; font-size: 16px; border-radius: 10px;
+            border: 2px solid var(--text); background: white; font-family: inherit;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>DIALOGUE EDITOR</h2>
-        <div id="auth-status">INITIALIZING...</div>
+        <h2>💬 DIALOGUE MAKER</h2>
+        <div id="auth-status" style="text-align:center; margin-bottom:10px; font-size:12px;">Connecting...</div>
 
         <!-- TABS -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('solo')">SOLO SETTINGS</button>
-            <button class="tab-btn" onclick="switchTab('duo')">DUO CONVERSATION</button>
+            <button class="tab-btn active" onclick="switchTab('solo')">👤 ソロ台詞 (Solo)</button>
+            <button class="tab-btn" onclick="switchTab('duo')">👥 DUO (掛け合い)</button>
         </div>
 
         <!-- === SOLO PANEL === -->
         <div id="panel-solo" class="panel active">
-            <select id="char-select-solo" onchange="loadSoloData()">
-                <option value="">-- SELECT CHARACTER --</option>
+            <select id="char-select-solo" class="big-select" onchange="loadSoloData()">
+                <option value="">キャラクターを選択してね</option>
             </select>
 
-            <div class="form-group">
-                <span class="label">DEFAULT (ALWAYS)</span>
-                <textarea id="txtDialogueDefault"></textarea>
-            </div>
-            <div class="form-group">
-                <span class="label">MORNING / NIGHT</span>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <textarea id="txtDialogueMorning" placeholder="Morning..."></textarea>
-                    <textarea id="txtDialogueNight" placeholder="Night..."></textarea>
-                </div>
-            </div>
-            <div class="form-group">
-                <span class="label">CONDITIONS</span>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <textarea id="txtDialogueDuo" placeholder="Generic Duo response..."></textarea>
-                    <textarea id="txtDialogueLowSan" placeholder="Low SANity..."></textarea>
-                </div>
-            </div>
+            <!-- JSで自動生成するためのプレースホルダー -->
+            <div id="solo-form-area"></div>
 
-            <button class="action-btn" onclick="saveSolo()">SAVE SOLO DATA</button>
+            <button class="action-btn" onclick="saveSolo()">SAVE SETTINGS !</button>
         </div>
 
         <!-- === DUO PANEL === -->
         <div id="panel-duo" class="panel">
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div style="flex:1;">
-                    <span class="label">CHAR A (LEFT)</span>
-                    <select id="char-a" onchange="loadDuoData()"><option value="">--</option></select>
+            <div class="grid-2" style="margin-bottom: 20px;">
+                <div>
+                    <span class="bubble-label">CHAR A (あなた)</span>
+                    <select id="char-a" class="big-select" onchange="loadDuoData()"><option value="">--</option></select>
                 </div>
-                <div style="flex:1;">
-                    <span class="label">CHAR B (RIGHT)</span>
-                    <select id="char-b" onchange="loadDuoData()"><option value="">--</option></select>
+                <div>
+                    <span class="bubble-label">CHAR B (相手)</span>
+                    <select id="char-b" class="big-select" onchange="loadDuoData()"><option value="">--</option></select>
                 </div>
             </div>
 
             <div id="conv-list"></div>
             
-            <button class="action-btn" style="background:transparent; border:1px dashed #555; color:#888; margin-bottom:20px;" onclick="addConvRow()">+ ADD PATTERN</button>
-            <button class="action-btn" onclick="saveDuo()">SAVE CONVERSATION</button>
+            <button class="action-btn add-btn" onclick="addConvRow()">+ パターンを追加 (Add Pattern)</button>
+            <button class="action-btn" onclick="saveDuo()">SAVE CONVERSATION !</button>
         </div>
 
-        <a href="../zo.html" class="back-link">← RETURN TO SYSTEM</a>
+        <a href="../zo.html" style="display:block; text-align:center; margin-top:20px; color:#888; text-decoration:none;">← 戻る</a>
     </div>
 
     <script type="module">
         import { login, monitorAuth, loadFromCloud, saveToCloud } from "./firestore.js";
+        import { DIALOGUE_MAPPING, DUO_SITUATIONS, createDuoConversationRecord, updateDuoConversation } from "./data/dialogue.js";
 
         let allData = {};
         let currentUser = null;
 
+        // --- 初期化 & 認証 ---
         monitorAuth(async (user) => {
             const el = document.getElementById('auth-status');
             if (user) {
                 currentUser = user;
-                el.textContent = "CONNECTED: " + user.displayName;
-                el.style.color = "#00ffcc";
+                el.textContent = "LOGIN: " + user.displayName;
+                el.style.color = "#4ecdc4";
                 await initData();
             } else {
                 el.textContent = "CLICK TO LOGIN";
-                el.style.cursor = "pointer"; el.style.color = "red";
+                el.style.cursor = "pointer"; el.style.color = "#ff6b6b";
                 el.onclick = login;
             }
         });
@@ -150,12 +224,15 @@
             if (!data) return;
             allData = data;
             
-            const opts = ['<option value="">-- SELECT --</option>'];
+            const opts = ['<option value="">キャラクターを選択してね</option>'];
             Object.values(data).forEach(c => opts.push(`<option value="${c.name}">${c.name}</option>`));
             
             document.getElementById('char-select-solo').innerHTML = opts.join('');
             document.getElementById('char-a').innerHTML = opts.join('');
             document.getElementById('char-b').innerHTML = opts.join('');
+
+            // ソロフォームの自動生成 (JSでHTMLを作る)
+            renderSoloForm();
         }
 
         window.switchTab = (mode) => {
@@ -172,41 +249,98 @@
         };
 
         // --- SOLO LOGIC ---
-        const SOLO_FIELDS = ['txtDialogueDefault', 'txtDialogueMorning', 'txtDialogueNight', 'txtDialogueDuo', 'txtDialogueLowSan'];
-        const KEY_MAP = {
-            'txtDialogueDefault': 'dialogue_default', 'txtDialogueMorning': 'dialogue_morning',
-            'txtDialogueNight': 'dialogue_night', 'txtDialogueDuo': 'dialogue_duo', 'txtDialogueLowSan': 'dialogue_lowsan'
-        };
 
+        function renderSoloForm() {
+            const container = document.getElementById('solo-form-area');
+            let html = "";
+            
+            // カテゴリごとにグルーピングするための簡易ロジック
+            const categories = {
+                "DAILY": ["txtDialogueDefault", "txtDialogueMorning", "txtDialogueDay", "txtDialogueNight", "txtDialogueWait", "txtDialogueAfk"],
+                "RELATION": ["txtDialogueAboutOthers", "txtDialogueThanks", "txtDialogueApology", "txtDialogueLove", "txtDialogueDuo"],
+                "BATTLE": ["txtDialogueBattleStart", "txtDialogueBattleCrit", "txtDialogueBattleFumble", "txtDialogueLowSan", "txtDialogueInsanity"]
+            };
+
+            for (const [catName, fieldIds] of Object.entries(categories)) {
+                html += `<div class="section-header">${catName}</div>`;
+                html += `<div class="grid-2">`; // 基本は2カラム
+                
+                fieldIds.forEach(id => {
+                    const map = DIALOGUE_MAPPING.find(m => m.id === id);
+                    if(map) {
+                        // プレースホルダー（見本）の設定
+                        let ph = "";
+                        if(map.key.includes("Wait")) ph = "例：ん？まだかな...\n例：おーい！";
+                        if(map.key.includes("Afk")) ph = "例：zZz... (居眠り)\n例：考え事をしているようだ。";
+                        if(map.key.includes("About")) ph = "例：あいつは面白い奴だよ。\n例：[To:Alice] アリスのご飯は美味しいんだ。";
+
+                        html += `
+                            <div class="bubble-group">
+                                <label class="bubble-label">${map.label}</label>
+                                <div class="bubble-wrapper">
+                                    <textarea id="${map.id}" class="bubble-input" placeholder="${ph}"></textarea>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            }
+            container.innerHTML = html;
+        }
+        
         window.loadSoloData = () => {
             const name = document.getElementById('char-select-solo').value;
-            if (name && allData[name]) {
-                const c = allData[name];
-                SOLO_FIELDS.forEach(id => {
-                    const k = KEY_MAP[id];
-                    document.getElementById(id).value = c[k] || (id === 'txtDialogueDefault' ? (c.remarks||"") : "");
-                });
-            } else {
-                SOLO_FIELDS.forEach(id => document.getElementById(id).value = "");
-            }
+            DIALOGUE_MAPPING.forEach(field => {
+                const el = document.getElementById(field.id);
+                if (!el) return;
+                if (name && allData[name]) {
+                    el.value = allData[name][field.key] || "";
+                } else {
+                    el.value = "";
+                }
+            });
         };
 
         window.saveSolo = async () => {
             const name = document.getElementById('char-select-solo').value;
-            if (!name) return alert("Select Character");
+            if (!name) return alert("キャラを選んでね！");
             const c = allData[name];
-            SOLO_FIELDS.forEach(id => c[KEY_MAP[id]] = document.getElementById(id).value);
-            c.remarks = document.getElementById('txtDialogueDefault').value; // sync
+            DIALOGUE_MAPPING.forEach(field => {
+                const el = document.getElementById(field.id);
+                if (el) c[field.key] = el.value;
+            });
             await saveToCloud(c);
+            alert("保存しました！✨");
         };
 
         // --- DUO LOGIC ---
-        window.addConvRow = (a="", b="") => {
-            const div = document.createElement('div'); div.className = 'conv-row';
+
+        window.addConvRow = (data = {}) => {
+            const aVal = data.a || "";
+            const bVal = data.b || "";
+            const sitVal = data.situation || "日常 (Normal)";
+
+            const div = document.createElement('div'); div.className = 'duo-row';
+            
+            // シチュエーション選択肢の生成
+            let sitOpts = DUO_SITUATIONS.map(s => 
+                `<option value="${s}" ${s === sitVal ? 'selected' : ''}>${s}</option>`
+            ).join('');
+
             div.innerHTML = `
-                <div><span class="label">A says:</span><textarea class="txt-a">${a}</textarea></div>
-                <div><span class="label">B says:</span><textarea class="txt-b">${b}</textarea></div>
-                <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+                <div class="duo-header">
+                    <select class="situation-select sit-tag">${sitOpts}</select>
+                    <button class="del-btn" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div class="duo-grid">
+                    <div class="char-icon">A</div>
+                    <div class="bubble-wrapper"><textarea class="bubble-input txt-a" placeholder="Aの台詞">${aVal}</textarea></div>
+                </div>
+                <div class="duo-grid" style="margin-top:10px;">
+                    <div class="char-icon" style="background:var(--text);color:#fff;">B</div>
+                    <div class="bubble-wrapper"><textarea class="bubble-input txt-b" placeholder="Bの台詞">${bVal}</textarea></div>
+                </div>
             `;
             document.getElementById('conv-list').appendChild(div);
         };
@@ -219,42 +353,40 @@
             
             if (!nA || !nB || nA === nB) return;
 
-            // Search in A's data
             const cA = allData[nA];
             if (cA.duo_conversations) {
                 const pair = cA.duo_conversations.find(p => p.partner === nB);
                 if (pair && pair.scripts) {
-                    pair.scripts.forEach(s => window.addConvRow(s.a, s.b));
+                    pair.scripts.forEach(s => window.addConvRow(s));
                     return;
                 }
             }
-            // Add empty row if none
-            window.addConvRow();
+            window.addConvRow(); // 初期表示用
         };
 
         window.saveDuo = async () => {
             const nA = document.getElementById('char-a').value;
             const nB = document.getElementById('char-b').value;
-            if (!nA || !nB || nA === nB) return alert("Invalid Pair");
-
-            const cA = allData[nA];
-            if (!cA.duo_conversations) cA.duo_conversations = [];
-            
-            // Remove existing for this partner
-            cA.duo_conversations = cA.duo_conversations.filter(p => p.partner !== nB);
+            if (!nA || !nB || nA === nB) return alert("ペアが無効だよ💦");
 
             const scripts = [];
-            document.querySelectorAll('.conv-row').forEach(row => {
+            document.querySelectorAll('.duo-row').forEach(row => {
                 const a = row.querySelector('.txt-a').value;
                 const b = row.querySelector('.txt-b').value;
-                if(a || b) scripts.push({a, b});
+                const situation = row.querySelector('.sit-tag').value;
+                
+                if(a || b) {
+                    // シチュエーションも含めて保存
+                    scripts.push({ a, b, situation });
+                }
             });
 
-            if (scripts.length > 0) {
-                cA.duo_conversations.push({ partner: nB, scripts });
-            }
-
-            await saveToCloud(cA);
+            const duoRecord = createDuoConversationRecord(nB, scripts);
+            // ローカルデータを更新
+            allData[nA] = updateDuoConversation(allData[nA], duoRecord);
+            
+            await saveToCloud(allData[nA]);
+            alert(`[${nA}] と [${nB}] の会話を保存したよ！💕`);
         };
     </script>
 </body>
