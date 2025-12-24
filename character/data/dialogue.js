@@ -1,28 +1,38 @@
-// js/dialogue_system.js
+// uchiyoso/character/data/dialogue.js
 
-// ■ 台詞項目の定義マップ (ここですべて管理)
+// =============================================
+// ■ 1. 編集画面 (Editor) 用の設定
+// =============================================
+
+// 台詞項目の定義マップ
 export const DIALOGUE_MAPPING = [
-    // --- DAILY / 日常 ---
-    { key: 'dialogue_default', id: 'txtDialogueDefault', label: '基本・自己紹介' },
-    { key: 'dialogue_morning', id: 'txtDialogueMorning', label: '朝 (Morning)' },
-    { key: 'dialogue_day',     id: 'txtDialogueDay',     label: '昼 (Day)' },
-    { key: 'dialogue_night',   id: 'txtDialogueNight',   label: '夜 (Night)' },
-    { key: 'dialogue_wait',    id: 'txtDialogueWait',    label: '待機中 (Waiting)' }, // NEW
-    { key: 'dialogue_afk',     id: 'txtDialogueAfk',     label: '放置中 (AFK/Sleep)' }, // NEW
-    
-    // --- RELATION / 関係性 ---
-    { key: 'dialogue_about_others', id: 'txtDialogueAboutOthers', label: '誰かについて (噂話)' }, // NEW
-    { key: 'dialogue_thanks',       id: 'txtDialogueThanks',      label: '感謝 (Thanks)' },
-    { key: 'dialogue_apology',      id: 'txtDialogueApology',     label: '謝罪 (Sorry)' },
-    { key: 'dialogue_love',         id: 'txtDialogueLove',        label: '好意・恋愛 (Love)' },
-    { key: 'dialogue_duo_generic',  id: 'txtDialogueDuo',         label: '汎用DUO反応' },
+    // --- BASIC ---
+    { key: 'dialogue_default', id: 'txtDialogueDefault', label: '自己紹介・デフォルト', category: 'BASIC / 基本' },
 
-    // --- BATTLE & CONDITION / 戦闘・状態 ---
-    { key: 'dialogue_battle_start',  id: 'txtDialogueBattleStart',  label: '戦闘開始' },
-    { key: 'dialogue_battle_crit',   id: 'txtDialogueBattleCrit',   label: 'クリティカル' },
-    { key: 'dialogue_battle_fumble', id: 'txtDialogueBattleFumble', label: 'ファンブル' },
-    { key: 'dialogue_lowsan',        id: 'txtDialogueLowSan',       label: '低SAN値 (Low Sanity)' },
-    { key: 'dialogue_insanity',      id: 'txtDialogueInsanity',     label: '発狂中 (Insanity)' }
+    // --- TIME ---
+    { key: 'dialogue_morning', id: 'txtDialogueMorning', label: '朝 (Morning)', category: 'TIME / 時間帯' },
+    { key: 'dialogue_day',     id: 'txtDialogueDay',     label: '昼 (Day)',     category: 'TIME / 時間帯' },
+    { key: 'dialogue_night',   id: 'txtDialogueNight',   label: '夜 (Night)',   category: 'TIME / 時間帯' },
+
+    // --- ACTION & STATUS ---
+    { key: 'dialogue_wait',    id: 'txtDialogueWait',    label: '待機中 (Waiting)',    category: 'ACTION / 行動' },
+    { key: 'dialogue_afk',     id: 'txtDialogueAfk',     label: '放置中 (AFK/Sleep)', category: 'ACTION / 行動' },
+
+    // --- RELATION ---
+    { key: 'dialogue_about_others', id: 'txtDialogueAboutOthers', label: '誰かについて (噂話)', category: 'RELATION / 関係性' },
+    { key: 'dialogue_duo_generic',  id: 'txtDialogueDuo',         label: '汎用DUO反応',        category: 'RELATION / 関係性' },
+
+    // --- EMOTION ---
+    { key: 'dialogue_thanks',  id: 'txtDialogueThanks',  label: '感謝 (Thanks)', category: 'EMOTION / 感情' },
+    { key: 'dialogue_apology', id: 'txtDialogueApology', label: '謝罪 (Sorry)',  category: 'EMOTION / 感情' },
+    { key: 'dialogue_love',    id: 'txtDialogueLove',    label: '好意・愛 (Love)',category: 'EMOTION / 感情' },
+
+    // --- BATTLE ---
+    { key: 'dialogue_battle_start',  id: 'txtDialogueBattleStart',  label: '戦闘開始',   category: 'BATTLE / 戦闘' },
+    { key: 'dialogue_battle_crit',   id: 'txtDialogueBattleCrit',   label: 'クリティカル', category: 'BATTLE / 戦闘' },
+    { key: 'dialogue_battle_fumble', id: 'txtDialogueBattleFumble', label: 'ファンブル',   category: 'BATTLE / 戦闘' },
+    { key: 'dialogue_lowsan',        id: 'txtDialogueLowSan',       label: '低SAN値 (Low Sanity)', category: 'BATTLE / 戦闘' },
+    { key: 'dialogue_insanity',      id: 'txtDialogueInsanity',     label: '発狂・狂気 (Insanity)', category: 'BATTLE / 戦闘' }
 ];
 
 // ■ DUO会話のシチュエーションタグ候補
@@ -35,12 +45,18 @@ export const DUO_SITUATIONS = [
     "ギャグ (Comedy)"
 ];
 
+// =========================================================
+// ▼ 表示用ロジック (Topページなどで使用)
+// =========================================================
+
 /**
  * テキストからランダムに1行を取得
  */
 export function pickRandomLine(text) {
     if (!text) return null;
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+    // <br>タグがある場合は改行コードに変換してから分割
+    const cleanText = text.replace(/<br>/gi, '\n');
+    const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l !== "");
     if (lines.length === 0) return null;
     return lines[Math.floor(Math.random() * lines.length)];
 }
@@ -48,7 +64,7 @@ export function pickRandomLine(text) {
 /**
  * 状況に応じたホーム画面用セリフを取得
  * @param {Object} charData - キャラクターデータ
- * @param {Object} statusOpts - { isAfk: boolean, isBattle: boolean, ... }
+ * @param {Object} statusOpts - { isAfk: boolean, isWaiting: boolean, ... }
  */
 export function getHomeDialogue(charData, statusOpts = {}) {
     if (!charData) return "...";
@@ -59,8 +75,9 @@ export function getHomeDialogue(charData, statusOpts = {}) {
         if (afk) return afk;
     }
 
-    // 2. SAN値ピンチ
-    if (charData.vitals && charData.vitals.san <= 30) {
+    // 2. SAN値ピンチ (30以下)
+    const currentSan = (charData.vitals && charData.vitals.san) ? parseInt(charData.vitals.san) : 99;
+    if (currentSan <= 30) {
         const lowSan = pickRandomLine(charData.dialogue_lowsan);
         if (lowSan) return lowSan;
     }
@@ -80,6 +97,42 @@ export function getHomeDialogue(charData, statusOpts = {}) {
 
     if (timeLine) return timeLine;
 
-    // 5. デフォルト
-    return pickRandomLine(charData.dialogue_default) || "......";
+    // 5. デフォルト (なければremarks等にフォールバック)
+    return pickRandomLine(charData.dialogue_default) || 
+           pickRandomLine(charData.remarks) || 
+           pickRandomLine(charData.txtRoleplay) || 
+           "……。";
+}
+
+// =========================================================
+// ▼ データ保存・更新用ロジック
+// =========================================================
+
+export function createDuoConversationRecord(partnerName, scriptList) {
+    // 空のスクリプトを除去してクリーンアップ
+    const cleanScripts = scriptList.filter(s => s.a.trim() !== "" || s.b.trim() !== "");
+    
+    return {
+        partner: partnerName,
+        updatedAt: new Date().toISOString(),
+        scripts: cleanScripts // [{ a: "...", b: "...", situation: "..." }, ...]
+    };
+}
+
+export function updateDuoConversation(charData, duoRecord) {
+    const updatedData = { ...charData };
+    
+    if (!updatedData.duo_conversations) {
+        updatedData.duo_conversations = [];
+    }
+
+    // 既存の相手データがあれば削除（上書きのため）
+    updatedData.duo_conversations = updatedData.duo_conversations.filter(d => d.partner !== duoRecord.partner);
+
+    // スクリプトが存在する場合のみ追加
+    if (duoRecord.scripts && duoRecord.scripts.length > 0) {
+        updatedData.duo_conversations.push(duoRecord);
+    }
+
+    return updatedData;
 }
