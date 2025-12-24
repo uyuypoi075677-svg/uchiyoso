@@ -241,51 +241,73 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script type="module">
+   <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
+        // dialogue.jsから表示ロジックを読み込み
         import { getHomeDialogue } from "./character/data/dialogue.js";
 
         // ★設定定数
-        const LOCAL_IMG_BASE = "./images/character/";
+        const LOCAL_IMG_BASE = "./images/character/"; // 立ち絵画像のフォルダ
+        const LOCAL_ICON_BASE = "./images/icon/";     // アイコン画像のフォルダ（新規追加）
         const PHOTO_BASE = "./images/photo/";
         const DEFAULT_THEME = "#00ffcc";
         
+        // ★状態変数
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
-        let lastUpdateTime = 0;
+        let lastUpdateTime = 0; // 自動更新タイマー制御用
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         let isDuo = false; 
-        let isAutoRotate = true;
         
+        // 新機能用変数
+        let isAutoRotate = true; // 自動キャラ変更のON/OFF
+        
+        // 音楽リスト
         const musicList = [
-            { title: "Aoren", url: "./sound/aoren.mp3" }
+            { title: "Aoren", url: "./sound/aoren.mp3" },
+            // 必要に応じて追加
         ];
 
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
-        const fallbackData = [{ name: "System", color: "#00ffcc", remarks: "Welcome.", image: "" }];
+
+        const fallbackData = [{
+            name: "System",
+            color: "#00ffcc",
+            remarks: "アーカイブへようこそ。<br>接続を確立するにはCONNECTボタンを押してください。",
+            image: "https://via.placeholder.com/800x1200/111/333?text=STANDBY"
+        }];
 
         // --- BGM ---
         const bgmPlayer = document.getElementById('bgm-player');
         const playBtn = document.getElementById('btn-play');
         if(bgmPlayer) bgmPlayer.volume = 0.3;
+
         window.toggleBGM = () => {
             if (bgmPlayer.paused) {
-                bgmPlayer.play().then(() => { playBtn.textContent = 'pause'; playBtn.classList.add('playing'); }).catch(e => {});
+                bgmPlayer.play().then(() => {
+                    playBtn.textContent = 'pause'; playBtn.classList.add('playing');
+                }).catch(e => console.log("User interaction required"));
             } else {
                 bgmPlayer.pause(); playBtn.textContent = 'play_arrow'; playBtn.classList.remove('playing');
             }
         };
         window.changeVolume = (v) => { bgmPlayer.volume = v; };
+
+        // Music Selection Logic
         window.playTrack = (url, index) => {
             bgmPlayer.src = url;
             const items = document.querySelectorAll('#music-list .list-item');
             items.forEach(el => el.classList.remove('selected'));
             if(items[index]) items[index].classList.add('selected');
-            bgmPlayer.play().then(() => { playBtn.textContent = 'pause'; playBtn.classList.add('playing'); });
+            
+            bgmPlayer.play().then(() => {
+                playBtn.textContent = 'pause'; playBtn.classList.add('playing');
+            });
         };
+
         function renderMusicList() {
             const container = document.getElementById('music-list');
             container.innerHTML = '';
@@ -298,109 +320,179 @@
             });
         }
 
-        // --- Draggable Bubbles ---
+        // --- Draggable Bubbles Logic ---
         function makeDraggable(elm) {
-            let isDragging = false, startX, startY, initialLeft, initialTop;
-            elm.addEventListener('mousedown', dragStart); document.addEventListener('mouseup', dragEnd); document.addEventListener('mousemove', drag);
-            elm.addEventListener('touchstart', dragStart, {passive: false}); document.addEventListener('touchend', dragEnd); document.addEventListener('touchmove', drag, {passive: false});
+            let isDragging = false;
+            let startX, startY;
+            let initialLeft, initialTop;
+
+            elm.addEventListener('mousedown', dragStart);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('mousemove', drag);
+
+            // タッチ対応
+            elm.addEventListener('touchstart', dragStart, {passive: false});
+            document.addEventListener('touchend', dragEnd);
+            document.addEventListener('touchmove', drag, {passive: false});
+
             function dragStart(e) {
-                if (e.target.closest('.char-name-label')) return;
-                isDragging = true; elm.style.transition = 'none';
-                const cX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-                const cY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
-                startX = cX; startY = cY;
+                if (e.target.closest('.char-name-label')) return; 
+
+                isDragging = true;
+                elm.style.transition = 'none'; 
+                
+                const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+                startX = clientX;
+                startY = clientY;
+                
                 if(!elm.style.left) elm.style.left = elm.offsetLeft + 'px';
                 if(!elm.style.top) elm.style.top = elm.offsetTop + 'px';
-                elm.style.bottom = 'auto'; elm.style.transform = 'none';
-                initialLeft = parseInt(elm.style.left || 0); initialTop = parseInt(elm.style.top || 0);
-            }
-            function drag(e) {
-                if (!isDragging) return; e.preventDefault();
-                const cX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-                const cY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
-                elm.style.left = (initialLeft + (cX - startX)) + 'px';
-                elm.style.top = (initialTop + (cY - startY)) + 'px';
-            }
-            function dragEnd() { if(isDragging) { isDragging = false; elm.style.transition = 'opacity 0.5s ease'; } }
-        }
-        makeDraggable(document.getElementById('bubble-1')); makeDraggable(document.getElementById('bubble-2'));
+                
+                elm.style.bottom = 'auto'; 
+                elm.style.transform = 'none'; 
 
-        // --- Modals ---
-        window.closeAllModals = () => document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
+                initialLeft = parseInt(elm.style.left || 0);
+                initialTop = parseInt(elm.style.top || 0);
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault(); 
+
+                const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                elm.style.left = (initialLeft + dx) + 'px';
+                elm.style.top = (initialTop + dy) + 'px';
+            }
+
+            function dragEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                elm.style.transition = 'opacity 0.5s ease'; 
+            }
+        }
+
+        makeDraggable(document.getElementById('bubble-1'));
+        makeDraggable(document.getElementById('bubble-2'));
+
+        // --- Modals Logic ---
+        window.closeAllModals = () => {
+            document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
+        };
         window.openBgModal = () => { window.closeAllModals(); document.getElementById('bg-modal').classList.add('open'); };
         window.openMusicModal = () => { window.closeAllModals(); document.getElementById('music-modal').classList.add('open'); };
         window.openCharModal = () => { window.closeAllModals(); document.getElementById('char-modal').classList.add('open'); };
+
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
             body.classList.remove('mode-black', 'mode-white', 'mode-photo');
             document.documentElement.style.setProperty('--bg-image-url', 'none');
-            if (mode === 'black') { body.classList.add('mode-black'); updateParticlesForBg('dark'); }
-            else if (mode === 'white') { body.classList.add('mode-white'); updateParticlesForBg('light'); }
-            else if (mode === 'photo') { body.classList.add('mode-photo'); document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`); updateParticlesForBg('dark'); }
+            
+            if (mode === 'black') {
+                body.classList.add('mode-black'); updateParticlesForBg('dark');
+            } else if (mode === 'white') {
+                body.classList.add('mode-white'); updateParticlesForBg('light');
+            } else if (mode === 'photo') {
+                body.classList.add('mode-photo');
+                document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
+                updateParticlesForBg('dark');
+            }
             window.closeAllModals();
         };
+
         const bgGrid = document.getElementById('bg-grid');
         for (let i = 1; i <= 5; i++) {
-            const div = document.createElement('div'); div.className = 'bg-option'; div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
-            div.onclick = () => window.setBgMode('photo', i); bgGrid.appendChild(div);
+            const div = document.createElement('div');
+            div.className = 'bg-option';
+            div.style.backgroundImage = `url('${PHOTO_BASE}${i}.png')`;
+            div.onclick = () => window.setBgMode('photo', i);
+            bgGrid.appendChild(div);
         }
 
-        // --- ★ 画像読み出しロジック (高画質/ローカル優先) ---
-        // schema.jsにも同様のロジックを追加し、汎用的に使えるようにします
-        function resolveImage(charName, cloudUrl) {
+        // --- ★画像解決ロジック (アイコンと立ち絵を区別して読み込む) ---
+        function resolveImage(charName, cloudUrl, basePath = LOCAL_IMG_BASE) {
             return new Promise((resolve) => {
-                if (!charName) { resolve(cloudUrl || "https://via.placeholder.com/800x1200?text=NO+IMAGE"); return; }
-                const localPath = `${LOCAL_IMG_BASE}${charName}.png`;
+                if (!charName) { 
+                    // 画像なしの場合のプレースホルダ
+                    resolve(cloudUrl || "https://via.placeholder.com/800x1200?text=NO+IMAGE"); 
+                    return; 
+                }
+                
+                // 指定されたフォルダ(basePath)から画像を探す
+                const localPath = `${basePath}${charName}.png`;
+                
                 const img = new Image();
-                img.onload = () => resolve(localPath); // ローカルにあればそれを採用
-                img.onerror = () => resolve(cloudUrl || `https://via.placeholder.com/800x1200?text=${encodeURIComponent(charName)}`); // なければクラウドURL
+                img.onload = () => resolve(localPath); // ローカルにあれば採用
+                img.onerror = () => {
+                    // ローカルになければクラウドURLを採用（それもなければプレースホルダ）
+                    resolve(cloudUrl || `https://via.placeholder.com/200x200?text=${encodeURIComponent(charName)}`);
+                };
                 img.src = localPath;
             });
         }
-
-        // --- ★ キャラクター選択リスト (d.icon 優先) ---
+        
+        // --- ★ キャラクター選択リスト (アイコン優先) ---
         async function renderCharList() {
             const container = document.getElementById('char-list');
             container.innerHTML = '';
+            
             for (let i = 0; i < charDataList.length; i++) {
                 const char = charDataList[i];
                 const div = document.createElement('div');
                 div.className = 'char-select-item';
                 if(i === currentIndex) div.classList.add('selected');
                 
-                // ★ iconがあればそれを、なければimage(立ち絵)を、それらもローカルに高画質版があればそちらを優先
-                const imgSrc = await resolveImage(char.name, char.icon || char.image);
+                // ★アイコン用フォルダ(LOCAL_ICON_BASE) または d.icon から画像を取得
+                const imgSrc = await resolveImage(char.name, char.icon || char.image, LOCAL_ICON_BASE);
                 
                 div.innerHTML = `
                     <img src="${imgSrc}" class="char-select-thumb" alt="${char.name}">
                     <span class="char-select-name">${char.name}</span>
                 `;
+                
                 div.onclick = () => {
-                    currentIndex = i; updateDisplay(); renderCharList();
+                    currentIndex = i;
+                    updateDisplay();
+                    renderCharList(); // 選択状態更新
                 };
                 container.appendChild(div);
             }
         }
+
         window.toggleAutoRotation = () => {
             isAutoRotate = !isAutoRotate;
             const toggle = document.getElementById('rotation-toggle');
-            toggle.classList.toggle('active', isAutoRotate);
+            if(isAutoRotate) toggle.classList.add('active');
+            else toggle.classList.remove('active');
         };
 
-        // --- Core Logic ---
+        // --- Logic ---
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
             if (char1.duo_conversations) {
                 const pair = char1.duo_conversations.find(p => p.partner === char2.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].a, text2: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].b };
+                if (pair && pair.scripts && pair.scripts.length > 0) {
+                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
+                    return { text1: script.a, text2: script.b };
+                }
             }
             if (char2.duo_conversations) {
                 const pair = char2.duo_conversations.find(p => p.partner === char1.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].b, text2: pair.scripts[Math.floor(Math.random()*pair.scripts.length)].a };
+                if (pair && pair.scripts && pair.scripts.length > 0) {
+                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
+                    return { text1: script.b, text2: script.a }; // 反転
+                }
             }
             return null;
         }
 
+        // --- Display Update ---
         const imgEl1 = document.getElementById('char-img-1');
         const imgEl2 = document.getElementById('char-img-2');
         const bubble1 = document.getElementById('bubble-1');
@@ -409,6 +501,7 @@
         const nameLabel2 = document.getElementById('name-label-2');
         const textContainer1 = document.getElementById('text-1');
         const textContainer2 = document.getElementById('text-2');
+        const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
             // 位置リセット
@@ -419,42 +512,61 @@
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
-            imgEl1.classList.remove('visible'); if (isDuo) imgEl2.classList.remove('visible');
-            bubble1.classList.remove('show'); bubble2.classList.remove('show');
+            imgEl1.classList.remove('visible');
+            if (isDuo) imgEl2.classList.remove('visible');
+            bubble1.classList.remove('show');
+            bubble2.classList.remove('show');
 
-            // 立ち絵表示: ここではd.image(立ち絵)を優先
-            const src1 = await resolveImage(char1.name, char1.image);
-            let src2 = null; if (isDuo) src2 = await resolveImage(char2.name, char2.image);
+            // ★メイン表示は立ち絵なので LOCAL_IMG_BASE を使用
+            const src1 = await resolveImage(char1.name, char1.image, LOCAL_IMG_BASE);
+            let src2 = null;
+            if (isDuo) src2 = await resolveImage(char2.name, char2.image, LOCAL_IMG_BASE);
 
             const theme = char1.color || char1.inpThemeColor || DEFAULT_THEME;
-            document.documentElement.style.setProperty('--accent-color', theme);
+            rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
             let text1 = "", text2 = "";
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
-                if (convSet) { text1 = convSet.text1; text2 = convSet.text2; }
-                else { text1 = getHomeDialogue(char1, {}); text2 = getHomeDialogue(char2, {}); }
-            } else { text1 = getHomeDialogue(char1, {}); }
+                if (convSet) {
+                    text1 = convSet.text1;
+                    text2 = convSet.text2;
+                } else {
+                    text1 = getHomeDialogue(char1, {});
+                    text2 = getHomeDialogue(char2, {});
+                }
+            } else {
+                text1 = getHomeDialogue(char1, {});
+            }
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
-            imgEl1.src = src1; imgEl1.onload = () => imgEl1.classList.add('visible');
+            imgEl1.src = src1;
+            imgEl1.onload = () => imgEl1.classList.add('visible');
+
             nameLabel1.textContent = char1.name.toUpperCase();
-            setTimeout(() => { bubble1.classList.add('show'); startTypewriter(text1, textContainer1, 1); }, 600);
+            setTimeout(() => {
+                bubble1.classList.add('show');
+                startTypewriter(text1, textContainer1, 1);
+            }, 600);
 
             if (isDuo) {
-                imgEl2.src = src2; imgEl2.onload = () => imgEl2.classList.add('visible');
+                imgEl2.src = src2;
+                imgEl2.onload = () => imgEl2.classList.add('visible');
+
                 nameLabel2.textContent = char2.name.toUpperCase();
                 setTimeout(() => {
                     bubble2.classList.add('show');
                     const theme2 = char2.color || char2.inpThemeColor || "#fff";
-                    bubble2.style.borderLeftColor = theme2; nameLabel2.style.color = theme2;
+                    bubble2.style.borderLeftColor = theme2;
+                    nameLabel2.style.color = theme2;
                     startTypewriter(text2, textContainer2, 2);
                 }, 800);
             }
+            
             lastUpdateTime = Date.now();
-            renderCharList();
+            renderCharList(); // 現在の選択状態を更新
         }
 
         function startTypewriter(text, container, id) {
@@ -463,88 +575,205 @@
             if (timerVar) clearTimeout(timerVar);
             let i = 0;
             function type() {
-                if (i < text.length) { container.textContent += text.charAt(i); i++; const next = setTimeout(type, 30); if (id === 1) typeWriterTimeout1 = next; else typeWriterTimeout2 = next; }
+                if (i < text.length) {
+                    container.textContent += text.charAt(i); i++;
+                    const next = setTimeout(type, 30);
+                    if (id === 1) typeWriterTimeout1 = next; else typeWriterTimeout2 = next;
+                }
             }
             type();
         }
 
-        // --- Other Init ---
+        // --- Particles ---
         function createParticles() {
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
+
             function getTexture() {
-                const c = document.createElement('canvas'); c.width = 32; c.height = 32; const ctx = c.getContext('2d');
-                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+                const c = document.createElement('canvas'); c.width = 32; c.height = 32;
+                const ctx = c.getContext('2d');
+                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+                g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = g; ctx.fillRect(0,0,32,32); return new THREE.Texture(c);
             }
-            const geometry = new THREE.BufferGeometry(); const vertices = [];
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
             for (let i = 0; i < 5000; i++) vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            particleMaterial = new THREE.PointsMaterial({ color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
-            particleMaterial.map.needsUpdate = true; const points = new THREE.Points(geometry, particleMaterial); scene.add(points); camera.position.z = 1000;
-            function animate() { requestAnimationFrame(animate); points.rotation.x += 0.0003; points.rotation.y += 0.0005; if (!document.body.classList.contains('mode-white')) particleMaterial.color.lerp(targetColor, 0.05); renderer.render(scene, camera); }
+            particleMaterial = new THREE.PointsMaterial({ 
+                color: new THREE.Color(DEFAULT_THEME), size: 5, map: getTexture(), 
+                transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false 
+            });
+            particleMaterial.map.needsUpdate = true;
+            const points = new THREE.Points(geometry, particleMaterial);
+            scene.add(points); camera.position.z = 1000;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                points.rotation.x += 0.0003; points.rotation.y += 0.0005;
+                if (!document.body.classList.contains('mode-white')) particleMaterial.color.lerp(targetColor, 0.05);
+                renderer.render(scene, camera);
+            }
             animate();
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-            window.updateParticlesForBg = () => {};
+            window.updateParticlesForBg = (mode) => {
+                // Background color change logic helper if needed in future
+            };
         }
 
+        // --- News ---
         async function initNews() {
             const el = document.getElementById('news-content');
+            const paths = ['./report.json', './TOP/report.json', '../TOP/report.json'];
             let data = null;
-            try { const res = await fetch(`./report.json?t=${Date.now()}`); if (res.ok) data = await res.json(); } catch (e) {}
-            if (!data || !data.length) { el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return; }
-            const cycle = () => { el.classList.remove('active'); setTimeout(() => { el.textContent = data[Math.floor(Math.random() * data.length)]; el.classList.add('active'); }, 500); };
+            for (const path of paths) {
+                try {
+                    const res = await fetch(`${path}?t=${Date.now()}`);
+                    if (res.ok) { data = await res.json(); break; }
+                } catch (e) {}
+            }
+            if (!data || !data.length) {
+                el.textContent = "Welcome to Uchiyoso Archive."; el.classList.add('active'); return;
+            }
+            const cycle = () => {
+                el.classList.remove('active');
+                setTimeout(() => {
+                    el.textContent = data[Math.floor(Math.random() * data.length)];
+                    el.classList.add('active');
+                }, 500);
+            };
             cycle(); setInterval(cycle, 6000);
         }
 
+        // --- Auth & Mode ---
+        const userDisplay = document.getElementById('user-display');
+        const connectBtn = document.getElementById('main-connect-btn');
+
         monitorAuth(
             async (user) => {
-                currentUser = user; document.getElementById('user-display').textContent = (user.displayName || "MEMBER").toUpperCase(); document.getElementById('main-connect-btn').textContent = "NEXT";
+                currentUser = user;
+                userDisplay.textContent = (user.displayName || "MEMBER").toUpperCase();
+                connectBtn.textContent = "NEXT";
                 const data = await loadFromCloud();
-                if (data && Object.keys(data).length > 0) charDataList = Object.values(data); else charDataList = [{ name: "No Data", color: "#555" }];
-                renderCharList(); renderMusicList();
-                currentIndex = Math.floor(Math.random() * charDataList.length); updateDisplay();
+                if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
+                else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
+                
+                // データロード後にリスト生成
+                renderCharList();
+                renderMusicList();
+
+                currentIndex = Math.floor(Math.random() * charDataList.length);
+                updateDisplay();
             },
-            () => { currentUser = null; document.getElementById('user-display').textContent = "GUEST"; document.getElementById('main-connect-btn').textContent = "CONNECT"; charDataList = fallbackData; currentIndex = 0; updateDisplay(); renderMusicList(); }
+            () => {
+                currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
+                charDataList = fallbackData; currentIndex = 0; updateDisplay();
+                renderMusicList(); // ゲストでも音楽は再生可能にする
+            }
         );
 
-        window.handleConnect = () => { if (!currentUser) { if(bgmPlayer.paused) try{toggleBGM()}catch(e){}; login(); } else nextChar(); };
-        window.handleCharClick = () => { if (currentUser) nextChar(); };
-        function nextChar() { if (charDataList.length <= 1) return; currentIndex = (currentIndex + 1) % charDataList.length; updateDisplay(); }
+        window.handleConnect = () => {
+           if (!currentUser) {
+             if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
+             login();
+           } else {
+             nextChar();
+           }
+        };
         
+        window.handleCharClick = () => { if (currentUser) nextChar(); };
+        function nextChar() {
+            if (charDataList.length <= 1) return;
+            currentIndex = (currentIndex + 1) % charDataList.length;
+            updateDisplay();
+        }
+
         window.setMode = (mode) => {
-            document.getElementById('bubble-1').classList.remove('show'); document.getElementById('bubble-2').classList.remove('show');
+            // モード切替のフェードアウト演出
+            document.getElementById('bubble-1').classList.remove('show');
+            document.getElementById('bubble-2').classList.remove('show');
+
             setTimeout(() => {
                 isDuo = (mode === 'duo');
-                document.getElementById('btn-solo').classList.toggle('active', !isDuo); document.getElementById('btn-duo').classList.toggle('active', isDuo);
-                const stage = document.getElementById('char-stage'); const body = document.body;
-                if (isDuo) { stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo'); document.getElementById('char-img-2').style.display = 'block'; }
-                else { stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo'); document.getElementById('char-img-2').style.display = 'none'; }
+                document.getElementById('btn-solo').classList.toggle('active', !isDuo);
+                document.getElementById('btn-duo').classList.toggle('active', isDuo);
+                const stage = document.getElementById('char-stage');
+                const body = document.body;
+                
+                if (isDuo) {
+                    stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo');
+                    document.getElementById('char-img-2').style.display = 'block';
+                } else {
+                    stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo');
+                    document.getElementById('char-img-2').style.display = 'none';
+                }
+                
                 updateDisplay();
             }, 500);
         };
 
         createParticles(); initNews();
 
+        // --- Auto Play Logic ---
+        const DIALOGUE_INTERVAL = 15000; 
+        const CHARACTER_INTERVAL = 45000; 
+
         function refreshDialogueOnly() {
-            if (!charDataList || charDataList.length === 0 || Date.now() - lastUpdateTime < 5000) return;
-            const char1 = charDataList[currentIndex]; const nextIdx = (currentIndex + 1) % charDataList.length; const char2 = charDataList[nextIdx];
+            if (!charDataList || charDataList.length === 0) return;
+            if (Date.now() - lastUpdateTime < 5000) return;
+
+            const char1 = charDataList[currentIndex];
+            const nextIdx = (currentIndex + 1) % charDataList.length;
+            const char2 = charDataList[nextIdx];
+
             let text1 = "", text2 = "";
+
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
-                if (convSet) { text1 = convSet.text1; text2 = convSet.text2; } else { text1 = getHomeDialogue(char1, {}); text2 = getHomeDialogue(char2, {}); }
-            } else { text1 = getHomeDialogue(char1, {}); }
-            if(text1) text1 = text1.replace(/<br>/g, "\n"); if(text2) text2 = text2.replace(/<br>/g, "\n");
-            bubble1.classList.remove('show'); if(isDuo) bubble2.classList.remove('show');
-            setTimeout(() => { bubble1.classList.add('show'); startTypewriter(text1, textContainer1, 1); }, 500);
-            if(isDuo) setTimeout(() => { bubble2.classList.add('show'); startTypewriter(text2, textContainer2, 2); }, 700);
+                if (convSet) {
+                    text1 = convSet.text1;
+                    text2 = convSet.text2;
+                } else {
+                    text1 = getHomeDialogue(char1, {});
+                    text2 = getHomeDialogue(char2, {});
+                }
+            } else {
+                text1 = getHomeDialogue(char1, {});
+            }
+            if(text1) text1 = text1.replace(/<br>/g, "\n");
+            if(text2) text2 = text2.replace(/<br>/g, "\n");
+
+            bubble1.classList.remove('show');
+            if(isDuo) bubble2.classList.remove('show');
+
+            setTimeout(() => {
+                bubble1.classList.add('show');
+                startTypewriter(text1, textContainer1, 1);
+            }, 500);
+
+            if(isDuo) {
+                setTimeout(() => {
+                    bubble2.classList.add('show');
+                    startTypewriter(text2, textContainer2, 2);
+                }, 700);
+            }
             lastUpdateTime = Date.now();
         }
-        setInterval(() => { if (currentUser) refreshDialogueOnly(); }, 15000);
-        setInterval(() => { if (currentUser && charDataList.length > 1 && isAutoRotate) { nextChar(); lastUpdateTime = Date.now(); } }, 45000);
+
+        setInterval(() => {
+            if (currentUser) refreshDialogueOnly();
+        }, DIALOGUE_INTERVAL);
+
+        setInterval(() => {
+            if (currentUser && charDataList.length > 1 && isAutoRotate) {
+                nextChar();
+                lastUpdateTime = Date.now();
+            }
+        }, CHARACTER_INTERVAL);
+        
     </script>
 </body>
 </html>
