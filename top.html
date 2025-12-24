@@ -49,6 +49,7 @@
         .char-img.visible:hover { transform: translateY(-5px) scale(1.02); filter: brightness(1.1); }
         .bubbles-layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 10; }
         
+        /* ★修正: 吹き出しのデザイン調整 */
         .speech-bubble {
             position: absolute;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
@@ -57,12 +58,16 @@
             border-left: 3px solid var(--accent-color);
             border-top: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            max-width: 450px; line-height: 1.8;
-            opacity: 0; transition: all 0.5s ease 0.3s, border-color 1s;
-            /* ★修正: 親要素からは white-space を削除し、下の #text-1, #text-2 に適用します */
+            
+            /* 横幅の制御: 最低300px確保、最大500pxまで伸びる */
+            min-width: 300px;
+            max-width: 500px;
+            
+            line-height: 1.8;
+            opacity: 0; transition: opacity 0.5s ease; /* フェードイン・アウト用 */
         }
         
-        /* ★修正: ここに設定することで、台詞部分だけ改行が有効になり、枠の謎空白が消えます */
+        /* 中身のテキスト用: ここで改行を有効にする */
         #text-1, #text-2 {
             white-space: pre-wrap;
         }
@@ -70,7 +75,7 @@
         .speech-bubble.show { opacity: 1; transform: translateX(0) translateY(0); }
         .mode-solo .speech-bubble { bottom: 25%; left: 2%; transform: translateX(-20px); }
         .mode-solo .speech-bubble.show { transform: translateX(0); }
-        .mode-duo .speech-bubble { width: 450px; max-width: 40vw; text-align: left; }
+        .mode-duo .speech-bubble { text-align: left; }
         .mode-duo #bubble-1 { top: 45%; left: 50%; transform: translate(-105%, -50%) translateY(10px); border-left-width: 5px; }
         .mode-duo #bubble-1.show { transform: translate(-105%, -50%) translateY(0); }
         .mode-duo #bubble-2 { top: 55%; left: 50%; transform: translate(5%, -50%) translateY(10px); border-left-width: 5px; }
@@ -221,7 +226,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
-        // ★dialogue.js の関数を読み込み
         import { getHomeDialogue } from "./character/data/dialogue.js";
 
         const LOCAL_IMG_BASE = "./images/character/";
@@ -293,7 +297,6 @@
         // --- Logic: Dialogue Selection ---
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
-            // 1. Char1の中に Char2 との会話データがあるか
             if (char1.duo_conversations) {
                 const pairData = char1.duo_conversations.find(p => p.partner === char2.name);
                 if (pairData && pairData.scripts && pairData.scripts.length > 0) {
@@ -301,12 +304,11 @@
                     return { text1: script.a, text2: script.b };
                 }
             }
-            // 2. Char2の中に Char1 との会話データがあるか (逆)
             if (char2.duo_conversations) {
                 const pairData = char2.duo_conversations.find(p => p.partner === char1.name);
                 if (pairData && pairData.scripts && pairData.scripts.length > 0) {
                     const script = pairData.scripts[Math.floor(Math.random() * pairData.scripts.length)];
-                    return { text1: script.b, text2: script.a }; // 左右反転
+                    return { text1: script.b, text2: script.a }; 
                 }
             }
             return null;
@@ -352,7 +354,6 @@
             rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
-            // Determine Texts
             let text1 = "", text2 = "";
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
@@ -360,20 +361,15 @@
                     text1 = convSet.text1;
                     text2 = convSet.text2;
                 } else {
-                    // ★ dialogue.js の関数を使用
                     text1 = getHomeDialogue(char1, {});
                     text2 = getHomeDialogue(char2, {});
                 }
             } else {
-                // ★ dialogue.js の関数を使用
                 text1 = getHomeDialogue(char1, {});
             }
-            
-            // 安全のために改行コードの統一などは行いますが、基本はJS側で処理済み
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
-            // Display Execution (Corrected: No onload locking)
             imgEl1.src = src1;
             imgEl1.onload = () => imgEl1.classList.add('visible');
 
@@ -497,11 +493,9 @@
 
         window.handleConnect = () => {
            if (!currentUser) {
-             // ログイン（CONNECT）時のみBGM再生を試みる
              if (bgmPlayer.paused) { try { toggleBGM(); } catch(e){} }
              login();
            } else {
-             // すでにログインしている（NEXT）時はキャラ送りだけ行う
              nextChar();
            }
         };
@@ -513,36 +507,42 @@
             updateDisplay();
         }
 
+        // ★修正: モード切替時に静かにフェードアウトさせる処理を追加
         window.setMode = (mode) => {
-            isDuo = (mode === 'duo');
-            document.getElementById('btn-solo').classList.toggle('active', !isDuo);
-            document.getElementById('btn-duo').classList.toggle('active', isDuo);
-            const stage = document.getElementById('char-stage');
-            const body = document.body;
-            if (isDuo) {
-                stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo');
-                document.getElementById('char-img-2').style.display = 'block';
-            } else {
-                stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo');
-                document.getElementById('char-img-2').style.display = 'none';
-                document.getElementById('bubble-2').classList.remove('show');
-            }
-            updateDisplay();
+            // 1. まず吹き出しを消す (透明にする)
+            document.getElementById('bubble-1').classList.remove('show');
+            document.getElementById('bubble-2').classList.remove('show');
+
+            // 2. フェードアウトの時間 (0.5秒) だけ待ってからモードを切り替える
+            setTimeout(() => {
+                isDuo = (mode === 'duo');
+                document.getElementById('btn-solo').classList.toggle('active', !isDuo);
+                document.getElementById('btn-duo').classList.toggle('active', isDuo);
+                const stage = document.getElementById('char-stage');
+                const body = document.body;
+                
+                if (isDuo) {
+                    stage.classList.add('duo-mode'); body.classList.add('mode-duo'); body.classList.remove('mode-solo');
+                    document.getElementById('char-img-2').style.display = 'block';
+                } else {
+                    stage.classList.remove('duo-mode'); body.classList.add('mode-solo'); body.classList.remove('mode-duo');
+                    document.getElementById('char-img-2').style.display = 'none';
+                }
+                
+                // 3. データ更新 (ここで新しい台詞が表示され、フェードインする)
+                updateDisplay();
+            }, 500);
         };
 
         createParticles(); initNews();
 
         // -----------------------------------------------------
-        // ▼ 追加: オートプレイ機能（会話更新とキャラクター変更） ▼
+        // ▼ オートプレイ機能 ▼
         // -----------------------------------------------------
-
-        // 設定時間（ミリ秒）: 会話=15秒, キャラ変更=45秒
         const DIALOGUE_INTERVAL = 15000; 
         const CHARACTER_INTERVAL = 45000; 
 
-        // 画像はそのままで、会話テキストだけリフレッシュする関数
         function refreshDialogueOnly() {
-            // データが無い場合はスキップ
             if (!charDataList || charDataList.length === 0) return;
 
             const char1 = charDataList[currentIndex];
@@ -566,7 +566,6 @@
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
-            // バブルを一度非表示にしてから再表示
             bubble1.classList.remove('show');
             if(isDuo) bubble2.classList.remove('show');
 
@@ -583,7 +582,6 @@
             }
         }
 
-        // タイマーのセット
         setInterval(() => {
             if (currentUser) refreshDialogueOnly();
         }, DIALOGUE_INTERVAL);
