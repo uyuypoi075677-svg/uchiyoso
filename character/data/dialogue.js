@@ -49,16 +49,30 @@ export const DUO_SITUATIONS = [
 // ▼ 表示用ロジック (Topページなどで使用)
 // =========================================================
 
-function pickRandomLine(text) {
-            if (!text) return null;
-            // [NEXT]で区切ってランダム選択
-            if (text.includes('[NEXT]')) {
-                const patterns = text.split('[NEXT]');
-                return patterns[Math.floor(Math.random() * patterns.length)].trim();
-            }
-           
-            return text;
-        }
+/**
+ * テキストからランダムに1行を取得 (修正版)
+ * [NEXT] という合言葉で区切ります。なければ改行で区切ります。
+ */
+export function pickRandomLine(text) {
+    if (!text) return null;
+
+    // 1. 新しい形式 ([NEXT]区切り) かチェック
+    if (text.includes('[NEXT]')) {
+        const patterns = text.split('[NEXT]').map(l => l.trim()).filter(l => l !== "");
+        if (patterns.length === 0) return null;
+        return patterns[Math.floor(Math.random() * patterns.length)];
+    }
+    
+    // 2. 古い形式 (改行区切り) の場合の救済措置
+    // [NEXT] がなくて改行があるなら、昔のデータとして扱う
+    if (text.includes('\n')) {
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+        return lines[Math.floor(Math.random() * lines.length)];
+    }
+
+    // 3. 1行だけの場合
+    return text;
+}
 
 /**
  * 状況に応じたホーム画面用セリフを取得
