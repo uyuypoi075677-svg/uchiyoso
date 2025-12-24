@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
-    <title>Uchiyoso Maker - Luxe Archive v2.6</title>
+    <title>Uchiyoso Maker - Luxe Archive v2.7</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -48,6 +48,8 @@
         .char-img.visible { opacity: 1; transform: translateY(0) scale(1); }
         .char-img.visible:hover { transform: translateY(-5px) scale(1.02); filter: brightness(1.1); }
         .bubbles-layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 10; }
+        
+        /* 吹き出しのスタイル（ドラッグ対応） */
         .speech-bubble {
             position: absolute;
             font-family: var(--font-jp); font-weight: 300; letter-spacing: 0.05em;
@@ -57,18 +59,35 @@
             border-top: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             min-width: 300px; max-width: 500px;
-            line-height: 1.8; opacity: 0; transition: opacity 0.5s ease;
+            line-height: 1.8; 
+            opacity: 0; 
+            
+            /* 可動式の設定 */
+            cursor: grab;
+            pointer-events: auto; /* ドラッグ操作のために必要 */
+            user-select: none; /* テキスト選択防止 */
+            touch-action: none;
+            
+            /* transitionからtop/left/transformを除外しないとドラッグ時に遅延する */
+            transition: opacity 0.5s ease; 
         }
+        .speech-bubble:active { cursor: grabbing; }
+
         #text-1, #text-2 { white-space: pre-wrap; }
-        .speech-bubble.show { opacity: 1; transform: translateX(0) translateY(0); }
+        .speech-bubble.show { opacity: 1; } /* TransformはJSまたは初期CSSで管理 */
+
+        /* 初期位置設定 (JSで上書き可) */
         .mode-solo .speech-bubble { bottom: 25%; left: 2%; transform: translateX(-20px); }
         .mode-solo .speech-bubble.show { transform: translateX(0); }
+        
         .mode-duo .speech-bubble { text-align: left; }
         .mode-duo #bubble-1 { top: 45%; left: 50%; transform: translate(-105%, -50%) translateY(10px); border-left-width: 5px; }
         .mode-duo #bubble-1.show { transform: translate(-105%, -50%) translateY(0); }
+        
         .mode-duo #bubble-2 { top: 55%; left: 50%; transform: translate(5%, -50%) translateY(10px); border-left-width: 5px; }
         .mode-duo #bubble-2.show { transform: translate(5%, -50%) translateY(0); }
-        .char-name-label { font-family: var(--font-en); font-size: 11px; color: var(--accent-color); margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em; }
+
+        .char-name-label { font-family: var(--font-en); font-size: 11px; color: var(--accent-color); margin-bottom: 12px; display: block; font-weight: bold; letter-spacing: 0.2em; pointer-events: none; }
         .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent-color); animation: blink 1s infinite; vertical-align: middle; }
         .header-title { grid-column: 3; grid-row: 1; padding: 20px 40px 0 0; text-align: right; white-space: nowrap; }
         .header-title h1 { font-family: var(--font-en); font-size: 24px; margin: 0; color: var(--text-main); letter-spacing: 0.1em; text-shadow: 0 0 20px rgba(255,255,255,0.1); transition: color 0.5s; }
@@ -104,7 +123,7 @@
         .bg-black { background: #000; }
         .bg-white { background: #fff; color: #000; }
 
-        /* リストとスイッチのスタイル */
+        /* Music List Style */
         .scrollable-list { width: 100%; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding-right: 5px; }
         .scrollable-list::-webkit-scrollbar { width: 5px; }
         .scrollable-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
@@ -116,7 +135,39 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .list-item:hover, .list-item.selected { border-color: var(--accent-color); background: rgba(255,255,255,0.1); color: var(--accent-color); }
-        .list-text { font-family: var(--font-jp); font-size: 13px; letter-spacing: 0.05em; }
+        .list-text { font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em; } /* 音楽リストは英語フォントで統一 */
+
+        /* Character Grid Style */
+        .char-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+            gap: 20px; 
+            width: 100%; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            padding: 10px; 
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        .char-grid::-webkit-scrollbar { width: 5px; }
+        .char-grid::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 2px; }
+
+        .char-select-item {
+            display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; position: relative;
+        }
+        .char-select-thumb {
+            width: 80px; height: 80px; object-fit: cover; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2); transition: 0.3s;
+        }
+        .char-select-item:hover .char-select-thumb, .char-select-item.selected .char-select-thumb {
+            border-color: var(--accent-color);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(0,255,204, 0.3);
+        }
+        .char-select-name {
+            font-size: 10px; font-family: var(--font-jp); color: var(--text-sub); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+        .char-select-item.selected .char-select-name { color: var(--accent-color); }
         
         .toggle-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 20px; padding: 0 10px; box-sizing: border-box; }
         .toggle-label { font-family: var(--font-en); font-size: 11px; letter-spacing: 0.1em; color: var(--text-sub); }
@@ -174,7 +225,8 @@
                 </div>
             </div>
 
-            <div class="scrollable-list" id="char-list">
+            <!-- リスト形式からグリッド形式に変更 -->
+            <div class="char-grid" id="char-list">
                 <!-- JSにより生成 -->
             </div>
             <button class="close-modal" onclick="closeAllModals()">CLOSE</button>
@@ -211,7 +263,7 @@
         <!-- Header -->
         <div class="header-title">
             <h1>UCHIYOSO<br>ARCHIVE</h1>
-            <div class="header-sub">PREMIUM INTERFACE v2.6</div>
+            <div class="header-sub">PREMIUM INTERFACE v2.7</div>
         </div>
 
         <!-- Mode Toggle -->
@@ -234,7 +286,7 @@
             <!-- Character 2 -->
             <img id="char-img-2" class="char-img" src="" alt="Character 2" style="display: none;">
 
-            <!-- Bubbles Layer -->
+            <!-- Bubbles Layer (Draggable) -->
             <div class="bubbles-layer">
                 <div id="bubble-1" class="speech-bubble">
                     <span id="name-label-1" class="char-name-label">SYSTEM</span>
@@ -294,11 +346,11 @@
         // 新機能用変数
         let isAutoRotate = true; // 自動キャラ変更のON/OFF
         
-        // 音楽リスト（URLを追加することで曲を増やせます）
+        // 音楽リスト（タイトルのみに修正）
         const musicList = [
-            { title: "DEFAULT THEME (Aoren)", url: "./sound/aoren.mp3" },
+            { title: "Aoren", url: "./sound/aoren.mp3" },
             // 必要に応じて以下のように追加
-            // { title: "Another Track", url: "https://example.com/music.mp3" },
+            // { title: "Jazz Night", url: "https://example.com/music.mp3" },
         ];
 
         let particleMaterial;
@@ -330,12 +382,10 @@
         // Music Selection Logic
         window.playTrack = (url, index) => {
             bgmPlayer.src = url;
-            // 更新されたボタンのスタイル制御
             const items = document.querySelectorAll('#music-list .list-item');
             items.forEach(el => el.classList.remove('selected'));
             if(items[index]) items[index].classList.add('selected');
             
-            // 再生開始
             bgmPlayer.play().then(() => {
                 playBtn.textContent = 'pause'; playBtn.classList.add('playing');
             });
@@ -352,6 +402,75 @@
                 container.appendChild(div);
             });
         }
+
+        // --- Draggable Bubbles Logic ---
+        function makeDraggable(elm) {
+            let isDragging = false;
+            let startX, startY;
+            let initialLeft, initialTop;
+
+            elm.addEventListener('mousedown', dragStart);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('mousemove', drag);
+
+            // タッチ対応
+            elm.addEventListener('touchstart', dragStart, {passive: false});
+            document.addEventListener('touchend', dragEnd);
+            document.addEventListener('touchmove', drag, {passive: false});
+
+            function dragStart(e) {
+                if (e.target.closest('.char-name-label')) return; // 名前ラベルなど特定要素を除外したければ記述
+
+                isDragging = true;
+                elm.style.transition = 'none'; // ドラッグ中はアニメーションを無効化
+                
+                // クライアント座標の取得
+                const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+                startX = clientX;
+                startY = clientY;
+                
+                // 現在の計算された位置を取得 (transformの影響を考慮せず、left/topオフセットとして扱う)
+                const rect = elm.getBoundingClientRect();
+                
+                // 親要素(viewport/bubbles-layer)内での相対位置に変換が必要だが、
+                // 簡易的に現在のstyle.left/topが未設定なら現在の位置を固定する
+                if(!elm.style.left) elm.style.left = elm.offsetLeft + 'px';
+                if(!elm.style.top) elm.style.top = elm.offsetTop + 'px';
+                
+                // bottom指定がある場合、topに変換して固定する（動きをスムーズにするため）
+                elm.style.bottom = 'auto'; 
+                elm.style.transform = 'none'; // CSSのtransform center配置を解除して絶対配置モードへ
+
+                initialLeft = parseInt(elm.style.left || 0);
+                initialTop = parseInt(elm.style.top || 0);
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault(); // スクロール防止
+
+                const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                elm.style.left = (initialLeft + dx) + 'px';
+                elm.style.top = (initialTop + dy) + 'px';
+            }
+
+            function dragEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                elm.style.transition = 'opacity 0.5s ease'; // アニメーション復帰
+            }
+        }
+
+        // 初期化時にドラッグ適用
+        makeDraggable(document.getElementById('bubble-1'));
+        makeDraggable(document.getElementById('bubble-2'));
 
         // --- Modals Logic ---
         window.closeAllModals = () => {
@@ -378,7 +497,6 @@
             window.closeAllModals();
         };
 
-        // Create BG Photos Grid
         const bgGrid = document.getElementById('bg-grid');
         for (let i = 1; i <= 5; i++) {
             const div = document.createElement('div');
@@ -388,25 +506,33 @@
             bgGrid.appendChild(div);
         }
         
-        // --- Character Select Logic ---
-        function renderCharList() {
+        // --- Character Select Logic (Icons) ---
+        async function renderCharList() {
             const container = document.getElementById('char-list');
             container.innerHTML = '';
             
-            charDataList.forEach((char, index) => {
+            for (let i = 0; i < charDataList.length; i++) {
+                const char = charDataList[i];
                 const div = document.createElement('div');
-                div.className = 'list-item';
-                if(index === currentIndex) div.classList.add('selected');
+                div.className = 'char-select-item';
+                if(i === currentIndex) div.classList.add('selected');
                 
-                div.innerHTML = `<span class="list-text" style="color:${char.color || '#fff'}">${char.name}</span>`;
+                // アイコン画像の解決（非同期）
+                const imgSrc = await resolveImage(char.name, char.icon || char.image); // iconがあれば優先、なければ立ち絵
+                
+                div.innerHTML = `
+                    <img src="${imgSrc}" class="char-select-thumb" alt="${char.name}">
+                    <span class="char-select-name">${char.name}</span>
+                `;
+                
                 div.onclick = () => {
-                    currentIndex = index;
+                    currentIndex = i;
                     updateDisplay();
-                    renderCharList(); // 更新して選択状態を反映
-                    // window.closeAllModals(); // 選択後閉じる場合はコメントアウトを外す
+                    renderCharList(); // 選択状態更新
+                    // window.closeAllModals(); // 閉じる場合はコメントアウト解除
                 };
                 container.appendChild(div);
-            });
+            }
         }
 
         window.toggleAutoRotation = () => {
@@ -459,6 +585,10 @@
         const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
+            // キャラクター変更時に吹き出しの位置をリセットする
+            bubble1.style.top = ''; bubble1.style.left = ''; bubble1.style.bottom = ''; bubble1.style.transform = '';
+            bubble2.style.top = ''; bubble2.style.left = ''; bubble2.style.bottom = ''; bubble2.style.transform = '';
+
             const char1 = charDataList[currentIndex];
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
@@ -717,7 +847,6 @@
             if (currentUser) refreshDialogueOnly();
         }, DIALOGUE_INTERVAL);
 
-        // ★自動ローテーションに isAutoRotate フラグのチェックを追加
         setInterval(() => {
             if (currentUser && charDataList.length > 1 && isAutoRotate) {
                 nextChar();
