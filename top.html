@@ -208,6 +208,9 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.6);
             max-width: 450px; line-height: 1.8;
             opacity: 0; transition: all 0.5s ease 0.3s, border-color 1s;
+            
+            /* ★修正点1: 改行を反映させるためのCSSを追加 */
+            white-space: pre-wrap;
         }
         .speech-bubble.show { opacity: 1; transform: translateX(0) translateY(0); }
 
@@ -505,6 +508,25 @@
             bgGrid.appendChild(div);
         }
 
+        // --- ★修正点2: [NEXT]を区切ってランダム選択する関数を追加 ---
+        function pickRandomLine(text) {
+            if (!text) return null;
+            
+            // 1. [NEXT]で区切ってランダム選択 (新仕様)
+            if (text.includes('[NEXT]')) {
+                const patterns = text.split('[NEXT]');
+                return patterns[Math.floor(Math.random() * patterns.length)].trim();
+            }
+            // 2. 改行で区切ってランダム選択 (旧データ救済)
+            const cleanText = text.replace(/<br>/gi, '\n');
+            if (cleanText.includes('\n')) {
+                const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l !== "");
+                if (lines.length > 0) return lines[Math.floor(Math.random() * lines.length)];
+            }
+            // 3. そのまま
+            return text;
+        }
+
         // --- Logic: Dialogue Selection ---
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
@@ -527,17 +549,18 @@
             return null;
         }
 
+        // ★修正点3: pickRandomLineを使うように変更
         function getSoloDialogue(selfChar, isDuoMode) {
             const currentSan = (selfChar.vitals && selfChar.vitals.san) ? parseInt(selfChar.vitals.san) : 99;
-            if (currentSan <= 20 && selfChar.dialogue_lowsan) return selfChar.dialogue_lowsan;
-            if (isDuoMode && selfChar.dialogue_duo) return selfChar.dialogue_duo;
+            if (currentSan <= 20 && selfChar.dialogue_lowsan) return pickRandomLine(selfChar.dialogue_lowsan);
+            if (isDuoMode && selfChar.dialogue_duo) return pickRandomLine(selfChar.dialogue_duo);
             
             const hour = new Date().getHours();
-            if (hour >= 5 && hour < 11 && selfChar.dialogue_morning) return selfChar.dialogue_morning;
-            if (selfChar.dialogue_day && hour >= 11 && hour < 18) return selfChar.dialogue_day;
-            if ((hour >= 18 || hour < 5) && selfChar.dialogue_night) return selfChar.dialogue_night;
+            if (hour >= 5 && hour < 11 && selfChar.dialogue_morning) return pickRandomLine(selfChar.dialogue_morning);
+            if (selfChar.dialogue_day && hour >= 11 && hour < 18) return pickRandomLine(selfChar.dialogue_day);
+            if ((hour >= 18 || hour < 5) && selfChar.dialogue_night) return pickRandomLine(selfChar.dialogue_night);
 
-            return selfChar.dialogue_default || selfChar.remarks || selfChar.txtRoleplay || "……。";
+            return pickRandomLine(selfChar.dialogue_default) || pickRandomLine(selfChar.remarks) || selfChar.txtRoleplay || "……。";
         }
 
         // --- Display ---
