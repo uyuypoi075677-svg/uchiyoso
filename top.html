@@ -235,6 +235,7 @@
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
+        let lastUpdateTime = 0; 
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         let isDuo = false; 
@@ -392,6 +393,7 @@
                     startTypewriter(text2, textContainer2, 2);
                 }, 800);
             }
+              lastUpdateTime = Date.now(); 
         }
 
         function startTypewriter(text, container, id) {
@@ -536,14 +538,25 @@
 
         createParticles(); initNews();
 
+ // -----------------------------------------------------
+        // ▼ 追加: オートプレイ機能（会話更新とキャラクター変更） ▼
         // -----------------------------------------------------
-        // ▼ オートプレイ機能 ▼
-        // -----------------------------------------------------
+
+        // 設定時間（ミリ秒）: 会話=15秒, キャラ変更=45秒
         const DIALOGUE_INTERVAL = 15000; 
         const CHARACTER_INTERVAL = 45000; 
+        
+        // ★修正点1: 最後に更新した時間を記録する変数を追加
+        let lastUpdateTime = 0;
 
+        // 画像はそのままで、会話テキストだけリフレッシュする関数
         function refreshDialogueOnly() {
+            // データが無い場合はスキップ
             if (!charDataList || charDataList.length === 0) return;
+
+            // ★修正点2: 前回の更新から時間が経っていないなら何もしない (読み込み直後の連打防止)
+            // (まだ5秒も経っていないならスキップする設定)
+            if (Date.now() - lastUpdateTime < 5000) return;
 
             const char1 = charDataList[currentIndex];
             const nextIdx = (currentIndex + 1) % charDataList.length;
@@ -580,16 +593,33 @@
                     startTypewriter(text2, textContainer2, 2);
                 }, 700);
             }
+            
+            // ★修正点3: 更新時間を記録
+            lastUpdateTime = Date.now();
         }
 
+        // また、初期表示の updateDisplay 関数内でも時間を記録する必要があります。
+        // updateDisplay関数の一部も修正が必要ですが、
+        // ここで簡易的に、updateDisplayが呼ばれるであろうタイミングで時間を更新するようにします。
+        
+        // 元の updateDisplay 関数の中に「lastUpdateTime = Date.now();」を1行足すのがベストですが、
+        // 既存コードをあまり触りたくない場合は、以下のハックでも機能します。
+        
+        // タイマーのセット
         setInterval(() => {
-            if (currentUser) refreshDialogueOnly();
+            if (currentUser) {
+                refreshDialogueOnly();
+            }
         }, DIALOGUE_INTERVAL);
 
         setInterval(() => {
-            if (currentUser && charDataList.length > 1) nextChar();
+            if (currentUser && charDataList.length > 1) {
+                nextChar();
+                // キャラ変更時も更新時間をリセット扱いに
+                lastUpdateTime = Date.now();
+            }
         }, CHARACTER_INTERVAL);
-        
+
     </script>
 </body>
 </html>
