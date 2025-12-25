@@ -17,8 +17,6 @@
             /* 5人表示レイアウト維持 */
             --card-w: 250px; 
             --card-h: 75vh;
-            /* ギャップはJS計算で使用しますが、見た目の目安として残します */
-            --gap: 30px;
             
             --accent: #00d2ff;
             
@@ -54,11 +52,11 @@
             color: var(--text-main);
         }
 
-        /* --- STAGE (Modified for Carousel) --- */
+        /* --- STAGE --- */
         .stage-wrapper {
             flex: 1; position: relative; width: 100%;
             display: flex; align-items: center; justify-content: center;
-            perspective: 2000px; /* 奥行きを深める */
+            perspective: 2000px;
             overflow: hidden;
         }
 
@@ -87,7 +85,6 @@
         }
         @keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-        /* スクロールではなく、絶対配置のコンテナに変更 */
         .stage-container {
             position: relative;
             width: 100%; height: 100%;
@@ -96,23 +93,25 @@
             z-index: 10;
         }
         
-        /* --- CHARACTER UNIT (Modified Positioning) --- */
+        /* --- CHARACTER UNIT (Fixed Positioning) --- */
         .char-unit {
-            position: absolute; /* 絶対配置に変更 */
+            position: absolute;
             width: var(--card-w);
             height: var(--card-h);
-            /* 初期位置は中央 */
-            left: 50%; top: 50%;
-            /* transformはJSで制御するため、基本のセンタリングのみCSSで指定 */
-            margin-left: calc(var(--card-w) / -2); 
-            margin-top: calc(var(--card-h) / -2);
+            
+            /* ★修正点: margin-top/left を削除し、top/leftのみにしました。
+               JS側の translate(-50%, -50%) と組み合わせて正確に中央に来ます。
+               また、少し視覚的なバランスを取るため 50% ではなく 52% にしています。 */
+            left: 50%; 
+            top: 52%; 
+            margin: 0;
             
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.1, 0.6, 0.2, 1), opacity 0.6s ease, filter 0.6s ease;
             will-change: transform, opacity;
         }
 
-        /* === 1. SCREEN (Modified) === */
+        /* === 1. SCREEN === */
         .unit-screen {
             position: absolute;
             top: 0; 
@@ -295,8 +294,7 @@
             50% { transform: scale(0.85); opacity: 0.3; }
         }
 
-        /* === HOVER EFFECTS (Active Only) === */
-        /* JSで .is-active クラスが付与されたときのみHoverを有効にする */
+        /* === HOVER EFFECTS === */
         .char-unit.is-active:hover .unit-screen {
             transform: translateZ(calc(var(--z-screen) - 20px));
             filter: drop-shadow(0 0 15px var(--accent)) brightness(1.05);
@@ -464,23 +462,15 @@
             const total = unitElements.length;
             if(total === 0) return;
 
-            // スプレッド（隣のカードとの距離）
             const xSpread = 320; 
             const zSpread = 250;
             const rotateAngle = 25;
 
             unitElements.forEach((unit, i) => {
-                // ループ計算：最短距離を算出
-                // 例：total=5, current=4, i=0 の場合、diffは 1 とする（右隣）
                 let diff = (i - currentIndex) % total;
-                
-                // JavaScriptの剰余は負の数を返すことがあるため補正
                 if (diff < 0) diff += total; 
-                
-                // 半分より大きい場合は、反対側（マイナス方向）に近いとみなす
                 if (diff > total / 2) diff -= total;
                 
-                // アクティブ判定
                 const isActive = (diff === 0);
 
                 if(isActive) {
@@ -488,29 +478,23 @@
                     unit.style.zIndex = 100;
                     unit.style.filter = 'brightness(1)';
                     unit.style.opacity = 1;
-                    // クリックレイヤー有効
                     unit.querySelector('.click-layer').style.pointerEvents = 'auto';
                 } else {
                     unit.classList.remove('is-active');
                     unit.style.zIndex = 100 - Math.abs(diff);
                     unit.style.filter = `brightness(0.4) blur(${Math.abs(diff)*2}px)`;
                     unit.style.opacity = Math.max(0.2, 1 - Math.abs(diff) * 0.3);
-                    // 隣のキャラをクリックしたらそこに移動する機能をつけても良いが、今回は誤操作防止で無効化
                     unit.querySelector('.click-layer').style.pointerEvents = 'none';
                 }
 
-                // 3D Transform計算
-                // X: 距離に応じて横へ。
-                // Z: 距離に応じて奥へ。
-                // RotateY: 中心に向くように回転。
                 const tx = diff * xSpread;
                 const tz = -Math.abs(diff) * zSpread;
-                const ry = diff * -rotateAngle; // 左にある奴は右を向き、右にある奴は左を向く
+                const ry = diff * -rotateAngle;
 
+                // 中央配置のための translate(-50%, -50%) は維持
                 unit.style.transform = `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg)`;
             });
 
-            // 現在のキャラのステータスカウントアップを発火
             if(unitElements[currentIndex]) {
                 const activeUnit = unitElements[currentIndex];
                 activeUnit.querySelectorAll('.count-up').forEach(el => {
@@ -539,7 +523,6 @@
 
                 const unit = document.createElement('div');
                 unit.className = 'char-unit';
-                // 初期状態は透明にしておき、updateCarouselで配置決定後に表示
                 unit.style.opacity = '0';
 
                 const accent = (char.color && char.color.length > 1) ? char.color : getDefaultColor(char.job);
@@ -561,7 +544,6 @@
                 const sanOffset = maxDash - (sanPct * maxDash);
 
                 unit.innerHTML = `
-                    <!-- 1. SCREEN -->
                     <div class="unit-screen">
                         <div class="screen-img-container">
                             <div class="screen-img" style="background-image: url('${img}');"></div>
@@ -570,7 +552,6 @@
                         <div class="screen-deco-corner corner-br"></div>
                     </div>
 
-                    <!-- 2. UI HEADER -->
                     <div class="ui-header-group">
                         <div class="ui-job-tag">
                             <div class="job-icon" style="background-image: url('${icon}');"></div>
@@ -579,7 +560,6 @@
                         <div class="ui-name-box">${char.name}</div>
                     </div>
 
-                    <!-- 3. DRAGGABLE SAN -->
                     <div class="ui-san-container draggable-ui">
                         <svg viewBox="0 0 80 80">
                             <circle class="san-bg" cx="40" cy="40" r="35"></circle>
@@ -589,7 +569,6 @@
                         <span class="san-label">SAN</span>
                     </div>
 
-                    <!-- 4. DRAGGABLE STATS -->
                     <div class="ui-stats-container draggable-ui">
                         <div class="stats-grid">
                             ${Object.entries(statsMap).map(([k, val]) => `
@@ -601,7 +580,6 @@
                         </div>
                     </div>
 
-                    <!-- 5. DRAGGABLE VITALS -->
                     <div class="ui-vitals draggable-ui">
                         <div class="vital-row">
                             <div class="vital-header"><span>HP</span><span>${v.hp||0}</span></div>
@@ -613,12 +591,10 @@
                         </div>
                     </div>
 
-                    <!-- 6. FIGURE -->
                     <div class="unit-figure-group">
                         <img src="${img}" class="char-figure" alt="${char.name}">
                     </div>
 
-                    <!-- 7. SHADOW -->
                     <div class="unit-shadow-container">
                         <div class="real-shadow"></div>
                     </div>
@@ -642,12 +618,10 @@
                 unitElements.push(unit);
             });
 
-            // 初期化
             currentIndex = 0;
             updateCarousel();
         };
 
-        // ナビゲーションボタン制御（ループ対応）
         document.getElementById('btnNext').onclick = () => {
             if(unitElements.length === 0) return;
             currentIndex = (currentIndex + 1) % unitElements.length;
@@ -659,7 +633,6 @@
             updateCarousel();
         };
         
-        // キーボード操作対応
         document.addEventListener('keydown', (e) => {
             if(e.key === 'ArrowRight') document.getElementById('btnNext').click();
             if(e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
