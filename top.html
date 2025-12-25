@@ -244,7 +244,7 @@
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
         // dialogue.jsから表示ロジックを読み込み
-        import { getHomeDialogue } from "./character/data/dialogue.js";
+        import { getHomeDialogue, pickRandomLine } from "./character/data/dialogue.js";
 
         // ★設定定数
         const LOCAL_IMG_BASE = "./images/character/"; // 立ち絵画像のフォルダ
@@ -512,10 +512,6 @@
         const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
-            // 位置リセット
-            bubble1.style.top = ''; bubble1.style.left = ''; bubble1.style.bottom = ''; bubble1.style.transform = '';
-            bubble2.style.top = ''; bubble2.style.left = ''; bubble2.style.bottom = ''; bubble2.style.transform = '';
-
             const char1 = charDataList[currentIndex];
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
@@ -525,28 +521,37 @@
             bubble1.classList.remove('show');
             bubble2.classList.remove('show');
 
-            // ★メイン表示は立ち絵なので LOCAL_IMG_BASE を使用
-            const src1 = await resolveImage(char1.name, char1.image, LOCAL_IMG_BASE);
+            const src1 = await resolveImage(char1.name, char1.image);
             let src2 = null;
-            if (isDuo) src2 = await resolveImage(char2.name, char2.image, LOCAL_IMG_BASE);
+            if (isDuo) src2 = await resolveImage(char2.name, char2.image);
 
             const theme = char1.color || char1.inpThemeColor || DEFAULT_THEME;
             rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
+            // ▼▼▼ 会話ロジック修正ここから ▼▼▼
             let text1 = "", text2 = "";
             if (isDuo) {
+                // 1. 特定ペアの会話があるか
                 const convSet = getDuoConversation(char1, char2);
                 if (convSet) {
                     text1 = convSet.text1;
                     text2 = convSet.text2;
                 } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
+                    // 2. なければ汎用DUO反応
+                    text1 = pickRandomLine(char1.dialogue_duo_generic);
+                    // 3. それもなければソロ台詞
+                    if (!text1) text1 = getHomeDialogue(char1, {});
+
+                    text2 = pickRandomLine(char2.dialogue_duo_generic);
+                    if (!text2) text2 = getHomeDialogue(char2, {});
                 }
             } else {
+                // ソロモード
                 text1 = getHomeDialogue(char1, {});
             }
+            // ▲▲▲ 会話ロジック修正ここまで ▲▲▲
+
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
@@ -574,7 +579,6 @@
             }
             
             lastUpdateTime = Date.now();
-            renderCharList(); // 現在の選択状態を更新
         }
 
         function startTypewriter(text, container, id) {
@@ -730,12 +734,14 @@
 
         function refreshDialogueOnly() {
             if (!charDataList || charDataList.length === 0) return;
+            // 連打防止
             if (Date.now() - lastUpdateTime < 5000) return;
 
             const char1 = charDataList[currentIndex];
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
+            // ▼▼▼ 自動更新のロジックも修正 ▼▼▼
             let text1 = "", text2 = "";
 
             if (isDuo) {
@@ -744,12 +750,17 @@
                     text1 = convSet.text1;
                     text2 = convSet.text2;
                 } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
+                    text1 = pickRandomLine(char1.dialogue_duo_generic);
+                    if (!text1) text1 = getHomeDialogue(char1, {});
+
+                    text2 = pickRandomLine(char2.dialogue_duo_generic);
+                    if (!text2) text2 = getHomeDialogue(char2, {});
                 }
             } else {
                 text1 = getHomeDialogue(char1, {});
             }
+            // ▲▲▲ 修正ここまで ▲▲▲
+
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
