@@ -516,6 +516,12 @@
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
+            renderCharList(); 
+
+            imgEl1.classList.remove('visible');
+
+            
+
             imgEl1.classList.remove('visible');
             if (isDuo) imgEl2.classList.remove('visible');
             bubble1.classList.remove('show');
