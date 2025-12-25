@@ -243,32 +243,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { login, logout, monitorAuth, loadFromCloud } from "./character/firestore.js";
-        // dialogue.jsから表示ロジックを読み込み
-        import { getHomeDialogue } from "./character/data/dialogue.js";
+        // ★修正: pickRandomLine を追加で読み込み
+        import { getHomeDialogue, pickRandomLine } from "./character/data/dialogue.js";
 
-        // ★設定定数
-        const LOCAL_IMG_BASE = "./images/character/"; // 立ち絵画像のフォルダ
-        const LOCAL_ICON_BASE = "./images/icon/";     // アイコン画像のフォルダ（新規追加）
+        const LOCAL_IMG_BASE = "./images/character/";
         const PHOTO_BASE = "./images/photo/";
         const DEFAULT_THEME = "#00ffcc";
         
-        // ★状態変数
         let currentUser = null;
         let charDataList = [];
         let currentIndex = 0;
-        let lastUpdateTime = 0; // 自動更新タイマー制御用
+        let lastUpdateTime = 0; 
         let typeWriterTimeout1 = null;
         let typeWriterTimeout2 = null;
         let isDuo = false; 
-        
-        // 新機能用変数
-        let isAutoRotate = true; // 自動キャラ変更のON/OFF
-        
-        // 音楽リスト
-        const musicList = [
-            { title: "Aoren", url: "./sound/aoren.mp3" },
-            // 必要に応じて追加
-        ];
 
         let particleMaterial;
         let targetColor = new THREE.Color(DEFAULT_THEME);
@@ -296,104 +284,8 @@
         };
         window.changeVolume = (v) => { bgmPlayer.volume = v; };
 
-        // Music Selection Logic
-        window.playTrack = (url, index) => {
-            bgmPlayer.src = url;
-            const items = document.querySelectorAll('#music-list .list-item');
-            items.forEach(el => el.classList.remove('selected'));
-            if(items[index]) items[index].classList.add('selected');
-            
-            bgmPlayer.play().then(() => {
-                playBtn.textContent = 'pause'; playBtn.classList.add('playing');
-            });
-        };
-
-        function renderMusicList() {
-            const container = document.getElementById('music-list');
-            container.innerHTML = '';
-            musicList.forEach((track, index) => {
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `<span class="list-text">${track.title}</span><span class="material-icons" style="font-size:16px">play_circle_filled</span>`;
-                div.onclick = () => window.playTrack(track.url, index);
-                container.appendChild(div);
-            });
-        }
-
-        // --- Draggable Bubbles Logic ---
-        function makeDraggable(elm) {
-            let isDragging = false;
-            let startX, startY;
-            let initialLeft, initialTop;
-
-            elm.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
-
-            elm.addEventListener('touchstart', dragStart, {passive: false});
-            document.addEventListener('touchend', dragEnd);
-            document.addEventListener('touchmove', drag, {passive: false});
-
-            function dragStart(e) {
-                if (e.target.closest('.char-name-label')) return; 
-
-                isDragging = true;
-                elm.style.transition = 'none'; 
-                
-                const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-                const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
-
-                startX = clientX;
-                startY = clientY;
-                
-                if(!elm.style.left) elm.style.left = elm.offsetLeft + 'px';
-                if(!elm.style.top) elm.style.top = elm.offsetTop + 'px';
-                
-                elm.style.bottom = 'auto'; 
-                elm.style.transform = 'none'; 
-
-                initialLeft = parseInt(elm.style.left || 0);
-                initialTop = parseInt(elm.style.top || 0);
-            }
-
-            function drag(e) {
-                if (!isDragging) return;
-                e.preventDefault(); 
-
-                const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-                const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
-
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-
-                elm.style.left = (initialLeft + dx) + 'px';
-                elm.style.top = (initialTop + dy) + 'px';
-            }
-
-            function dragEnd() {
-                if (!isDragging) return;
-                isDragging = false;
-                elm.style.transition = 'opacity 0.5s ease'; 
-
-                // ★追加: ドラッグ後のクリックイベント伝播を防止
-                function preventClick(e) {
-                    e.stopPropagation();
-                    elm.removeEventListener('click', preventClick);
-                }
-                elm.addEventListener('click', preventClick, { once: true });
-            }
-        }
-
-        makeDraggable(document.getElementById('bubble-1'));
-        makeDraggable(document.getElementById('bubble-2'));
-
-        // --- Modals Logic ---
-        window.closeAllModals = () => {
-            document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
-        };
-        window.openBgModal = () => { window.closeAllModals(); document.getElementById('bg-modal').classList.add('open'); };
-        window.openMusicModal = () => { window.closeAllModals(); document.getElementById('music-modal').classList.add('open'); };
-        window.openCharModal = () => { window.closeAllModals(); document.getElementById('char-modal').classList.add('open'); };
+        // --- BG Modal ---
+        window.toggleBgModal = () => document.getElementById('bg-modal').classList.toggle('open');
 
         window.setBgMode = (mode, photoIdx) => {
             const body = document.body;
@@ -409,7 +301,7 @@
                 document.documentElement.style.setProperty('--bg-image-url', `url('${PHOTO_BASE}${photoIdx}.png')`);
                 updateParticlesForBg('dark');
             }
-            window.closeAllModals();
+            toggleBgModal();
         };
 
         const bgGrid = document.getElementById('bg-grid');
@@ -420,65 +312,6 @@
             div.onclick = () => window.setBgMode('photo', i);
             bgGrid.appendChild(div);
         }
-
-        // --- ★画像解決ロジック (アイコンと立ち絵を区別して読み込む) ---
-        function resolveImage(charName, cloudUrl, basePath = LOCAL_IMG_BASE) {
-            return new Promise((resolve) => {
-                if (!charName) { 
-                    // 画像なしの場合のプレースホルダ
-                    resolve(cloudUrl || "https://via.placeholder.com/800x1200?text=NO+IMAGE"); 
-                    return; 
-                }
-                
-                // 指定されたフォルダ(basePath)から画像を探す
-                const localPath = `${basePath}${charName}.png`;
-                
-                const img = new Image();
-                img.onload = () => resolve(localPath); // ローカルにあれば採用
-                img.onerror = () => {
-                    // ローカルになければクラウドURLを採用（それもなければプレースホルダ）
-                    // アイコンの場合、プレースホルダは小さめにする
-                    const placeholderSize = (basePath === LOCAL_ICON_BASE) ? "200x200" : "800x1200";
-                    resolve(cloudUrl || `https://via.placeholder.com/${placeholderSize}?text=${encodeURIComponent(charName)}`);
-                };
-                img.src = localPath;
-            });
-        }
-        
-        // --- ★ キャラクター選択リスト (アイコン優先) ---
-        async function renderCharList() {
-            const container = document.getElementById('char-list');
-            container.innerHTML = ''; // ★既存要素をクリアして重複防止
-            
-            for (let i = 0; i < charDataList.length; i++) {
-                const char = charDataList[i];
-                const div = document.createElement('div');
-                div.className = 'char-select-item';
-                if(i === currentIndex) div.classList.add('selected');
-                
-                // ★アイコン用フォルダ(LOCAL_ICON_BASE) または d.icon から画像を取得
-                const imgSrc = await resolveImage(char.name, char.icon || char.image, LOCAL_ICON_BASE);
-                
-                div.innerHTML = `
-                    <img src="${imgSrc}" class="char-select-thumb" alt="${char.name}">
-                    <span class="char-select-name">${char.name}</span>
-                `;
-                
-                div.onclick = () => {
-                    currentIndex = i;
-                    updateDisplay();
-                    renderCharList(); // 選択状態更新
-                };
-                container.appendChild(div);
-            }
-        }
-
-        window.toggleAutoRotation = () => {
-            isAutoRotate = !isAutoRotate;
-            const toggle = document.getElementById('rotation-toggle');
-            if(isAutoRotate) toggle.classList.add('active');
-            else toggle.classList.remove('active');
-        };
 
         // --- Logic ---
         function getDuoConversation(char1, char2) {
@@ -500,7 +333,18 @@
             return null;
         }
 
-        // --- Display Update ---
+        function resolveImage(charName, cloudUrl) {
+            return new Promise((resolve) => {
+                if (!charName) { resolve(cloudUrl || fallbackData[0].image); return; }
+                const localPath = `${LOCAL_IMG_BASE}${charName}.png`;
+                const img = new Image();
+                img.onload = () => resolve(localPath);
+                img.onerror = () => resolve(cloudUrl || `https://via.placeholder.com/800x1200/111/333?text=${encodeURIComponent(charName)}`);
+                img.src = localPath;
+            });
+        }
+
+        // --- Display ---
         const imgEl1 = document.getElementById('char-img-1');
         const imgEl2 = document.getElementById('char-img-2');
         const bubble1 = document.getElementById('bubble-1');
@@ -512,10 +356,6 @@
         const rootStyles = document.documentElement.style;
 
         async function updateDisplay() {
-            // 位置リセット
-            bubble1.style.top = ''; bubble1.style.left = ''; bubble1.style.bottom = ''; bubble1.style.transform = '';
-            bubble2.style.top = ''; bubble2.style.left = ''; bubble2.style.bottom = ''; bubble2.style.transform = '';
-
             const char1 = charDataList[currentIndex];
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
@@ -525,28 +365,37 @@
             bubble1.classList.remove('show');
             bubble2.classList.remove('show');
 
-            // ★メイン表示は立ち絵なので LOCAL_IMG_BASE を使用
-            const src1 = await resolveImage(char1.name, char1.image, LOCAL_IMG_BASE);
+            const src1 = await resolveImage(char1.name, char1.image);
             let src2 = null;
-            if (isDuo) src2 = await resolveImage(char2.name, char2.image, LOCAL_IMG_BASE);
+            if (isDuo) src2 = await resolveImage(char2.name, char2.image);
 
             const theme = char1.color || char1.inpThemeColor || DEFAULT_THEME;
             rootStyles.setProperty('--accent-color', theme);
             if (!document.body.classList.contains('mode-white')) targetColor.set(theme);
 
+            // ★修正: 会話取得ロジックの改善
             let text1 = "", text2 = "";
             if (isDuo) {
                 const convSet = getDuoConversation(char1, char2);
                 if (convSet) {
+                    // 特定のペア会話が見つかった場合
                     text1 = convSet.text1;
                     text2 = convSet.text2;
                 } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
+                    // 特定ペアがない場合、まず「汎用DUO反応」を探す
+                    text1 = pickRandomLine(char1.dialogue_duo_generic);
+                    // それもなければソロ会話（デフォルト）
+                    if (!text1) text1 = getHomeDialogue(char1, {});
+
+                    text2 = pickRandomLine(char2.dialogue_duo_generic);
+                    if (!text2) text2 = getHomeDialogue(char2, {});
                 }
             } else {
+                // ソロモード
                 text1 = getHomeDialogue(char1, {});
             }
+            // ------------------------------------
+
             if(text1) text1 = text1.replace(/<br>/g, "\n");
             if(text2) text2 = text2.replace(/<br>/g, "\n");
 
@@ -574,7 +423,6 @@
             }
             
             lastUpdateTime = Date.now();
-            renderCharList(); // 現在の選択状態を更新
         }
 
         function startTypewriter(text, container, id) {
@@ -582,6 +430,9 @@
             let timerVar = (id === 1) ? typeWriterTimeout1 : typeWriterTimeout2;
             if (timerVar) clearTimeout(timerVar);
             let i = 0;
+            // nullチェック追加
+            if (!text) text = "";
+            
             function type() {
                 if (i < text.length) {
                     container.textContent += text.charAt(i); i++;
@@ -627,9 +478,6 @@
             }
             animate();
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-            window.updateParticlesForBg = (mode) => {
-                // Background color change logic helper if needed in future
-            };
         }
 
         // --- News ---
@@ -668,17 +516,12 @@
                 const data = await loadFromCloud();
                 if (data && Object.keys(data).length > 0) charDataList = Object.values(data);
                 else charDataList = [{ name: "No Data", remarks: "データがありません。", color: "#555" }];
-                
-                // データロード後に音楽リストは生成
-                renderMusicList();
-
                 currentIndex = Math.floor(Math.random() * charDataList.length);
-                updateDisplay(); // ★renderCharList() の呼び出しは updateDisplay() に任せる
+                updateDisplay();
             },
             () => {
                 currentUser = null; userDisplay.textContent = "GUEST"; connectBtn.textContent = "CONNECT";
                 charDataList = fallbackData; currentIndex = 0; updateDisplay();
-                renderMusicList(); // ゲストでも音楽は再生可能にする
             }
         );
 
@@ -699,7 +542,6 @@
         }
 
         window.setMode = (mode) => {
-            // モード切替のフェードアウト演出
             document.getElementById('bubble-1').classList.remove('show');
             document.getElementById('bubble-2').classList.remove('show');
 
@@ -736,6 +578,7 @@
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
+            // ★修正: 自動更新も同じロジックにする
             let text1 = "", text2 = "";
 
             if (isDuo) {
@@ -744,8 +587,11 @@
                     text1 = convSet.text1;
                     text2 = convSet.text2;
                 } else {
-                    text1 = getHomeDialogue(char1, {});
-                    text2 = getHomeDialogue(char2, {});
+                    text1 = pickRandomLine(char1.dialogue_duo_generic);
+                    if (!text1) text1 = getHomeDialogue(char1, {});
+
+                    text2 = pickRandomLine(char2.dialogue_duo_generic);
+                    if (!text2) text2 = getHomeDialogue(char2, {});
                 }
             } else {
                 text1 = getHomeDialogue(char1, {});
@@ -775,7 +621,7 @@
         }, DIALOGUE_INTERVAL);
 
         setInterval(() => {
-            if (currentUser && charDataList.length > 1 && isAutoRotate) {
+            if (currentUser && charDataList.length > 1) {
                 nextChar();
                 lastUpdateTime = Date.now();
             }
