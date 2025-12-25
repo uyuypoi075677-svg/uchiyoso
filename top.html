@@ -456,83 +456,105 @@
             bgGrid.appendChild(div);
         }
 
-        // --- ★画像解決ロジック (アイコンと立ち絵を区別して読み込む) ---
+        // --- ★画像解決ロジック (軽量化・非同期化) ---
         function resolveImage(charName, cloudUrl, basePath = LOCAL_IMG_BASE) {
+            // Promiseを返しますが、待機はさせません
             return new Promise((resolve) => {
                 if (!charName) { 
-                    // 画像なしの場合のプレースホルダ
                     resolve(cloudUrl || "https://via.placeholder.com/800x1200?text=NO+IMAGE"); 
                     return; 
                 }
-                
-                // 指定されたフォルダ(basePath)から画像を探す
                 const localPath = `${basePath}${charName}.png`;
-                
                 const img = new Image();
-                img.onload = () => resolve(localPath); // ローカルにあれば採用
+                img.onload = () => resolve(localPath);
                 img.onerror = () => {
-                    // ローカルになければクラウドURLを採用（それもなければプレースホルダ）
-                    // アイコンの場合、プレースホルダは小さめにする
-                    const placeholderSize = (basePath === LOCAL_ICON_BASE) ? "200x200" : "800x1200";
-                    resolve(cloudUrl || `https://via.placeholder.com/${placeholderSize}?text=${encodeURIComponent(charName)}`);
+                    // アイコンの場合のサイズ調整
+                    const size = (basePath === LOCAL_ICON_BASE) ? "200x200" : "800x1200";
+                    resolve(cloudUrl || `https://via.placeholder.com/${size}?text=${encodeURIComponent(charName)}`);
                 };
                 img.src = localPath;
             });
         }
-        
-         // ★追加: 編集スロット切り替え関数
-        window.selectEditSlot = (slot) => {
-            editingSlot = slot;
-            // UI更新
-            document.getElementById('slot-btn-1').classList.toggle('active', slot === 1);
-            document.getElementById('slot-btn-2').classList.toggle('active', slot === 2);
-            // リスト再描画（選択状態を更新するため）
-            renderCharList();
-        };
 
-        // --- ★ キャラクター選択リスト (ロジック修正) ---
-        async function renderCharList() {
+        // --- ★ キャラクター選択リスト (重複バグ修正・高速化版) ---
+        function renderCharList() {
             const container = document.getElementById('char-list');
+            // 一度中身を完全に空にする
             container.innerHTML = '';
             
-            // 現在の編集対象インデックスを取得
+            // 現在編集中のスロット（左か右か）に合わせて、ターゲットとなるインデックスを決める
             const targetIndex = (editingSlot === 1) ? currentIndex1 : currentIndex2;
 
-            for (let i = 0; i < charDataList.length; i++) {
-                const char = charDataList[i];
+            // ★修正点: awaitを使わず、forEachで一気にHTML要素を作ってしまう
+            charDataList.forEach((char, i) => {
                 const div = document.createElement('div');
                 div.className = 'char-select-item';
                 
-                // 編集中のスロットと同じキャラなら選択表示
+                // 選択中のキャラには色をつける
                 if(i === targetIndex) div.classList.add('selected');
                 
-                const imgSrc = await resolveImage(char.name, char.icon || char.image, LOCAL_ICON_BASE);
+                // まず仮の画像要素を作る
+                const img = document.createElement('img');
+                img.className = 'char-select-thumb';
+                img.alt = char.name;
+                // 仮の画像（ローディング用、または空）
+                img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; 
+
+                // 非同期で本画像を取得し、完了次第差し替える（これでリスト生成を邪魔しない）
+                resolveImage(char.name, char.icon || char.image, LOCAL_ICON_BASE).then(src => {
+                    img.src = src;
+                });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'char-select-name';
+                nameSpan.textContent = char.name;
                 
-                div.innerHTML = `
-                    <img src="${imgSrc}" class="char-select-thumb" alt="${char.name}">
-                    <span class="char-select-name">${char.name}</span>
-                `;
+                div.appendChild(img);
+                div.appendChild(nameSpan);
                 
+                // クリック時の動作
                 div.onclick = () => {
-                    // スロットに応じてインデックスを更新
                     if (editingSlot === 1) {
                         currentIndex1 = i;
                     } else {
                         currentIndex2 = i;
                     }
+                    
+                    // 画面全体の表示更新
                     updateDisplay();
-                    renderCharList(); // 選択表示更新
+                    
+                    // リストの選択表示だけを更新（リスト全体の再描画はしない）
+                    document.querySelectorAll('.char-select-item').forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
                 };
+                
                 container.appendChild(div);
-            }
+            });
         }
 
-        window.toggleAutoRotation = () => {
-            isAutoRotate = !isAutoRotate;
-            const toggle = document.getElementById('rotation-toggle');
-            if(isAutoRotate) toggle.classList.add('active');
-            else toggle.classList.remove('active');
+        // ★追加: 編集スロット切り替え関数（リスト再描画ではなく、選択状態の更新のみ行う）
+        window.selectEditSlot = (slot) => {
+            editingSlot = slot;
+            
+            // ボタンの見た目更新
+            document.getElementById('slot-btn-1').classList.toggle('active', slot === 1);
+            document.getElementById('slot-btn-2').classList.toggle('active', slot === 2);
+            
+            // リストの「選択状態(selectedクラス)」を新しいスロットに合わせて更新
+            const targetIndex = (slot === 1) ? currentIndex1 : currentIndex2;
+            const items = document.querySelectorAll('.char-select-item');
+            
+            items.forEach((item, index) => {
+                if (index === targetIndex) {
+                    item.classList.add('selected');
+                    // 選択されているアイテムが見えるようにスクロール
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
         };
+
 
         // --- Logic ---
         function getDuoConversation(char1, char2) {
