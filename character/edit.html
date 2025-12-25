@@ -13,12 +13,7 @@
         .container { max-width: 900px; margin: 0 auto; padding: 80px 20px 100px; }
         .toolbar { background: #333; padding: 20px; border-radius: 4px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
         select { padding: 10px; background: #111; color: #fff; border: 1px solid #555; width: 300px; border-radius: 4px; }
-        
         .btn-new { background: #44ff44; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        /* 【追加】保存ボタンのスタイル */
-        .btn-save { background: #00f3ff; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-left: 10px;}
-        .btn-save:hover { background: #88ffff; }
-        
         .btn-delete { background: #ff4444; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
         
         .import-area { background: #2a2a2d; padding: 20px; border-radius: 4px; border: 2px dashed #666; margin-bottom: 30px; transition: 0.3s; }
@@ -101,8 +96,6 @@
                 <select id="charSelect"><option value="">LOADING...</option></select>
             </div>
             <div>
-                <!-- 【修正】保存ボタンを追加しました -->
-                <button type="button" class="btn-save" onclick="prepareSaveData()">SAVE CLOUD</button>
                 <button id="btnCreateNew" class="btn-new">+ NEW</button>
             </div>
         </div>
@@ -269,40 +262,9 @@
             </div>
 
             <div class="form-row full" style="margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px;">
-                    <label style="margin:0;">通過シナリオ詳細 (SCENARIO LOGS)</label>
-                    <a href="../scenario/register.html" target="_blank" style="font-size:0.75rem; color:#00f3ff; text-decoration:none; border:1px solid #00f3ff; padding:2px 8px; border-radius:4px;">+ DB登録</a>
-                </div>
-
-                <!-- ★統合コンテナ: 枠線で囲む -->
-                <div style="border: 1px solid #444; background: #2a2a2a; border-radius: 4px; overflow: hidden;">
-                    
-                    <!-- ① 上部: データベースからの自動取得リスト -->
-                    <div id="firestore-scenario-list" style="
-                        background: rgba(0, 243, 255, 0.05); 
-                        padding: 10px; 
-                        border-bottom: 1px solid #444; 
-                        min-height: 40px;
-                        max-height: 300px;
-                        overflow-y: auto;
-                    ">
-                        <div style="color:#666; font-size:0.8rem;">(DBに登録されたシナリオがここに表示されます)</div>
-                    </div>
-
-                    <!-- ② 下部: 従来の手動入力テキストエリア -->
-                    <textarea id="txtScenarioDetails" style="
-                        width: 100%; 
-                        height: 150px; 
-                        border: none; 
-                        background: transparent; 
-                        padding: 10px; 
-                        resize: vertical;
-                        outline: none;
-                    " placeholder="こちらは自由記述欄です。データベースを使わない過去ログや、補足事項などはここに記入してください。"></textarea>
-                </div>
-
-                <!-- 簡易一覧はそのまま下に配置 -->
-                <div class="form-row" style="margin-top:15px;">
+                <label>通過シナリオ詳細 (SCENARIO LOGS)</label>
+                <textarea id="txtScenarioDetails" style="height:200px;" placeholder="[シナリオタイトル]&#13;内容..."></textarea>
+                <div class="form-row">
                     <label>通過シナリオ(簡易一覧)</label>
                     <textarea id="txtScenarios" style="height:60px;" placeholder="シナリオ名..."></textarea>
                 </div>
@@ -311,14 +273,11 @@
             <div style="margin-top:50px; text-align:right;">
                 <button id="btnDelete" class="btn-delete">DELETE CHARACTER</button>
             </div>
-
-            
         </div>
     </div>
 
     <script type="module">
-        // 【修正】deleteFromCloud をインポートに追加
-        import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud, getScenariosForCharacter } from "./firestore.js";
+        import { loadFromCloud, monitorAuth, saveToCloud } from "./firestore.js";
         import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
         import { parseIaChara } from "./data/parser_ia.js";
 
@@ -337,6 +296,8 @@
 
         let allData = {};
         let currentId = null;
+
+        // --- グローバル関数定義 ---
 
         window.addItemRow = (val={name:'', desc:''}) => {
             const div = document.createElement('div');
@@ -366,6 +327,7 @@
             getEl('weaponList').appendChild(div);
         };
 
+        // スキル計算用イベント付与
         function attachSkillCalc(row) {
             row.querySelectorAll('input[type="number"]').forEach(inp => {
                 inp.addEventListener('input', () => {
@@ -400,11 +362,13 @@
             attachSkillCalc(tr);
         };
 
+        // カテゴリ移動処理 (HTML構造変更に対応)
         window.moveCategory = (selectEl) => {
             const targetCat = selectEl.value;
             if(!targetCat) return;
 
             const row = selectEl.closest('tr');
+            // 名前テキストを取得（span内のテキスト、またはinputの値）
             let name = "";
             const nameSpan = row.querySelector('.s-name-text');
             if (nameSpan) {
@@ -419,8 +383,10 @@
             const growth = row.querySelector('.s-growth').value;
             const desc = row.querySelector('.s-desc').value;
 
+            // 移動先のテーブル取得
             const targetTable = document.querySelector(`#skill-cat-${targetCat} tbody`);
             if(targetTable) {
+                // 行を削除して移動先に再作成
                 row.remove();
                 
                 const tr = document.createElement('tr');
@@ -452,16 +418,11 @@
             }
         };
 
-        // --- 保存処理の修正 ---
         window.prepareSaveData = function() {
-            if(!currentId) {
-                alert("キャラクターが選択されていません。");
-                return null;
-            }
+            if(!currentId) return null;
             const originalData = Object.values(allData).find(c=>c.id==currentId);
             if(!originalData) return null;
             
-            // アイテム収集
             const itemRows = document.querySelectorAll('.item-entry');
             const itemsArr = [];
             itemRows.forEach(row => {
@@ -502,14 +463,8 @@
             const finalData = collectFormData(originalData, true);
             finalData.skills = skillsObj;
 
-            // 名前が空だと保存できないためチェック
-            if (!finalData.name) {
-                alert("エラー：キャラクター名(NAME)を入力してください。");
-                return;
-            }
-
             saveToCloud(finalData).then(() => {
-                // 保存完了後のリロード (分割保存の場合はリストを再取得する必要があるため)
+                alert("保存しました");
                 location.reload();
             });
         };
@@ -521,7 +476,6 @@
 
         async function init() {
             try {
-                // loadFromCloud は { 名前: データ, 名前2: データ } の形式で返ってきます
                 const data = await loadFromCloud();
                 allData = data || {};
                 renderSelect();
@@ -531,10 +485,8 @@
         function renderSelect() {
             const sel = getEl('charSelect');
             sel.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
-            // allData はオブジェクトなので配列に変換して回す
             Object.values(allData).forEach(c => {
                 const opt = document.createElement('option');
-                // IDとしてUUIDを使用 (save時もUUIDは維持されます)
                 opt.value = c.id;
                 opt.textContent = c.name;
                 sel.appendChild(opt);
@@ -612,7 +564,6 @@
             }
 
             runCalculations();
-            if(d.id) updateScenarioList(d.id); 
         }
 
         function renderSkills(skillsObj) {
@@ -825,108 +776,10 @@
             allData[id]={id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
             currentId=id; renderSelect(); loadCharacterToForm(allData[id]);
         });
-
-        // 【修正】削除ボタン処理の修正
         getEl('btnDelete').addEventListener('click', async ()=>{
-            if(!currentId) return;
-            // 削除には名前(FirestoreのドキュメントIDとして使用している)が必要
-            const targetChar = allData[currentId];
-            if(!targetChar || !targetChar.name) {
-                alert("削除対象のデータが見つかりません。");
-                return;
-            }
-
-            if(confirm(`キャラクター「${targetChar.name}」を完全に削除しますか？\n(この操作は元に戻せません)`)) { 
-                await deleteFromCloud(targetChar.name);
-                delete allData[currentId]; 
-                location.reload(); 
-            }
+            if(!currentId)return;
+            if(confirm('削除しますか？')) { delete allData[currentId]; location.reload(); }
         });
-
-        // --- ★追加: シナリオ一覧を表示・更新する関数 ---
-        async function updateScenarioList(charId) {
-            const listContainer = getEl('firestore-scenario-list');
-            if (!listContainer) return;
-
-            listContainer.innerHTML = '<div style="color:#666;">Searching database...</div>';
-
-            try {
-                // firestore.js からデータを取得
-                const scenarios = await getScenariosForCharacter(charId);
-
-                if (!scenarios || scenarios.length === 0) {
-                    listContainer.innerHTML = '<div style="color:#666;">No linked scenarios found.</div>';
-                    return;
-                }
-
-                let html = '<ul style="list-style:none; padding:0; margin:0;">';
-                scenarios.forEach(scn => {
-                    // 結果による色分け
-                    const resultColor = (scn.result === 'Lost') ? '#ff4444' : 
-                                        (scn.result === 'Cleared') ? '#44ff44' : '#aaa';
-                    
-                    html += `
-                        <li style="border-bottom:1px solid #333; padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
-                            <div style="padding-right:10px;">
-                                <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${scn.title}</div>
-                                <div style="font-size:0.75rem; color:#888;">${scn.date || 'Unknown'} / GM: ${scn.gm || '-'}</div>
-                            </div>
-                            <div style="text-align:right; flex-shrink:0;">
-                                <span style="color:${resultColor}; border:1px solid ${resultColor}; padding:1px 5px; font-size:0.7rem; border-radius:3px;">${scn.result}</span>
-                            </div>
-                        </li>
-                    `;
-                });
-                html += '</ul>';
-                listContainer.innerHTML = html;
-
-            } catch (e) {
-                console.error(e);
-                listContainer.innerHTML = '<div style="color:#ff4444;">Error loading scenarios.</div>';
-            }
-        }
-
-        // --- ★統合版: シナリオ一覧を表示する関数 ---
-        async function updateScenarioList(charId) {
-            const listContainer = getEl('firestore-scenario-list');
-            if (!listContainer) return;
-
-            listContainer.innerHTML = '<div style="color:#888; font-size:0.8rem;">Loading database...</div>';
-
-            try {
-                const scenarios = await getScenariosForCharacter(charId);
-
-                if (!scenarios || scenarios.length === 0) {
-                    // データがない場合の表示
-                    listContainer.innerHTML = '<div style="color:#666; font-size:0.8rem;">No database logs linked. (Use "+ DB登録" to add)</div>';
-                    return;
-                }
-
-                // リスト生成
-                let html = '<div style="display:flex; flex-direction:column; gap:5px;">';
-                scenarios.forEach(scn => {
-                    const resultColor = (scn.result === 'Lost') ? '#ff4444' : 
-                                        (scn.result === 'Cleared') ? '#44ff44' : '#888';
-                    
-                    html += `
-                        <div style="display:flex; align-items:center; background:rgba(0,0,0,0.2); padding:5px 10px; border-radius:3px; font-size:0.85rem;">
-                            <div style="flex:1;">
-                                <span style="color:#fff; font-weight:bold; margin-right:10px;">${scn.title}</span>
-                                <span style="color:#aaa; font-size:0.75rem;">${scn.date || '-'} (GM:${scn.gm||'-'})</span>
-                            </div>
-                            <span style="color:${resultColor}; border:1px solid ${resultColor}; padding:0 4px; font-size:0.7rem; border-radius:2px;">${scn.result}</span>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                listContainer.innerHTML = html;
-
-            } catch (e) {
-                console.error(e);
-                listContainer.innerHTML = '<div style="color:#ff4444;">Load Error</div>';
-            }
-        }
-
     </script>
 </body>
 </html>
