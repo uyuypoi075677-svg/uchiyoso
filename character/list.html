@@ -17,6 +17,7 @@
             /* 5人表示レイアウト維持 */
             --card-w: 250px; 
             --card-h: 75vh;
+            /* ギャップはJS計算で使用しますが、見た目の目安として残します */
             --gap: 30px;
             
             --accent: #00d2ff;
@@ -53,11 +54,11 @@
             color: var(--text-main);
         }
 
-        /* --- STAGE --- */
+        /* --- STAGE (Modified for Carousel) --- */
         .stage-wrapper {
             flex: 1; position: relative; width: 100%;
             display: flex; align-items: center; justify-content: center;
-            perspective: 1600px;
+            perspective: 2000px; /* 奥行きを深める */
             overflow: hidden;
         }
 
@@ -86,28 +87,29 @@
         }
         @keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
+        /* スクロールではなく、絶対配置のコンテナに変更 */
         .stage-container {
-            display: flex; align-items: center;
-            padding: 0 50vw; 
-            overflow-x: auto; overflow-y: visible;
-            scroll-behavior: smooth;
-            height: 100%; width: 100%;
+            position: relative;
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
             transform-style: preserve-3d;
-            scrollbar-width: none;
-            scroll-snap-type: x mandatory;
             z-index: 10;
         }
-        .stage-container::-webkit-scrollbar { display: none; }
-
-        /* --- CHARACTER UNIT --- */
+        
+        /* --- CHARACTER UNIT (Modified Positioning) --- */
         .char-unit {
-            flex: 0 0 var(--card-w);
+            position: absolute; /* 絶対配置に変更 */
+            width: var(--card-w);
             height: var(--card-h);
-            margin: 0 var(--gap);
-            position: relative;
+            /* 初期位置は中央 */
+            left: 50%; top: 50%;
+            /* transformはJSで制御するため、基本のセンタリングのみCSSで指定 */
+            margin-left: calc(var(--card-w) / -2); 
+            margin-top: calc(var(--card-h) / -2);
+            
             transform-style: preserve-3d;
-            scroll-snap-align: center;
-            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 0.6s cubic-bezier(0.1, 0.6, 0.2, 1), opacity 0.6s ease, filter 0.6s ease;
+            will-change: transform, opacity;
         }
 
         /* === 1. SCREEN (Modified) === */
@@ -293,29 +295,29 @@
             50% { transform: scale(0.85); opacity: 0.3; }
         }
 
-        /* === HOVER EFFECTS === */
-        .char-unit:hover .unit-screen {
+        /* === HOVER EFFECTS (Active Only) === */
+        /* JSで .is-active クラスが付与されたときのみHoverを有効にする */
+        .char-unit.is-active:hover .unit-screen {
             transform: translateZ(calc(var(--z-screen) - 20px));
             filter: drop-shadow(0 0 15px var(--accent)) brightness(1.05);
             background: rgba(20, 20, 30, 0.95);
         }
-        .char-unit:hover .screen-img-container { transform: rotate(0deg) scale(1.1); }
+        .char-unit.is-active:hover .screen-img-container { transform: rotate(0deg) scale(1.1); }
         
-        .char-unit:hover .screen-img {
+        .char-unit.is-active:hover .screen-img {
             filter: grayscale(0) contrast(1.05) brightness(1.0);
             opacity: 1;
-            /* ★修正点: 色をもう少し濃くするため、transparentを60%に設定 */
             background-color: color-mix(in srgb, var(--accent), transparent 60%);
             background-blend-mode: overlay;
         }
         
-        .char-unit:hover .unit-figure-group {
+        .char-unit.is-active:hover .unit-figure-group {
             animation: none;
             transform: translateX(-50%) translateZ(calc(var(--z-fig) + 50px)) scale(1.08);
         }
-        .char-unit:hover .real-shadow { animation: none; transform: scale(1.3); opacity: 0.4; }
-        .char-unit:hover .ui-job-tag { background: var(--text-main); }
-        .char-unit:hover .job-val { color: var(--bg-color); }
+        .char-unit.is-active:hover .real-shadow { animation: none; transform: scale(1.3); opacity: 0.4; }
+        .char-unit.is-active:hover .ui-job-tag { background: var(--text-main); }
+        .char-unit.is-active:hover .job-val { color: var(--bg-color); }
 
         /* CONTROLS */
         .sub-header {
@@ -366,7 +368,6 @@
         import { loadFromCloud, saveToCloud } from "./firestore.js";
 
         const stage = document.getElementById('stage');
-        // ★修正点: HTMLがcharacterフォルダ内にあるため、一つ上の階層(../)に戻ってからimagesに入る
         const LOCAL_IMG_BASE = '../images/character/';
 
         function initParticles() {
@@ -441,15 +442,11 @@
             window.requestAnimationFrame(step);
         }
         
-        // 画像解決関数
         function resolveImage(charName, cloudUrl) {
             return new Promise((resolve) => {
                 if (!charName) { resolve(cloudUrl || 'https://placehold.co/400x800/222/555?text=NO+IMG'); return; }
-                
-                // ★修正点: 見本コードに倣い、encodeURIComponentを使用して正しいパスを生成
                 const encodedName = encodeURIComponent(charName);
                 const localPath = `${LOCAL_IMG_BASE}${encodedName}.png`;
-                
                 const img = new Image();
                 img.onload = () => resolve(localPath);
                 img.onerror = () => {
@@ -459,11 +456,72 @@
             });
         }
 
+        // --- CAROUSEL LOGIC VARIABLES ---
+        let unitElements = [];
+        let currentIndex = 0;
+        
+        function updateCarousel() {
+            const total = unitElements.length;
+            if(total === 0) return;
+
+            // スプレッド（隣のカードとの距離）
+            const xSpread = 320; 
+            const zSpread = 250;
+            const rotateAngle = 25;
+
+            unitElements.forEach((unit, i) => {
+                // ループ計算：最短距離を算出
+                // 例：total=5, current=4, i=0 の場合、diffは 1 とする（右隣）
+                let diff = (i - currentIndex) % total;
+                
+                // JavaScriptの剰余は負の数を返すことがあるため補正
+                if (diff < 0) diff += total; 
+                
+                // 半分より大きい場合は、反対側（マイナス方向）に近いとみなす
+                if (diff > total / 2) diff -= total;
+                
+                // アクティブ判定
+                const isActive = (diff === 0);
+
+                if(isActive) {
+                    unit.classList.add('is-active');
+                    unit.style.zIndex = 100;
+                    unit.style.filter = 'brightness(1)';
+                    unit.style.opacity = 1;
+                    // クリックレイヤー有効
+                    unit.querySelector('.click-layer').style.pointerEvents = 'auto';
+                } else {
+                    unit.classList.remove('is-active');
+                    unit.style.zIndex = 100 - Math.abs(diff);
+                    unit.style.filter = `brightness(0.4) blur(${Math.abs(diff)*2}px)`;
+                    unit.style.opacity = Math.max(0.2, 1 - Math.abs(diff) * 0.3);
+                    // 隣のキャラをクリックしたらそこに移動する機能をつけても良いが、今回は誤操作防止で無効化
+                    unit.querySelector('.click-layer').style.pointerEvents = 'none';
+                }
+
+                // 3D Transform計算
+                // X: 距離に応じて横へ。
+                // Z: 距離に応じて奥へ。
+                // RotateY: 中心に向くように回転。
+                const tx = diff * xSpread;
+                const tz = -Math.abs(diff) * zSpread;
+                const ry = diff * -rotateAngle; // 左にある奴は右を向き、右にある奴は左を向く
+
+                unit.style.transform = `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg)`;
+            });
+
+            // 現在のキャラのステータスカウントアップを発火
+            if(unitElements[currentIndex]) {
+                const activeUnit = unitElements[currentIndex];
+                activeUnit.querySelectorAll('.count-up').forEach(el => {
+                    animateValue(el, parseInt(el.dataset.target));
+                });
+            }
+        }
+
         window.renderCharacterList = async function(data) {
             stage.innerHTML = ''; 
-            const spacer = document.createElement('div');
-            spacer.style.minWidth = "50vw";
-            stage.appendChild(spacer);
+            unitElements = [];
 
             if (!data || Object.keys(data).length === 0) {
                 stage.innerHTML = '<div class="loading">NO DATA</div>';
@@ -481,8 +539,8 @@
 
                 const unit = document.createElement('div');
                 unit.className = 'char-unit';
+                // 初期状態は透明にしておき、updateCarouselで配置決定後に表示
                 unit.style.opacity = '0';
-                unit.style.animation = `fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${idx * 0.15}s`;
 
                 const accent = (char.color && char.color.length > 1) ? char.color : getDefaultColor(char.job);
                 unit.style.setProperty('--accent', accent);
@@ -564,12 +622,10 @@
                     <div class="unit-shadow-container">
                         <div class="real-shadow"></div>
                     </div>
-
                     
                     <div class="click-layer"></div>
                 `;
 
-                
                 enableDrag(unit.querySelector('.ui-san-container'));
                 enableDrag(unit.querySelector('.ui-stats-container'));
                 enableDrag(unit.querySelector('.ui-vitals'));
@@ -578,41 +634,37 @@
                     window.location.href = `https://chocolatmer.github.io/uchiyoso/character/detail.html?id=${charId}`;
                 };
 
-                unit.addEventListener('mouseenter', () => {
-                    unit.querySelectorAll('.count-up').forEach(el => animateValue(el, parseInt(el.dataset.target)));
-                });
-                
-                unit._animateStats = () => {
-                    setTimeout(() => {
-                        unit.querySelectorAll('.count-up').forEach(el => animateValue(el, parseInt(el.dataset.target)));
-                    }, 800 + idx*100);
-                };
-
                 return unit;
             }));
 
             units.forEach(unit => {
                 stage.appendChild(unit);
-                if (unit._animateStats) unit._animateStats();
+                unitElements.push(unit);
             });
 
-            const spacerEnd = document.createElement('div');
-            spacerEnd.style.minWidth = "50vw";
-            stage.appendChild(spacerEnd);
+            // 初期化
+            currentIndex = 0;
+            updateCarousel();
         };
 
+        // ナビゲーションボタン制御（ループ対応）
         document.getElementById('btnNext').onclick = () => {
-            const w = document.querySelector('.char-unit')?.offsetWidth || 250;
-            stage.scrollBy({ left: w + 30, behavior: 'smooth' });
+            if(unitElements.length === 0) return;
+            currentIndex = (currentIndex + 1) % unitElements.length;
+            updateCarousel();
         };
         document.getElementById('btnPrev').onclick = () => {
-            const w = document.querySelector('.char-unit')?.offsetWidth || 250;
-            stage.scrollBy({ left: -(w + 30), behavior: 'smooth' });
+            if(unitElements.length === 0) return;
+            currentIndex = (currentIndex - 1 + unitElements.length) % unitElements.length;
+            updateCarousel();
         };
+        
+        // キーボード操作対応
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight') document.getElementById('btnNext').click();
+            if(e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+        });
 
-        const st = document.createElement('style');
-        st.innerText = `@keyframes fadeInUp { from{opacity:0; transform:translateY(50px) scale(0.9);} to{opacity:1; transform:translateY(0) scale(1);} }`;
-        document.head.appendChild(st);
     </script>
 </body>
 </html>
