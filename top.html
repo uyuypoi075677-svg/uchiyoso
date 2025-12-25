@@ -516,7 +516,8 @@
             const nextIdx = (currentIndex + 1) % charDataList.length;
             const char2 = charDataList[nextIdx];
 
-            renderCharList(); 
+          // ★ ここに await をつけるのがオススメです
+            await renderCharList(); 
 
             imgEl1.classList.remove('visible');
 
