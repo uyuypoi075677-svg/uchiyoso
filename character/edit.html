@@ -271,6 +271,30 @@
             <div class="form-row full" style="margin-top:20px;">
                 <label>通過シナリオ詳細 (SCENARIO LOGS)</label>
                 <textarea id="txtScenarioDetails" style="height:200px;" placeholder="[シナリオタイトル]&#13;内容..."></textarea>
+
+                <div class="form-group" style="border: 1px dashed #444; padding: 15px; background: rgba(0,0,0,0.2); margin: 15px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin:0; color:#00f3ff;">LINKED SCENARIO LOGS (DATABASE)</label>
+                        <a href="../scenario/register.html" target="_blank" style="font-size:0.8rem; color:#fff; text-decoration:underline;">+ ADD NEW LOG</a>
+                    </div>
+                    
+                    <div id="firestore-scenario-list" style="font-size: 0.9rem; color: #ccc; min-height: 20px;">
+                        <div style="color: #666;">Loading linked scenarios...</div>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="border: 1px dashed #444; padding: 15px; background: rgba(0,0,0,0.2); margin: 15px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="margin:0; color:#00f3ff;">LINKED SCENARIO LOGS (DATABASE)</label>
+                        <a href="../scenario/register.html" target="_blank" style="font-size:0.8rem; color:#fff; text-decoration:underline;">+ ADD NEW LOG</a>
+                    </div>
+                    
+                    <div id="firestore-scenario-list" style="font-size: 0.9rem; color: #ccc; min-height: 20px;">
+                        <div style="color: #666;">Loading linked scenarios...</div>
+                    </div>
+                </div>
+               
+
                 <div class="form-row">
                     <label>通過シナリオ(簡易一覧)</label>
                     <textarea id="txtScenarios" style="height:60px;" placeholder="シナリオ名..."></textarea>
@@ -280,12 +304,14 @@
             <div style="margin-top:50px; text-align:right;">
                 <button id="btnDelete" class="btn-delete">DELETE CHARACTER</button>
             </div>
+
+            
         </div>
     </div>
 
     <script type="module">
         // 【修正】deleteFromCloud をインポートに追加
-        import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud } from "./firestore.js";
+        import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud, getScenariosForCharacter } from "./firestore.js";
         import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
         import { parseIaChara } from "./data/parser_ia.js";
 
@@ -579,6 +605,7 @@
             }
 
             runCalculations();
+            if(d.id) updateScenarioList(d.id); 
         }
 
         function renderSkills(skillsObj) {
@@ -808,6 +835,50 @@
                 location.reload(); 
             }
         });
+
+        // --- ★追加: シナリオ一覧を表示・更新する関数 ---
+        async function updateScenarioList(charId) {
+            const listContainer = getEl('firestore-scenario-list');
+            if (!listContainer) return;
+
+            listContainer.innerHTML = '<div style="color:#666;">Searching database...</div>';
+
+            try {
+                // firestore.js からデータを取得
+                const scenarios = await getScenariosForCharacter(charId);
+
+                if (!scenarios || scenarios.length === 0) {
+                    listContainer.innerHTML = '<div style="color:#666;">No linked scenarios found.</div>';
+                    return;
+                }
+
+                let html = '<ul style="list-style:none; padding:0; margin:0;">';
+                scenarios.forEach(scn => {
+                    // 結果による色分け
+                    const resultColor = (scn.result === 'Lost') ? '#ff4444' : 
+                                        (scn.result === 'Cleared') ? '#44ff44' : '#aaa';
+                    
+                    html += `
+                        <li style="border-bottom:1px solid #333; padding:8px 0; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="padding-right:10px;">
+                                <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${scn.title}</div>
+                                <div style="font-size:0.75rem; color:#888;">${scn.date || 'Unknown'} / GM: ${scn.gm || '-'}</div>
+                            </div>
+                            <div style="text-align:right; flex-shrink:0;">
+                                <span style="color:${resultColor}; border:1px solid ${resultColor}; padding:1px 5px; font-size:0.7rem; border-radius:3px;">${scn.result}</span>
+                            </div>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                listContainer.innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+                listContainer.innerHTML = '<div style="color:#ff4444;">Error loading scenarios.</div>';
+            }
+        }
+
     </script>
 </body>
 </html>

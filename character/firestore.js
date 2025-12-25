@@ -141,3 +141,52 @@ export async function deleteFromCloud(charName) {
         alert("削除エラー: " + e.message);
     }
 }
+
+
+
+// シナリオを新規保存（別コレクション "scenarios" に保存）
+export async function saveScenario(scenarioData) {
+    if (!currentUser) throw new Error("User not logged in");
+    
+    // ログインユーザーIDを紐付け
+    const dataToSave = {
+        ...scenarioData,
+        userId: currentUser.uid,
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        const docRef = await addDoc(collection(db, "scenarios"), dataToSave);
+        console.log("Scenario saved with ID: ", docRef.id);
+        return docRef.id;
+    } catch (e) {
+        console.error("Error adding scenario: ", e);
+        throw e;
+    }
+}
+
+// 特定のキャラクターIDが含まれるシナリオを取得
+export async function getScenariosForCharacter(charId) {
+    if (!currentUser) return [];
+
+    try {
+        const q = query(
+            collection(db, "scenarios"),
+            where("userId", "==", currentUser.uid),
+            where("members", "array-contains", charId) // members配列にcharIdが含まれるものを検索
+        );
+
+        const querySnapshot = await getDocs(q);
+        const scenarios = [];
+        querySnapshot.forEach((doc) => {
+            scenarios.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // 日付順などでソートしたい場合はここで行う
+        return scenarios.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    } catch (e) {
+        console.error("Error fetching scenarios:", e);
+        return [];
+    }
+}
