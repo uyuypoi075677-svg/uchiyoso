@@ -87,7 +87,207 @@
     </style>
 </head>
 <body>
-   <script type="module">
+    <!-- ヘッダー読み込み（元々あった場合） -->
+    <script type="module">
+        // ヘッダーが無い環境でのエラーを防ぐためtry-catch
+        try {
+            const mod = await import("./header.js");
+            if(mod.initHeader) mod.initHeader();
+        } catch(e) { console.log("Header not found, skipping."); }
+    </script>
+
+    <div class="container">
+        <div class="toolbar">
+            <div>
+                <label>EDIT TARGET</label>
+                <!-- ここが消えていたためエラーになっていました -->
+                <select id="charSelect"><option value="">LOADING...</option></select>
+            </div>
+            <div>
+                <!-- ここにSAVEボタンが追加されます -->
+                <button id="btnCreateNew" class="btn-new">+ NEW</button>
+            </div>
+        </div>
+
+        <div id="editorArea" style="opacity:0.3; pointer-events:none;">
+            
+            <div id="dropZone" class="import-area">
+                <h3 style="margin-top:0; color:#00f3ff;">SMART IMPORT (Drop .txt File Here)</h3>
+                <p style="font-size:0.8rem; color:#888; margin-bottom:5px;">いあきゃらのテキストファイル(.txt)をここにドロップするか、テキストを貼り付けてください。</p>
+                <textarea id="txtImportSource" placeholder="テキストデータを貼り付け..."></textarea>
+                <button id="btnMerge" class="btn-merge">✨ FILL MISSING INFO (解析＆補完)</button>
+            </div>
+
+            <h2>BASIC PROFILE</h2>
+            <div class="form-grid">
+                <div class="form-row"><label>NAME</label><input type="text" id="inpName"></div>
+                <div class="form-row"><label>KANA</label><input type="text" id="inpKana"></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-row"><label>JOB</label><input type="text" id="inpJob"></div>
+                <div class="form-row"><label>TAGS</label><input type="text" id="inpTags"></div>
+            </div>
+
+            <div class="grid-4" style="margin-top:15px;">
+                <div class="form-row"><label>AGE</label><input type="text" id="inpAge" placeholder="年齢(不詳可)"></div>
+                <div class="form-row"><label>GENDER</label><input type="text" id="inpGender"></div>
+                <div class="form-row"><label>MONEY (所持金)</label><input type="text" id="inpMoney"></div>
+                <div class="form-row"><label>DEBT (借金)</label><input type="text" id="inpDebt"></div>
+            </div>
+            
+            <div class="grid-4" style="margin-top:15px;">
+                <div class="form-row"><label>BIRTHDAY</label><input type="text" id="inpBirthday"></div>
+                <div class="form-row"><label>BIRTHPLACE</label><input type="text" id="inpOrigin"></div>
+                <div class="form-row"><label>THEME COLOR</label><input type="color" id="inpThemeColor" value="#d9333f"></div>
+            </div>
+
+            <div id="eduCheckArea" class="analysis-box" style="display:none;"><span>🎓 EDU分析:</span><span id="eduMsg"></span></div>
+
+            <div class="grid-3" style="margin-top:20px; background:#2b2b2b; padding:15px; border-radius:4px;">
+                <div class="form-row"><label>HEIGHT (cm)</label><input type="number" id="inpHeight"></div>
+                <div class="form-row"><label>WEIGHT (kg)</label><input type="number" id="inpWeight"></div>
+                <div class="form-row"><label>HAIR / EYE / SKIN</label>
+                    <input type="text" id="inpHair" placeholder="髪色" style="margin-bottom:5px;">
+                    <input type="text" id="inpEye" placeholder="瞳の色" style="margin-bottom:5px;">
+                    <input type="text" id="inpSkin" placeholder="肌の色">
+                </div>
+            </div>
+            <div id="bodyCheckArea" class="analysis-box">
+                <div style="margin-bottom:5px;">📊 <b>BMI:</b> <span id="outBMI" class="calc-val">--</span></div>
+            </div>
+
+            <h2>VISUALS (Drag & Drop Image)</h2>
+            <div class="visual-grid">
+                <div>
+                    <label>STANDING ART (立ち絵)</label>
+                    <div class="img-preview-box" id="dropBody">
+                        <span class="drop-msg">Drop Image Here</span>
+                        <img id="previewBody" class="img-preview">
+                    </div>
+                    <input type="text" id="inpImageBody" placeholder="URL or Base64..." style="margin-top:5px;">
+                </div>
+                <div>
+                    <label>FACE ICON (顔アイコン)</label>
+                    <div class="img-preview-box" id="dropIcon">
+                        <span class="drop-msg">Drop Image Here</span>
+                        <img id="previewIcon" class="img-preview">
+                    </div>
+                    <input type="text" id="inpImageIcon" placeholder="URL or Base64..." style="margin-top:5px;">
+                </div>
+            </div>
+
+            <h2>STATS & VITALS</h2>
+            <div class="stats-container">
+                <div class="stat-box"><label>STR</label><input type="number" id="s_str"></div>
+                <div class="stat-box"><label>CON</label><input type="number" id="s_con"></div>
+                <div class="stat-box"><label>POW</label><input type="number" id="s_pow"></div>
+                <div class="stat-box"><label>DEX</label><input type="number" id="s_dex"></div>
+                <div class="stat-box"><label>APP</label><input type="number" id="s_app"></div>
+                <div class="stat-box"><label>SIZ</label><input type="number" id="s_siz"></div>
+                <div class="stat-box"><label>INT</label><input type="number" id="s_int"></div>
+                <div class="stat-box"><label>EDU</label><input type="number" id="s_edu"></div>
+            </div>
+            <div class="grid-4" style="margin-top:20px;">
+                <div class="form-row"><label>HP</label><input type="number" id="v_hp"></div>
+                <div class="form-row"><label>MP</label><input type="number" id="v_mp"></div>
+                <div class="form-row"><label>SAN</label><input type="number" id="v_san"></div>
+                <div class="form-row"><label>DB</label><input type="text" id="v_db"></div>
+            </div>
+
+            <h2>DETAILS</h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div>
+                    <div class="text-section">
+                        <h3>経歴</h3><button class="btn-clear-text" onclick="document.getElementById('txtBackground').value=''">× CLEAR</button>
+                        <textarea id="txtBackground"></textarea>
+                    </div>
+                    <div class="text-section">
+                        <h3>性格</h3><button class="btn-clear-text" onclick="document.getElementById('txtPersonality').value=''">× CLEAR</button>
+                        <textarea id="txtPersonality"></textarea>
+                    </div>
+                    <div class="text-section">
+                        <h3>人間関係</h3><button class="btn-clear-text" onclick="document.getElementById('txtRelations').value=''">× CLEAR</button>
+                        <textarea id="txtRelations"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-section">
+                        <h3>外見的特徴</h3><button class="btn-clear-text" onclick="document.getElementById('txtAppearance').value=''">× CLEAR</button>
+                        <textarea id="txtAppearance"></textarea>
+                    </div>
+                    <div class="text-section">
+                        <h3>RP補足</h3><button class="btn-clear-text" onclick="document.getElementById('txtRoleplay').value=''">× CLEAR</button>
+                        <textarea id="txtRoleplay"></textarea>
+                    </div>
+                    <div class="text-section">
+                        <h3>メモ</h3><button class="btn-clear-text" onclick="document.getElementById('txtMemo').value=''">× CLEAR</button>
+                        <textarea id="txtMemo"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row full">
+                <div class="text-section">
+                    <h3>技能データ (SKILLS & DETAIL)</h3>
+                    <div id="skillArea" class="list-container" style="max-height: 600px; overflow-y: auto;">
+                        </div>
+                </div>
+            </div>
+
+            <div class="text-section" style="margin-top:20px; border-left-color: #d4b346;">
+                <h3 style="color: #d4b346;">技能成長履歴 (GROWTH LOG)</h3>
+                <button class="btn-clear-text" onclick="document.getElementById('txtGrowth').value=''">× CLEAR</button>
+                <textarea id="txtGrowth" style="height:120px;" placeholder="例：&#13;シナリオA: 回避+5, 目星+3"></textarea>
+            </div>
+
+            <h2>INVENTORY & HISTORY</h2>
+            <div class="grid-3">
+                <div class="form-row full" style="grid-column:span 2;">
+                    <label>所持品 (ITEMS)</label>
+                    <div class="list-container">
+                        <div id="itemList"></div>
+                        <button type="button" class="btn-add" onclick="addItemRow()">+ ADD ITEM</button>
+                        <textarea id="txtItems" style="display:none;"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>魔術/AF (SPELLS/ARTIFACTS)</label>
+                    <textarea id="txtSpells" style="height:90px;"></textarea>
+                    
+                    <label style="margin-top:10px;">遭遇した存在 (ENTITIES)</label>
+                    <textarea id="txtEncountered" style="height:90px;"></textarea>
+                </div>
+            </div>
+
+            <div class="form-row full" style="margin-top:15px;">
+                <label>戦闘・武器・防具 (WEAPONS)</label>
+                <div class="list-container">
+                    <div class="weapon-header">
+                        <div>名前</div><div>成功率</div><div>ダメ</div><div>射程</div><div>回数</div><div>装弾</div><div>HP</div><div>故障</div><div></div>
+                    </div>
+                    <div id="weaponList"></div>
+                    <button type="button" class="btn-add" onclick="addWeaponRow()">+ ADD WEAPON</button>
+                </div>
+            </div>
+
+            <div class="form-row full" style="margin-top:20px;">
+                <label>通過シナリオ詳細 (SCENARIO LOGS)</label>
+                <textarea id="txtScenarioDetails" style="height:200px;" placeholder="[シナリオタイトル]&#13;内容..."></textarea>
+                <div class="form-row">
+                    <label>通過シナリオ(簡易一覧)</label>
+                    <textarea id="txtScenarios" style="height:60px;" placeholder="シナリオ名..."></textarea>
+                </div>
+            </div>
+
+            <div style="margin-top:50px; text-align:right;">
+                <!-- ここが消えていたためエラーになっていました -->
+                <button id="btnDelete" class="btn-delete">DELETE CHARACTER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ここからスクリプト -->
+    <script type="module">
         import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud } from "./firestore.js";
         import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
         import { parseIaChara } from "./data/parser_ia.js";
@@ -103,22 +303,18 @@
 
         let allData = {};
         let currentId = null;
-        let isInitDone = false; // ★軽量化: 多重読み込み防止フラグ
+        let isInitDone = false; // 軽量化フラグ
 
         // --- 保存ボタン追加 (位置修正版) ---
         function addSaveButton() {
-            // NEWボタンの親要素を探して、その中に追加する（これで横並びになります）
             const newBtn = document.getElementById('btnCreateNew');
+            // ボタンが存在しないとエラーになるためチェック
             if(newBtn && !document.getElementById('btnManualSave')) {
                 const saveBtn = document.createElement('button');
                 saveBtn.id = 'btnManualSave';
                 saveBtn.textContent = '💾 SAVE';
-                // スタイル調整
                 saveBtn.style.cssText = "background:#00f3ff; color:#000; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:4px; margin-left:10px;";
-                
-                // NEWボタンの隣に追加
                 newBtn.parentElement.appendChild(saveBtn);
-                
                 saveBtn.addEventListener('click', window.prepareSaveData);
             }
         }
@@ -267,29 +463,23 @@
             });
             
             const finalData = collectFormData(originalData, true);
-            
             const nameInputVal = document.getElementById('inpName').value;
             if (nameInputVal) finalData.name = nameInputVal;
-
             finalData.skills = skillsObj;
             finalData.id = currentId;
 
             saveToCloud(finalData).then(() => {
-                // 保存後はリロード
                 location.reload();
             });
         };
 
-        // ★軽量化: init()が何度も呼ばれないようにフラグで制御
         monitorAuth((user) => {
             if(user) {
-                if(!isInitDone) {
-                    init();
-                    isInitDone = true;
-                }
+                if(!isInitDone) { init(); isInitDone = true; }
                 addSaveButton();
             } else {
-                getEl('charSelect').innerHTML = '<option>LOGIN REQUIRED</option>';
+                const sel = getEl('charSelect');
+                if(sel) sel.innerHTML = '<option>LOGIN REQUIRED</option>';
             }
         });
 
@@ -303,6 +493,7 @@
 
         function renderSelect() {
             const sel = getEl('charSelect');
+            if(!sel) return; // エラー防止
             sel.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
             Object.values(allData).forEach(c => {
                 const opt = document.createElement('option');
@@ -314,16 +505,19 @@
             if(currentId) sel.value = currentId;
         }
 
-        getEl('charSelect').addEventListener('change', (e) => {
-            currentId = e.target.value;
-            if(!currentId) {
-                getEl('editorArea').style.opacity='0.3';
-                getEl('editorArea').style.pointerEvents='none';
-                return;
-            }
-            const target = allData[currentId];
-            if(target) loadCharacterToForm(target);
-        });
+        const sel = getEl('charSelect');
+        if(sel) {
+            sel.addEventListener('change', (e) => {
+                currentId = e.target.value;
+                if(!currentId) {
+                    getEl('editorArea').style.opacity='0.3';
+                    getEl('editorArea').style.pointerEvents='none';
+                    return;
+                }
+                const target = allData[currentId];
+                if(target) loadCharacterToForm(target);
+            });
+        }
 
         function loadCharacterToForm(d) {
             getEl('editorArea').style.opacity='1';
@@ -447,18 +641,24 @@
         }
         ['inpAge','inpHeight','inpWeight','s_edu'].forEach(id=>getEl(id)?.addEventListener('input', runCalculations));
 
-        getEl('btnCreateNew').addEventListener('click', ()=>{
-            const id=crypto.randomUUID();
-            allData[id]={id: id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
-            currentId=id; renderSelect(); loadCharacterToForm(allData[id]);
-        });
+        const btnCreate = getEl('btnCreateNew');
+        if(btnCreate) {
+            btnCreate.addEventListener('click', ()=>{
+                const id=crypto.randomUUID();
+                allData[id]={id: id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
+                currentId=id; renderSelect(); loadCharacterToForm(allData[id]);
+            });
+        }
         
-        getEl('btnDelete').addEventListener('click', async ()=>{
-            if(!currentId) return;
-            if(confirm('本当に削除しますか？\n（この操作は取り消せません）')) { 
-                await deleteFromCloud(currentId);
-            }
-        });
+        const btnDel = getEl('btnDelete');
+        if(btnDel) {
+            btnDel.addEventListener('click', async ()=>{
+                if(!currentId) return;
+                if(confirm('本当に削除しますか？\n（この操作は取り消せません）')) { 
+                    await deleteFromCloud(currentId);
+                }
+            });
+        }
     </script>
 </body>
 </html>
