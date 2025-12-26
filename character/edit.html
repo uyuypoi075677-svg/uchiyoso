@@ -277,9 +277,10 @@
     </div>
 
     <script type="module">
-        import { loadFromCloud, monitorAuth, saveToCloud } from "./firestore.js";
-        import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
-        import { parseIaChara } from "./data/parser_ia.js";
+        // ★修正1: deleteFromCloud をインポートに追加
+        import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud } from "./firestore.js";
+        import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./schema.js";
+        import { parseIaChara } from "./parser_ia.js";
 
         const getEl = (id) => document.getElementById(id);
         const setVal = (id, v) => { const el = getEl(id); if(el) el.value = (v == null ? '' : v); };
@@ -327,7 +328,6 @@
             getEl('weaponList').appendChild(div);
         };
 
-        // スキル計算用イベント付与
         function attachSkillCalc(row) {
             row.querySelectorAll('input[type="number"]').forEach(inp => {
                 inp.addEventListener('input', () => {
@@ -362,13 +362,11 @@
             attachSkillCalc(tr);
         };
 
-        // カテゴリ移動処理 (HTML構造変更に対応)
         window.moveCategory = (selectEl) => {
             const targetCat = selectEl.value;
             if(!targetCat) return;
 
             const row = selectEl.closest('tr');
-            // 名前テキストを取得（span内のテキスト、またはinputの値）
             let name = "";
             const nameSpan = row.querySelector('.s-name-text');
             if (nameSpan) {
@@ -383,10 +381,8 @@
             const growth = row.querySelector('.s-growth').value;
             const desc = row.querySelector('.s-desc').value;
 
-            // 移動先のテーブル取得
             const targetTable = document.querySelector(`#skill-cat-${targetCat} tbody`);
             if(targetTable) {
-                // 行を削除して移動先に再作成
                 row.remove();
                 
                 const tr = document.createElement('tr');
@@ -432,7 +428,6 @@
             });
             getEl('txtItems').value = itemsArr.join('\n');
 
-            // 技能データ収集
             const skillsObj = {
                 combat:[], explore:[], action:[], negotiate:[], knowledge:[], original:[]
             };
@@ -462,9 +457,12 @@
             
             const finalData = collectFormData(originalData, true);
             finalData.skills = skillsObj;
+            
+            // ★修正2: IDを必ず保持させる
+            finalData.id = currentId;
 
             saveToCloud(finalData).then(() => {
-                alert("保存しました");
+                // 保存後は画面リロードして最新状態にする
                 location.reload();
             });
         };
@@ -487,7 +485,7 @@
             sel.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
             Object.values(allData).forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c.id;
+                opt.value = c.id || c.name; // フォールバック
                 opt.textContent = c.name;
                 sel.appendChild(opt);
             });
@@ -501,7 +499,8 @@
                 getEl('editorArea').style.pointerEvents='none';
                 return;
             }
-            const target = Object.values(allData).find(c => c.id == currentId);
+            // IDで検索してロード
+            const target = allData[currentId];
             if(target) loadCharacterToForm(target);
         });
 
@@ -732,7 +731,6 @@
                 });
             }
             
-            // 技能があれば上書き(オリジナル含む)
             if(p.skills && Object.values(p.skills).flat().length > 0) {
                 renderSkills(p.skills);
             }
@@ -773,12 +771,17 @@
 
         getEl('btnCreateNew').addEventListener('click', ()=>{
             const id=crypto.randomUUID();
-            allData[id]={id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
+            // 新規作成時にIDを確実にセット
+            allData[id]={id: id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
             currentId=id; renderSelect(); loadCharacterToForm(allData[id]);
         });
+        
+        // ★修正3: 削除ボタンでFirestore削除関数を呼ぶように変更
         getEl('btnDelete').addEventListener('click', async ()=>{
-            if(!currentId)return;
-            if(confirm('削除しますか？')) { delete allData[currentId]; location.reload(); }
+            if(!currentId) return;
+            if(confirm('本当に削除しますか？\n（この操作は取り消せません）')) { 
+                await deleteFromCloud(currentId);
+            }
         });
     </script>
 </body>

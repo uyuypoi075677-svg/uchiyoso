@@ -1,9 +1,8 @@
-// --- firestore.js (サブコレクション対応・修正版) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// ★必要な機能を追加しました (collection, getDocs, deleteDoc)
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } 
+// ★不足していた addDoc, query, where, serverTimestamp などを追加しました
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, addDoc, query, where, serverTimestamp } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -53,31 +52,30 @@ export function monitorAuth(onLogin, onLogout) {
     });
 }
 
-// --- データベース機能 (サブコレクション方式) ---
+// --- データベース機能 (キャラクター) ---
 
 const SHARED_COLLECTION = "rooms";
 const SHARED_DOC_ID = "couple_shared_data";
-// ★重要: ここでフォルダ名を指定します。もし読み込めない場合は "data" などを試してください
 const CHAR_SUB_COLLECTION = "characters"; 
 
-// 保存 (SAVE CLOUD)
+// 保存 (SAVE) - IDを基準に保存するように修正
 export async function saveToCloud(charData) {
     if (!currentUser) {
         alert("エラー: データの保存にはログインが必要です。");
         return;
     }
-    if (!charData || !charData.name) {
-        alert("エラー: 保存するキャラクターデータがありません。");
+    if (!charData || !charData.id) {
+        alert("エラー: IDがありません。保存できません。");
         return;
     }
 
     try {
-        // キャラクターごとの専用ファイルに保存する方式に戻しました
-        const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charData.name);
+        // ★修正点: 名前(name)ではなく、IDをファイル名として保存します
+        // これにより名前を変更してもファイルが増殖しません
+        const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charData.id);
         
         await setDoc(charRef, charData, { merge: true });
         
-        // 日本語で保存完了を表示
         alert("保存が完了しました: " + charData.name);
         
     } catch (e) {
@@ -86,7 +84,7 @@ export async function saveToCloud(charData) {
     }
 }
 
-// 読み込み (LOAD CLOUD)
+// 読み込み (LOAD) - ID対応
 export async function loadFromCloud() {
     if (!currentUser) {
         alert("エラー: データの読み込みにはログインが必要です。");
@@ -94,21 +92,24 @@ export async function loadFromCloud() {
     }
 
     try {
-        // フォルダ内の全ファイルを一括取得する方式に戻しました
         const colRef = collection(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION);
         const querySnapshot = await getDocs(colRef);
 
         const loadedData = {};
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            if(data.name) {
-                loadedData[data.name] = data;
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            
+            // ★重要: 古いデータ(IDがない)場合、ドキュメント名をIDとして扱う救済処置
+            if (!data.id) {
+                data.id = docSnap.id;
             }
+
+            // IDをキーにしてデータを格納
+            loadedData[data.id] = data;
         });
 
-        // データが空っぽだった場合の確認ログ
         if (Object.keys(loadedData).length === 0) {
-            console.log("データが見つかりませんでした。(コレクション名が違う可能性があります)");
+            console.log("データが見つかりませんでした。");
         }
 
         return loadedData;
@@ -120,21 +121,18 @@ export async function loadFromCloud() {
     }
 }
 
-// 削除機能 (DELETE CLOUD)
-export async function deleteFromCloud(charName) {
+// 削除 (DELETE) - ID基準に修正
+export async function deleteFromCloud(charId) {
     if (!currentUser) return;
-    if (!charName) return;
-
-    if (!confirm(charName + " を削除しますか？\nこの操作は取り消せません。")) {
-        return;
-    }
+    if (!charId) return;
 
     try {
-        const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charName);
+        // ★修正点: 名前ではなくIDを指定して削除します
+        const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charId);
         await deleteDoc(charRef);
         
-        alert("削除しました: " + charName);
-        location.reload(); // 画面更新
+        alert("削除しました。");
+        location.reload(); 
 
     } catch (e) {
         console.error("Delete error:", e);
@@ -142,8 +140,8 @@ export async function deleteFromCloud(charName) {
     }
 }
 
-
 // --- シナリオデータ (Scenarios) ---
+// ★以下、削除されていたコードを復旧しました
 
 // シナリオを新規保存 (scenariosコレクション)
 export async function saveScenario(scenarioData) {
@@ -169,6 +167,7 @@ export async function saveScenario(scenarioData) {
 export async function getScenariosForCharacter(charId) {
     if (!currentUser) return [];
     try {
+        // 参加メンバー(members配列)にcharIdが含まれているものを検索
         const q = query(
             collection(db, "scenarios"),
             where("members", "array-contains", charId)
