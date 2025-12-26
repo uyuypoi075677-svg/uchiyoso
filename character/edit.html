@@ -277,8 +277,8 @@
     </div>
 
     <script type="module">
-        // ★修正1: deleteFromCloud をインポートに追加
         import { loadFromCloud, monitorAuth, saveToCloud, deleteFromCloud } from "./firestore.js";
+        // ★パス修正済み
         import { collectFormData, FIELD_MAPPING, STATS_MAPPING, VITALS_MAPPING } from "./data/schema.js";
         import { parseIaChara } from "./data/parser_ia.js";
 
@@ -287,19 +287,25 @@
         const setSrc = (id, s) => { const el = getEl(id); if(el) el.src = s || ''; };
 
         const MEMO_ID_MAP = {
-            background: 'txtBackground',
-            personality: 'txtPersonality',
-            relations: 'txtRelations',
-            appearance: 'txtAppearance',
-            roleplay: 'txtRoleplay',
-            memo: 'txtMemo'
+            background: 'txtBackground', personality: 'txtPersonality', relations: 'txtRelations',
+            appearance: 'txtAppearance', roleplay: 'txtRoleplay', memo: 'txtMemo'
         };
 
         let allData = {};
         let currentId = null;
 
-        // --- グローバル関数定義 ---
+        // --- 保存ボタン追加 ---
+        function addSaveButton() {
+            const toolbar = document.querySelector('.toolbar');
+            if(toolbar && !document.getElementById('btnManualSave')) {
+                const div = document.createElement('div');
+                div.innerHTML = `<button id="btnManualSave" style="background:#00f3ff; color:#000; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:4px; margin-left:10px;">💾 SAVE</button>`;
+                toolbar.appendChild(div);
+                document.getElementById('btnManualSave').addEventListener('click', window.prepareSaveData);
+            }
+        }
 
+        // --- グローバル関数定義 ---
         window.addItemRow = (val={name:'', desc:''}) => {
             const div = document.createElement('div');
             div.className = 'item-entry';
@@ -343,7 +349,6 @@
         window.addSkillRow = (catId) => {
             const table = document.querySelector(`#skill-cat-${catId} tbody`);
             if(!table) return;
-            
             const tr = document.createElement('tr');
             tr.className = 'skill-entry';
             tr.innerHTML = `
@@ -363,17 +368,11 @@
         };
 
         window.moveCategory = (selectEl) => {
-            const targetCat = selectEl.value;
-            if(!targetCat) return;
-
+            const targetCat = selectEl.value; if(!targetCat) return;
             const row = selectEl.closest('tr');
             let name = "";
             const nameSpan = row.querySelector('.s-name-text');
-            if (nameSpan) {
-                const nameInput = nameSpan.querySelector('input');
-                name = nameInput ? nameInput.value : nameSpan.textContent;
-            }
-
+            if (nameSpan) { const nameInput = nameSpan.querySelector('input'); name = nameInput ? nameInput.value : nameSpan.textContent; }
             const total = row.querySelector('.s-total').value;
             const init = row.querySelector('.s-init').value;
             const job = row.querySelector('.s-job').value;
@@ -384,7 +383,6 @@
             const targetTable = document.querySelector(`#skill-cat-${targetCat} tbody`);
             if(targetTable) {
                 row.remove();
-                
                 const tr = document.createElement('tr');
                 tr.className = 'skill-entry';
                 tr.innerHTML = `
@@ -414,10 +412,12 @@
             }
         };
 
+        // --- 保存処理 (名前問題を修正済み) ---
         window.prepareSaveData = function() {
             if(!currentId) return null;
-            const originalData = Object.values(allData).find(c=>c.id==currentId);
-            if(!originalData) return null;
+            let originalData = Object.values(allData).find(c=>c.id==currentId);
+            if (!originalData) originalData = allData[currentId];
+            if (!originalData) return;
             
             const itemRows = document.querySelectorAll('.item-entry');
             const itemsArr = [];
@@ -428,21 +428,14 @@
             });
             getEl('txtItems').value = itemsArr.join('\n');
 
-            const skillsObj = {
-                combat:[], explore:[], action:[], negotiate:[], knowledge:[], original:[]
-            };
+            const skillsObj = { combat:[], explore:[], action:[], negotiate:[], knowledge:[], original:[] };
             document.querySelectorAll('.skill-category').forEach(catDiv => {
                 const catId = catDiv.id.replace('skill-cat-', '');
                 if(skillsObj[catId] === undefined) skillsObj[catId] = [];
-                
                 catDiv.querySelectorAll('.skill-entry').forEach(row => {
                     const nameSpan = row.querySelector('.s-name-text');
                     let name = "";
-                    if (nameSpan) {
-                         const nameInput = nameSpan.querySelector('input');
-                         name = nameInput ? nameInput.value : nameSpan.textContent;
-                    }
-                    
+                    if (nameSpan) { const nameInput = nameSpan.querySelector('input'); name = nameInput ? nameInput.value : nameSpan.textContent; }
                     skillsObj[catId].push({
                         name: name.trim(),
                         total: parseInt(row.querySelector('.s-total').value)||0,
@@ -456,20 +449,26 @@
             });
             
             const finalData = collectFormData(originalData, true);
-            finalData.skills = skillsObj;
             
-            // ★修正2: IDを必ず保持させる
+            // ★画面の名前を確実に反映
+            const nameInputVal = document.getElementById('inpName').value;
+            if (nameInputVal) finalData.name = nameInputVal;
+
+            finalData.skills = skillsObj;
             finalData.id = currentId;
 
             saveToCloud(finalData).then(() => {
-                // 保存後は画面リロードして最新状態にする
                 location.reload();
             });
         };
 
         monitorAuth((user) => {
-            if(user) init();
-            else getEl('charSelect').innerHTML = '<option>LOGIN REQUIRED</option>';
+            if(user) {
+                init();
+                addSaveButton();
+            } else {
+                getEl('charSelect').innerHTML = '<option>LOGIN REQUIRED</option>';
+            }
         });
 
         async function init() {
@@ -485,7 +484,9 @@
             sel.innerHTML = '<option value="">-- SELECT CHARACTER --</option>';
             Object.values(allData).forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c.id || c.name; // フォールバック
+                // ID優先、なければ名前
+                const val = c.id || c.name;
+                opt.value = val;
                 opt.textContent = c.name;
                 sel.appendChild(opt);
             });
@@ -499,7 +500,6 @@
                 getEl('editorArea').style.pointerEvents='none';
                 return;
             }
-            // IDで検索してロード
             const target = allData[currentId];
             if(target) loadCharacterToForm(target);
         });
@@ -508,124 +508,57 @@
             getEl('editorArea').style.opacity='1';
             getEl('editorArea').style.pointerEvents='auto';
             
-            FIELD_MAPPING.forEach(field => {
-                setVal(field.id, d[field.key]);
-            });
-            setSrc('previewBody', d.image);
-            setSrc('previewIcon', d.icon);
-
+            FIELD_MAPPING.forEach(field => { setVal(field.id, d[field.key]); });
+            setSrc('previewBody', d.image); setSrc('previewIcon', d.icon);
             setVal('inpThemeColor', d.color || '#d9333f');
-
-            const s = d.stats || {};
-            STATS_MAPPING.forEach(f => setVal(f.id, s[f.key]));
-            const v = d.vitals || {};
-            VITALS_MAPPING.forEach(f => setVal(f.id, v[f.key]));
-
+            const s = d.stats || {}; STATS_MAPPING.forEach(f => setVal(f.id, s[f.key]));
+            const v = d.vitals || {}; VITALS_MAPPING.forEach(f => setVal(f.id, v[f.key]));
             const fullMemo = d.memo || '';
             const extract = (tag) => {
                 const regex = new RegExp(`\\[${tag}\\]\\n([\\s\\S]*?)(\\n\\[|$)`);
                 const m = fullMemo.match(regex);
                 return m ? m[1].trim() : '';
             };
-            
-            setVal('txtBackground', extract('経歴'));
-            setVal('txtPersonality', extract('性格'));
-            setVal('txtRelations', extract('人間関係'));
-            setVal('txtAppearance', extract('外見')||extract('外見的特徴'));
-            setVal('txtRoleplay', extract('RP補足')||extract('RP用補足'));
-            
-            if(!fullMemo.includes('[')) setVal('txtMemo', fullMemo);
-            else setVal('txtMemo', extract('メモ'));
-
+            setVal('txtBackground', extract('経歴')); setVal('txtPersonality', extract('性格')); setVal('txtRelations', extract('人間関係'));
+            setVal('txtAppearance', extract('外見')||extract('外見的特徴')); setVal('txtRoleplay', extract('RP補足')||extract('RP用補足'));
+            if(!fullMemo.includes('[')) setVal('txtMemo', fullMemo); else setVal('txtMemo', extract('メモ'));
             getEl('itemList').innerHTML = '';
-            if(Array.isArray(d.items)) d.items.forEach(i => addItemRow(i));
-            else addItemRow();
-
+            if(Array.isArray(d.items)) d.items.forEach(i => addItemRow(i)); else addItemRow();
             getEl('weaponList').innerHTML = '';
-            if(Array.isArray(d.weapons)) d.weapons.forEach(w => addWeaponRow(w));
-            else addWeaponRow();
-
+            if(Array.isArray(d.weapons)) d.weapons.forEach(w => addWeaponRow(w)); else addWeaponRow();
             renderSkills(d.skills);
-
             if(Array.isArray(d.scenarioList)) {
                 const text = d.scenarioList.map(scn => `[${scn.title}]\n${scn.desc}`).join('\n\n');
                 setVal('txtScenarioDetails', text);
             } else {
                 const simpleList = d.scenarios || "";
                 if (simpleList && !d.scenarioList) {
-                    const converted = simpleList.split('\n')
-                        .filter(l => l.trim())
-                        .map(l => `[${l.replace(/[\[\]]/g, '')}]\n(詳細未記入)`).join('\n\n');
+                    const converted = simpleList.split('\n').filter(l => l.trim()).map(l => `[${l.replace(/[\[\]]/g, '')}]\n(詳細未記入)`).join('\n\n');
                     setVal('txtScenarioDetails', converted);
-                } else {
-                    setVal('txtScenarioDetails', '');
-                }
+                } else { setVal('txtScenarioDetails', ''); }
             }
-
             runCalculations();
         }
 
         function renderSkills(skillsObj) {
-            const area = getEl('skillArea');
-            area.innerHTML = '';
-            
+            const area = getEl('skillArea'); area.innerHTML = '';
             const cats = [
                 {id:'combat', label:'戦闘技能'}, {id:'explore', label:'探索技能'}, 
                 {id:'action', label:'行動技能'}, {id:'negotiate', label:'交渉技能'}, 
                 {id:'knowledge', label:'知識技能'}, {id:'original', label:'その他 (オリジナル)'}
             ];
-
             cats.forEach(c => {
                 const list = skillsObj ? (skillsObj[c.id] || []) : [];
-
                 const box = document.createElement('div');
                 box.className = 'skill-category';
                 box.id = `skill-cat-${c.id}`;
-                
                 let html = `<h4>${c.label} <button type="button" class="btn-add-skill" onclick="addSkillRow('${c.id}')">+ 追加</button></h4>
-                <table class="skill-table">
-                    <thead>
-                        <tr>
-                            <th style="width:120px; text-align:left;">技能名</th>
-                            <th style="width:40px;">合計</th>
-                            <th style="width:40px;">初期</th>
-                            <th style="width:40px;">職業</th>
-                            <th style="width:40px;">興味</th>
-                            <th style="width:40px;">成長</th>
-                            <th style="text-align:left; padding-left:10px;">技能詳細 (Flavor Text)</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                
+                <table class="skill-table"><thead><tr><th style="width:120px; text-align:left;">技能名</th><th style="width:40px;">合計</th><th style="width:40px;">初期</th><th style="width:40px;">職業</th><th style="width:40px;">興味</th><th style="width:40px;">成長</th><th style="text-align:left; padding-left:10px;">技能詳細 (Flavor Text)</th></tr></thead><tbody>`;
                 list.forEach(s => {
-                    html += `
-                    <tr class="skill-entry">
-                        <td class="s-name" style="font-weight:bold;">
-                            <span class="s-name-text">${s.name}</span>
-                            <div style="margin-top:2px;">
-                                <select class="skill-cat-select" onchange="moveCategory(this)">
-                                    <option value="">カテゴリ移動...</option>
-                                    <option value="combat">戦闘</option>
-                                    <option value="explore">探索</option>
-                                    <option value="action">行動</option>
-                                    <option value="negotiate">交渉</option>
-                                    <option value="knowledge">知識</option>
-                                    <option value="original">その他</option>
-                                </select>
-                            </div>
-                        </td>
-                        <td><input type="number" class="s-total" value="${s.total}" readonly tabindex="-1"></td>
-                        <td><input type="number" class="s-init" value="${s.init}" readonly tabindex="-1" style="color:#888;"></td>
-                        <td><input type="number" class="s-job" value="${s.job}"></td>
-                        <td><input type="number" class="s-interest" value="${s.interest}"></td>
-                        <td><input type="number" class="s-growth" value="${s.growth}"></td>
-                        <td style="padding-left:10px;"><input type="text" class="s-desc skill-desc-input" value="${s.desc || ''}" placeholder="設定や理由など..."></td>
-                    </tr>`;
+                    html += `<tr class="skill-entry"><td class="s-name" style="font-weight:bold;"><span class="s-name-text">${s.name}</span><div style="margin-top:2px;"><select class="skill-cat-select" onchange="moveCategory(this)"><option value="">カテゴリ移動...</option><option value="combat">戦闘</option><option value="explore">探索</option><option value="action">行動</option><option value="negotiate">交渉</option><option value="knowledge">知識</option><option value="original">その他</option></select></div></td><td><input type="number" class="s-total" value="${s.total}" readonly tabindex="-1"></td><td><input type="number" class="s-init" value="${s.init}" readonly tabindex="-1" style="color:#888;"></td><td><input type="number" class="s-job" value="${s.job}"></td><td><input type="number" class="s-interest" value="${s.interest}"></td><td><input type="number" class="s-growth" value="${s.growth}"></td><td style="padding-left:10px;"><input type="text" class="s-desc skill-desc-input" value="${s.desc || ''}" placeholder="設定や理由など..."></td></tr>`;
                 });
                 html += `</tbody></table>`;
-                box.innerHTML = html;
-                area.appendChild(box);
-                
+                box.innerHTML = html; area.appendChild(box);
                 box.querySelectorAll('.skill-entry').forEach(row => attachSkillCalc(row));
             });
         }
@@ -651,132 +584,54 @@
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > maxWidth || h > maxHeight) {
-                        const ratio = Math.min(maxWidth / w, maxHeight / h);
-                        w *= ratio;
-                        h *= ratio;
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-                    callback(canvas.toDataURL('image/png'));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                    let w = img.width; let h = img.height;
+                    if (w > maxWidth || h > maxHeight) { const ratio = Math.min(maxWidth / w, maxHeight / h); w *= ratio; h *= ratio; }
+                    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); callback(canvas.toDataURL('image/png'));
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(file);
         };
-
         const setupImgDrop = (zoneId, inputId, imgId) => {
             const zone = getEl(zoneId);
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
-                zone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
-            });
-            zone.addEventListener('drop', (e) => {
-                const file = e.dataTransfer.files[0];
-                if(file && file.type.match('image.*')) {
-                    resizeImage(file, 600, 600, (resizedDataUrl) => {
-                        getEl(inputId).value = resizedDataUrl;
-                        getEl(imgId).src = resizedDataUrl;
-                    });
-                }
-            });
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => { zone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); }); });
+            zone.addEventListener('drop', (e) => { const file = e.dataTransfer.files[0]; if(file && file.type.match('image.*')) { resizeImage(file, 600, 600, (resizedDataUrl) => { getEl(inputId).value = resizedDataUrl; getEl(imgId).src = resizedDataUrl; }); } });
         };
         setupImgDrop('dropBody', 'inpImageBody', 'previewBody');
         setupImgDrop('dropIcon', 'inpImageIcon', 'previewIcon');
 
-
         getEl('btnMerge').addEventListener('click', () => {
-            const text = getEl('txtImportSource').value;
-            if(!text) return;
-            
+            const text = getEl('txtImportSource').value; if(!text) return;
             const p = parseIaChara(text);
-            
-            const updateVal = (id, val) => {
-                if(val !== undefined && val !== null && val !== "") {
-                    setVal(id, val);
-                }
-            };
-
+            const updateVal = (id, val) => { if(val !== undefined && val !== null && val !== "") { setVal(id, val); } };
             FIELD_MAPPING.forEach(f => { if(p[f.key]) updateVal(f.id, p[f.key]); });
             STATS_MAPPING.forEach(f => updateVal(f.id, p.stats[f.key]));
             VITALS_MAPPING.forEach(f => updateVal(f.id, p.vitals[f.key]));
-            
-            if(p.colorHair) updateVal('inpHair', p.colorHair);
-            if(p.colorEye) updateVal('inpEye', p.colorEye);
-            if(p.colorSkin) updateVal('inpSkin', p.colorSkin);
-
-            Object.keys(MEMO_ID_MAP).forEach(key => {
-                if(p.memo[key]) updateVal(MEMO_ID_MAP[key], p.memo[key]);
-            });
-
-            if(p.items && p.items.length > 0) {
-                const existingNames = Array.from(document.querySelectorAll('.i-name')).map(el => el.value.trim());
-                p.items.forEach(i => {
-                    if (i.name && !existingNames.includes(i.name.trim())) {
-                        addItemRow(i);
-                    }
-                });
-            }
-
-            if(p.weapons && p.weapons.length > 0) {
-                const existingWeapons = Array.from(document.querySelectorAll('.w-name')).map(el => el.value.trim());
-                p.weapons.forEach(w => {
-                    if (w.name && !existingWeapons.includes(w.name.trim())) {
-                        addWeaponRow(w);
-                    }
-                });
-            }
-            
-            if(p.skills && Object.values(p.skills).flat().length > 0) {
-                renderSkills(p.skills);
-            }
-
-            if(p.image) {
-                setVal('inpImageBody', p.image);
-                setSrc('previewBody', p.image);
-            }
-            if(p.icon) {
-                setVal('inpImageIcon', p.icon);
-                setSrc('previewIcon', p.icon);
-            }
-
-            alert("解析・補完しました！\n値がある項目はテキストデータの内容で上書きされています。\n（空白の項目は既存データを維持しています）");
+            if(p.colorHair) updateVal('inpHair', p.colorHair); if(p.colorEye) updateVal('inpEye', p.colorEye); if(p.colorSkin) updateVal('inpSkin', p.colorSkin);
+            Object.keys(MEMO_ID_MAP).forEach(key => { if(p.memo[key]) updateVal(MEMO_ID_MAP[key], p.memo[key]); });
+            if(p.items && p.items.length > 0) { const existingNames = Array.from(document.querySelectorAll('.i-name')).map(el => el.value.trim()); p.items.forEach(i => { if (i.name && !existingNames.includes(i.name.trim())) { addItemRow(i); } }); }
+            if(p.weapons && p.weapons.length > 0) { const existingWeapons = Array.from(document.querySelectorAll('.w-name')).map(el => el.value.trim()); p.weapons.forEach(w => { if (w.name && !existingWeapons.includes(w.name.trim())) { addWeaponRow(w); } }); }
+            if(p.skills && Object.values(p.skills).flat().length > 0) { renderSkills(p.skills); }
+            if(p.image) { setVal('inpImageBody', p.image); setSrc('previewBody', p.image); }
+            if(p.icon) { setVal('inpImageIcon', p.icon); setSrc('previewIcon', p.icon); }
+            alert("解析・補完しました！");
             runCalculations();
         });
 
         function runCalculations() {
-            const age = parseInt(getEl('inpAge')?.value)||0;
-            const edu = parseInt(getEl('s_edu')?.value)||0;
-            const eduArea = getEl('eduCheckArea');
-            const eduMsg = getEl('eduMsg');
-            if(eduArea) {
-                if(edu>0 && age>0) {
-                    const minAge=edu+6;
-                    eduArea.style.display='block';
-                    if(age<minAge){ eduMsg.className='warn-text'; eduMsg.textContent=`⚠️ 年齢不足 (EDU${edu}なら最低${minAge}歳)`; }
-                    else { eduMsg.className='calc-val'; eduMsg.textContent=`✅ OK (最低${minAge}歳)`; }
-                } else eduArea.style.display='none';
-            }
+            const age = parseInt(getEl('inpAge')?.value)||0; const edu = parseInt(getEl('s_edu')?.value)||0;
+            const eduArea = getEl('eduCheckArea'); const eduMsg = getEl('eduMsg');
+            if(eduArea) { if(edu>0 && age>0) { const minAge=edu+6; eduArea.style.display='block'; if(age<minAge){ eduMsg.className='warn-text'; eduMsg.textContent=`⚠️ 年齢不足 (EDU${edu}なら最低${minAge}歳)`; } else { eduMsg.className='calc-val'; eduMsg.textContent=`✅ OK (最低${minAge}歳)`; } } else eduArea.style.display='none'; }
             const h = parseFloat(getEl('inpHeight')?.value), w = parseFloat(getEl('inpWeight')?.value);
-            if(h>0 && w>0) {
-                const bmi = w/((h/100)**2);
-                getEl('outBMI').textContent = `${bmi.toFixed(1)}`;
-            }
+            if(h>0 && w>0) { const bmi = w/((h/100)**2); getEl('outBMI').textContent = `${bmi.toFixed(1)}`; }
         }
         ['inpAge','inpHeight','inpWeight','s_edu'].forEach(id=>getEl(id)?.addEventListener('input', runCalculations));
 
         getEl('btnCreateNew').addEventListener('click', ()=>{
             const id=crypto.randomUUID();
-            // 新規作成時にIDを確実にセット
             allData[id]={id: id, name:"新規キャラ", stats:{}, vitals:{}, items:[], weapons:[], scenarioList:[], skills:{}};
             currentId=id; renderSelect(); loadCharacterToForm(allData[id]);
         });
         
-        // ★修正3: 削除ボタンでFirestore削除関数を呼ぶように変更
         getEl('btnDelete').addEventListener('click', async ()=>{
             if(!currentId) return;
             if(confirm('本当に削除しますか？\n（この操作は取り消せません）')) { 
