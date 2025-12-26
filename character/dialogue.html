@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -192,7 +191,10 @@
             const opts = ['<option value="">-- キャラクターを選択 --</option>'];
             Object.values(data)
                 .sort((a, b) => a.name.localeCompare(b.name))
-                .forEach(c => opts.push(`<option value="${c.name}">${c.name}</option>`));
+                .forEach(c => {
+                    // 【修正点】 valueを c.name から c.id に変更しました
+                    opts.push(`<option value="${c.id}">${c.name}</option>`);
+                });
             
             const optHtml = opts.join('');
             document.getElementById('char-select-solo').innerHTML = optHtml;
@@ -295,7 +297,9 @@
 
         // 3. データ読み込み ( [NEXT] で分割して行を作成 )
         window.loadSoloData = () => {
-            const name = document.getElementById('char-select-solo').value;
+            // valueがIDになっているため、IDでデータを検索
+            const id = document.getElementById('char-select-solo').value;
+            
             // まず全ての入力欄をクリア
             DIALOGUE_MAPPING.forEach(field => {
                 const containerId = `container-${field.id}`;
@@ -303,7 +307,7 @@
                 if (container) container.innerHTML = ""; // クリア
             });
 
-            if (!name || !allData[name]) {
+            if (!id || !allData[id]) {
                 // キャラ未選択なら各項目に空の行を1つ追加しておく
                  DIALOGUE_MAPPING.forEach(field => {
                     window.addSoloRow(`container-${field.id}`, "");
@@ -311,7 +315,7 @@
                 return;
             }
 
-            const charData = allData[name];
+            const charData = allData[id];
 
             DIALOGUE_MAPPING.forEach(field => {
                 const rawText = charData[field.key] || "";
@@ -342,10 +346,10 @@
 
         // 4. データ保存 ( [NEXT] で結合 )
         window.saveSolo = async () => {
-            const name = document.getElementById('char-select-solo').value;
-            if (!name) return alert("キャラを選択してください");
+            const id = document.getElementById('char-select-solo').value;
+            if (!id) return alert("キャラを選択してください");
             
-            const c = allData[name];
+            const c = allData[id];
 
             DIALOGUE_MAPPING.forEach(field => {
                 const containerId = `container-${field.id}`;
@@ -365,8 +369,8 @@
                 c[field.key] = values.length > 0 ? values.join('[NEXT]') : "";
             });
 
+            // cにはidが含まれているため、そのまま保存可能
             await saveToCloud(c);
-            // alert("保存しました！");
         };
 
 
@@ -405,24 +409,27 @@
         };
 
         window.loadDuoData = () => {
-            const nA = document.getElementById('char-a').value;
-            const nB = document.getElementById('char-b').value;
+            // IDを取得
+            const idA = document.getElementById('char-a').value;
+            const idB = document.getElementById('char-b').value;
             const list = document.getElementById('conv-list');
             list.innerHTML = "";
-            if (!nA || !nB || nA === nB) return;
+            if (!idA || !idB || idA === idB) return;
 
-            const cA = allData[nA];
-            const cB = allData[nB];
+            // allDataはIDキーなので正しく取得可能
+            const cA = allData[idA];
+            const cB = allData[idB];
 
+            // 以下のpartner判定もIDで行われることになります
             if (cA && cA.duo_conversations) {
-                const pair = cA.duo_conversations.find(p => p.partner === nB);
+                const pair = cA.duo_conversations.find(p => p.partner === idB);
                 if (pair && pair.scripts && pair.scripts.length > 0) {
                     pair.scripts.forEach(s => window.addConvRow(s));
                     return;
                 }
             }
             if (cB && cB.duo_conversations) {
-                const pairRev = cB.duo_conversations.find(p => p.partner === nA);
+                const pairRev = cB.duo_conversations.find(p => p.partner === idA);
                 if (pairRev && pairRev.scripts && pairRev.scripts.length > 0) {
                     pairRev.scripts.forEach(s => window.addConvRow({
                         a: s.b, b: s.a, situation: s.situation
@@ -434,9 +441,9 @@
         };
 
         window.saveDuo = async () => {
-            const nA = document.getElementById('char-a').value;
-            const nB = document.getElementById('char-b').value;
-            if (!nA || !nB || nA === nB) return alert("ペア設定が無効です");
+            const idA = document.getElementById('char-a').value;
+            const idB = document.getElementById('char-b').value;
+            if (!idA || !idB || idA === idB) return alert("ペア設定が無効です");
 
             const rawScripts = [];
             document.querySelectorAll('.conv-row').forEach(row => {
@@ -448,20 +455,21 @@
                 }
             });
 
-            const recordForA = createDuoConversationRecord(nB, rawScripts);
-            const updatedA = updateDuoConversation(allData[nA], recordForA);
-            allData[nA] = updatedA;
+            // 保存処理 (IDをパートナーとして記録します)
+            const recordForA = createDuoConversationRecord(idB, rawScripts);
+            const updatedA = updateDuoConversation(allData[idA], recordForA);
+            allData[idA] = updatedA;
 
             const invertedScripts = rawScripts.map(s => ({
                 a: s.b, b: s.a, situation: s.situation
             }));
-            const recordForB = createDuoConversationRecord(nA, invertedScripts);
-            const updatedB = updateDuoConversation(allData[nB], recordForB);
-            allData[nB] = updatedB;
+            const recordForB = createDuoConversationRecord(idA, invertedScripts);
+            const updatedB = updateDuoConversation(allData[idB], recordForB);
+            allData[idB] = updatedB;
 
             await Promise.all([ saveToCloud(updatedA), saveToCloud(updatedB) ]);
 
-            // alert(`完了！\n[${nA}] と [${nB}] の両方に会話を記録しました！`);
+            alert(`完了！\n両方のキャラクターに会話を記録しました！`);
         };
     </script>
 </body>
