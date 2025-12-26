@@ -5,7 +5,7 @@ import {
     getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, addDoc, query, where, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ▼もしご自身の環境でキーを変えている場合は、ここを元の値に戻してください
+// 設定 (変更なし)
 const firebaseConfig = {
   apiKey: "AIzaSyBZVh6NhFA_BSuyUW-sZV2QPSvSzdYJZWU",
   authDomain: "chocolatmer-uchiyoso.firebaseapp.com",
@@ -22,8 +22,7 @@ const provider = new GoogleAuthProvider();
 
 let currentUser = null;
 
-// --- 認証機能 ---
-
+// --- 認証 ---
 export function login() {
     signInWithPopup(auth, provider)
         .then((result) => alert("ログインしました: " + result.user.displayName))
@@ -43,20 +42,19 @@ export function monitorAuth(onLogin, onLogout) {
 }
 
 // --- データベース設定 ---
-// ★重要: ここをご自身で変更していた場合、元の名前に戻さないとデータが読み込めません
 const SHARED_COLLECTION = "rooms";
 const SHARED_DOC_ID = "couple_shared_data";
 const CHAR_SUB_COLLECTION = "characters"; 
 
-// --- キャラクター機能 (保存・読み込み・削除) ---
+// --- キャラクター操作 (ID管理版) ---
 
-// 保存 (ID基準)
+// 保存: IDをファイル名として保存
 export async function saveToCloud(charData) {
     if (!currentUser) return alert("保存にはログインが必要です。");
     if (!charData || !charData.id) return alert("データエラー: IDがありません。");
 
     try {
-        // IDをファイル名として保存
+        // IDをキーにして保存（名前が変わってもファイルは同じまま）
         const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charData.id);
         await setDoc(charRef, charData, { merge: true });
         alert("保存完了: " + charData.name);
@@ -66,7 +64,7 @@ export async function saveToCloud(charData) {
     }
 }
 
-// 読み込み (ID対応・旧データ互換機能付き)
+// 読み込み: 全データを取得し、IDで整理
 export async function loadFromCloud() {
     if (!currentUser) return alert("読み込みにはログインが必要です。");
 
@@ -78,7 +76,7 @@ export async function loadFromCloud() {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             
-            // ★救済処置: 古いデータでIDがない場合、ファイル名(doc.id)をIDとする
+            // 重要: 古いデータ(IDがない)場合、ファイル名をIDとして扱う救済処置
             if (!data.id) {
                 data.id = docSnap.id;
             }
@@ -95,7 +93,7 @@ export async function loadFromCloud() {
     }
 }
 
-// 削除 (ID指定)
+// 削除: IDを指定してファイルを消す
 export async function deleteFromCloud(charId) {
     if (!currentUser || !charId) return;
     try {
@@ -109,9 +107,8 @@ export async function deleteFromCloud(charId) {
     }
 }
 
-// --- シナリオ機能 (復活分) ---
+// --- シナリオ機能 ---
 
-// シナリオ保存
 export async function saveScenario(scenarioData) {
     if (!currentUser) throw new Error("User not logged in");
     const dataToSave = {
@@ -127,7 +124,6 @@ export async function saveScenario(scenarioData) {
     }
 }
 
-// キャラクターIDからシナリオ取得
 export async function getScenariosForCharacter(charId) {
     if (!currentUser) return [];
     try {
