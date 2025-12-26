@@ -494,30 +494,36 @@
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
 
-            // パターン1: 左側のキャラ(char1)が会話データを持っている場合
-            if (char1.duo_conversations) {
-                const pair = char1.duo_conversations.find(p => p.partner === char2.name);
+            // 名前の前後の空白を削除して比較精度を上げる
+            const name1 = char1.name.trim();
+            const name2 = char2.name.trim();
+
+            // ■ パターン1: 左側(char1)のデータから「相手が右側(char2)」の会話を探す
+            if (char1.duo_conversations && Array.isArray(char1.duo_conversations)) {
+                // partner名も空白削除して比較
+                const pair = char1.duo_conversations.find(p => p.partner && p.partner.trim() === name2);
+                
                 if (pair && pair.scripts && pair.scripts.length > 0) {
-                    // ★修正: 先にランダムで1つの「会話ペア」を確定させる
+                    console.log(`[DUO FOUND] ${name1} -> ${name2}`);
+                    // ランダムで1つ選出してセットで返す
                     const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
-                    // そのペアの A と B を取り出す
                     return { text1: script.a, text2: script.b };
                 }
             }
 
-            // パターン2: 右側のキャラ(char2)が会話データを持っている場合
-            // (保存時は両方に保存しているため、基本的にはパターン1で見つかるはずですが、念のためのバックアップ)
-            if (char2.duo_conversations) {
-                const pair = char2.duo_conversations.find(p => p.partner === char1.name);
+            // ■ パターン2: 右側(char2)のデータから「相手が左側(char1)」の会話を探す
+            if (char2.duo_conversations && Array.isArray(char2.duo_conversations)) {
+                const pair = char2.duo_conversations.find(p => p.partner && p.partner.trim() === name1);
+                
                 if (pair && pair.scripts && pair.scripts.length > 0) {
-                    // ★修正: こちらも同様にペアを確定させる
+                    console.log(`[DUO FOUND (REV)] ${name2} -> ${name1}`);
                     const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
-                    
-                    // データ所持者がchar2(右)なので、script.aが「自分(右)」、script.bが「相手(左)」
-                    // 画面上の text1(左), text2(右) にあわせて入れ替える
+                    // データ持ち主が右(char2)なので、text2が自分(a)、text1が相手(b)
                     return { text1: script.b, text2: script.a };
                 }
             }
+            
+            // 見つからなければnullを返し、汎用会話や自己紹介にフォールバックする
             return null;
         }
 
