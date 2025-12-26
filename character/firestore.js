@@ -1,10 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// ★不足していた addDoc, query, where, serverTimestamp などを追加しました
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, addDoc, query, where, serverTimestamp } 
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, addDoc, query, where, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// ▼もしご自身の環境でキーを変えている場合は、ここを元の値に戻してください
 const firebaseConfig = {
   apiKey: "AIzaSyBZVh6NhFA_BSuyUW-sZV2QPSvSzdYJZWU",
   authDomain: "chocolatmer-uchiyoso.firebaseapp.com",
@@ -14,7 +15,6 @@ const firebaseConfig = {
   appId: "1:251681036234:web:be56156da1210d45afe133"
 };
 
-// 初期化処理
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -26,70 +26,49 @@ let currentUser = null;
 
 export function login() {
     signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Logged in:", result.user.email);
-            alert("ログインしました: " + result.user.displayName);
-        }).catch((error) => {
-            console.error(error);
-            alert("ログインに失敗しました: " + error.message);
-        });
+        .then((result) => alert("ログインしました: " + result.user.displayName))
+        .catch((error) => alert("ログイン失敗: " + error.message));
 }
 
 export function logout() {
-    signOut(auth).then(() => {
-        alert("ログアウトしました");
-    });
+    signOut(auth).then(() => alert("ログアウトしました"));
 }
 
 export function monitorAuth(onLogin, onLogout) {
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
-        if (user) {
-            if(onLogin) onLogin(user);
-        } else {
-            if(onLogout) onLogout();
-        }
+        if (user) { if(onLogin) onLogin(user); }
+        else { if(onLogout) onLogout(); }
     });
 }
 
-// --- データベース機能 (キャラクター) ---
-
+// --- データベース設定 ---
+// ★重要: ここをご自身で変更していた場合、元の名前に戻さないとデータが読み込めません
 const SHARED_COLLECTION = "rooms";
 const SHARED_DOC_ID = "couple_shared_data";
 const CHAR_SUB_COLLECTION = "characters"; 
 
-// 保存 (SAVE) - IDを基準に保存するように修正
+// --- キャラクター機能 (保存・読み込み・削除) ---
+
+// 保存 (ID基準)
 export async function saveToCloud(charData) {
-    if (!currentUser) {
-        alert("エラー: データの保存にはログインが必要です。");
-        return;
-    }
-    if (!charData || !charData.id) {
-        alert("エラー: IDがありません。保存できません。");
-        return;
-    }
+    if (!currentUser) return alert("保存にはログインが必要です。");
+    if (!charData || !charData.id) return alert("データエラー: IDがありません。");
 
     try {
-        // ★修正点: 名前(name)ではなく、IDをファイル名として保存します
-        // これにより名前を変更してもファイルが増殖しません
+        // IDをファイル名として保存
         const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charData.id);
-        
         await setDoc(charRef, charData, { merge: true });
-        
-        alert("保存が完了しました: " + charData.name);
-        
+        alert("保存完了: " + charData.name);
     } catch (e) {
-        console.error("Error adding document: ", e);
+        console.error("Save Error:", e);
         alert("保存エラー: " + e.message);
     }
 }
 
-// 読み込み (LOAD) - ID対応
+// 読み込み (ID対応・旧データ互換機能付き)
 export async function loadFromCloud() {
-    if (!currentUser) {
-        alert("エラー: データの読み込みにはログインが必要です。");
-        return null;
-    }
+    if (!currentUser) return alert("読み込みにはログインが必要です。");
 
     try {
         const colRef = collection(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION);
@@ -99,63 +78,48 @@ export async function loadFromCloud() {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             
-            // ★重要: 古いデータ(IDがない)場合、ドキュメント名をIDとして扱う救済処置
+            // ★救済処置: 古いデータでIDがない場合、ファイル名(doc.id)をIDとする
             if (!data.id) {
                 data.id = docSnap.id;
             }
-
-            // IDをキーにしてデータを格納
+            
             loadedData[data.id] = data;
         });
-
-        if (Object.keys(loadedData).length === 0) {
-            console.log("データが見つかりませんでした。");
-        }
-
+        
         return loadedData;
 
     } catch (e) {
-        console.error("Error loading document: ", e);
+        console.error("Load Error:", e);
         alert("読み込みエラー: " + e.message);
         return null;
     }
 }
 
-// 削除 (DELETE) - ID基準に修正
+// 削除 (ID指定)
 export async function deleteFromCloud(charId) {
-    if (!currentUser) return;
-    if (!charId) return;
-
+    if (!currentUser || !charId) return;
     try {
-        // ★修正点: 名前ではなくIDを指定して削除します
         const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charId);
         await deleteDoc(charRef);
-        
         alert("削除しました。");
         location.reload(); 
-
     } catch (e) {
-        console.error("Delete error:", e);
+        console.error("Delete Error:", e);
         alert("削除エラー: " + e.message);
     }
 }
 
-// --- シナリオデータ (Scenarios) ---
-// ★以下、削除されていたコードを復旧しました
+// --- シナリオ機能 (復活分) ---
 
-// シナリオを新規保存 (scenariosコレクション)
+// シナリオ保存
 export async function saveScenario(scenarioData) {
     if (!currentUser) throw new Error("User not logged in");
-    
-    // サーバー時間を付与
     const dataToSave = {
         ...scenarioData,
         updatedAt: serverTimestamp()
     };
-
     try {
         const docRef = await addDoc(collection(db, "scenarios"), dataToSave);
-        console.log("Scenario saved ID:", docRef.id);
         return docRef.id;
     } catch (e) {
         console.error("Error adding scenario: ", e);
@@ -163,11 +127,10 @@ export async function saveScenario(scenarioData) {
     }
 }
 
-// キャラクターIDからシナリオを取得
+// キャラクターIDからシナリオ取得
 export async function getScenariosForCharacter(charId) {
     if (!currentUser) return [];
     try {
-        // 参加メンバー(members配列)にcharIdが含まれているものを検索
         const q = query(
             collection(db, "scenarios"),
             where("members", "array-contains", charId)
@@ -177,7 +140,6 @@ export async function getScenariosForCharacter(charId) {
         querySnapshot.forEach((doc) => {
             scenarios.push({ id: doc.id, ...doc.data() });
         });
-        // 日付順ソート (新しい順)
         return scenarios.sort((a, b) => new Date(b.date) - new Date(a.date));
     } catch (e) {
         console.error(e);
