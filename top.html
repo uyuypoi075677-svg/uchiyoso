@@ -494,36 +494,45 @@
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
 
-            // 名前の前後の空白を削除して比較精度を上げる
-            const name1 = char1.name.trim();
-            const name2 = char2.name.trim();
+            // 名前とIDの両方を取得して比較用にする
+            const name1 = char1.name ? char1.name.trim() : "";
+            const id1 = char1.id; // Firestoreから読み込み時に付与されているID
+            
+            const name2 = char2.name ? char2.name.trim() : "";
+            const id2 = char2.id;
 
-            // ■ パターン1: 左側(char1)のデータから「相手が右側(char2)」の会話を探す
+            // ■ パターン1: 左側(char1)のデータから「相手(char2)」を探す
             if (char1.duo_conversations && Array.isArray(char1.duo_conversations)) {
-                // partner名も空白削除して比較
-                const pair = char1.duo_conversations.find(p => p.partner && p.partner.trim() === name2);
+                // partnerが「相手の名前」または「相手のID」と一致するものを探す
+                const pair = char1.duo_conversations.find(p => {
+                    if (!p.partner) return false;
+                    const pVal = p.partner.trim();
+                    return pVal === name2 || pVal === id2;
+                });
                 
                 if (pair && pair.scripts && pair.scripts.length > 0) {
-                    console.log(`[DUO FOUND] ${name1} -> ${name2}`);
-                    // ランダムで1つ選出してセットで返す
+                    console.log(`[DUO MATCH] ${char1.name} -> ${char2.name}`);
                     const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
                     return { text1: script.a, text2: script.b };
                 }
             }
 
-            // ■ パターン2: 右側(char2)のデータから「相手が左側(char1)」の会話を探す
+            // ■ パターン2: 右側(char2)のデータから「相手(char1)」を探す
             if (char2.duo_conversations && Array.isArray(char2.duo_conversations)) {
-                const pair = char2.duo_conversations.find(p => p.partner && p.partner.trim() === name1);
+                const pair = char2.duo_conversations.find(p => {
+                    if (!p.partner) return false;
+                    const pVal = p.partner.trim();
+                    return pVal === name1 || pVal === id1;
+                });
                 
                 if (pair && pair.scripts && pair.scripts.length > 0) {
-                    console.log(`[DUO FOUND (REV)] ${name2} -> ${name1}`);
+                    console.log(`[DUO MATCH (REV)] ${char2.name} -> ${char1.name}`);
                     const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
-                    // データ持ち主が右(char2)なので、text2が自分(a)、text1が相手(b)
+                    // データ持ち主が右(char2)なので、a=自分(右), b=相手(左)
                     return { text1: script.b, text2: script.a };
                 }
             }
             
-            // 見つからなければnullを返し、汎用会話や自己紹介にフォールバックする
             return null;
         }
 
