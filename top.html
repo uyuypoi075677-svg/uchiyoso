@@ -493,13 +493,30 @@
 
         function getDuoConversation(char1, char2) {
             if (!char1 || !char2) return null;
+
+            // パターン1: 左側のキャラ(char1)が会話データを持っている場合
             if (char1.duo_conversations) {
                 const pair = char1.duo_conversations.find(p => p.partner === char2.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random() * pair.scripts.length)].a, text2: pair.scripts[Math.floor(Math.random() * pair.scripts.length)].b };
+                if (pair && pair.scripts && pair.scripts.length > 0) {
+                    // ★修正: 先にランダムで1つの「会話ペア」を確定させる
+                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
+                    // そのペアの A と B を取り出す
+                    return { text1: script.a, text2: script.b };
+                }
             }
+
+            // パターン2: 右側のキャラ(char2)が会話データを持っている場合
+            // (保存時は両方に保存しているため、基本的にはパターン1で見つかるはずですが、念のためのバックアップ)
             if (char2.duo_conversations) {
                 const pair = char2.duo_conversations.find(p => p.partner === char1.name);
-                if (pair && pair.scripts && pair.scripts.length > 0) return { text1: pair.scripts[Math.floor(Math.random() * pair.scripts.length)].b, text2: pair.scripts[Math.floor(Math.random() * pair.scripts.length)].a };
+                if (pair && pair.scripts && pair.scripts.length > 0) {
+                    // ★修正: こちらも同様にペアを確定させる
+                    const script = pair.scripts[Math.floor(Math.random() * pair.scripts.length)];
+                    
+                    // データ所持者がchar2(右)なので、script.aが「自分(右)」、script.bが「相手(左)」
+                    // 画面上の text1(左), text2(右) にあわせて入れ替える
+                    return { text1: script.b, text2: script.a };
+                }
             }
             return null;
         }
