@@ -1,9 +1,10 @@
-// --- firestore.js (サブコレクション対応・修正版) ---
+// --- firestore.js (修正済み: import不足を解消) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// ★必要な機能を追加しました (collection, getDocs, deleteDoc)
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } 
+
+// ★修正: addDoc, serverTimestamp, query, where を追加しました
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, addDoc, serverTimestamp, query, where } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -29,7 +30,7 @@ export function login() {
     signInWithPopup(auth, provider)
         .then((result) => {
             console.log("Logged in:", result.user.email);
-            alert("ログインしました: " + result.user.displayName);
+            // alert("ログインしました: " + result.user.displayName); // 必要ならコメントアウト解除
         }).catch((error) => {
             console.error(error);
             alert("ログインに失敗しました: " + error.message);
@@ -57,7 +58,6 @@ export function monitorAuth(onLogin, onLogout) {
 
 const SHARED_COLLECTION = "rooms";
 const SHARED_DOC_ID = "couple_shared_data";
-// ★重要: ここでフォルダ名を指定します。もし読み込めない場合は "data" などを試してください
 const CHAR_SUB_COLLECTION = "characters"; 
 
 // 保存 (SAVE CLOUD)
@@ -72,44 +72,44 @@ export async function saveToCloud(charData) {
     }
 
     try {
-        // キャラクターごとの専用ファイルに保存する方式に戻しました
+        // キャラクターごとの専用ファイル(ドキュメント)に保存
         const charRef = doc(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION, charData.name);
-        
         await setDoc(charRef, charData, { merge: true });
         
-        // 日本語で保存完了を表示
-        alert("保存が完了しました: " + charData.name);
+        console.log("保存完了: " + charData.name);
         
     } catch (e) {
         console.error("Error adding document: ", e);
         alert("保存エラー: " + e.message);
+        throw e; // エラーを呼び出し元に伝える
     }
 }
 
 // 読み込み (LOAD CLOUD)
 export async function loadFromCloud() {
     if (!currentUser) {
-        alert("エラー: データの読み込みにはログインが必要です。");
+        // alert("エラー: データの読み込みにはログインが必要です。"); // 頻繁に出ると邪魔なのでコンソールへ
+        console.log("Login required for loading.");
         return null;
     }
 
     try {
-        // フォルダ内の全ファイルを一括取得する方式に戻しました
+        // charactersフォルダ内の全ファイルを一括取得
         const colRef = collection(db, SHARED_COLLECTION, SHARED_DOC_ID, CHAR_SUB_COLLECTION);
         const querySnapshot = await getDocs(colRef);
 
         const loadedData = {};
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            if(data.name) {
-                loadedData[data.name] = data;
+            // 名前をキーにして保存
+            const key = data.id || data.name; // IDがあればID、なければ名前
+            if(key) {
+                loadedData[key] = data; // ここで { "名前": データ } または { "ID": データ } の形にする
             }
         });
 
-        // データが空っぽだった場合の確認ログ
-        if (Object.keys(loadedData).length === 0) {
-            console.log("データが見つかりませんでした。(コレクション名が違う可能性があります)");
-        }
+        // データ確認用ログ
+        console.log("Loaded Characters:", Object.keys(loadedData));
 
         return loadedData;
 
@@ -134,7 +134,7 @@ export async function deleteFromCloud(charName) {
         await deleteDoc(charRef);
         
         alert("削除しました: " + charName);
-        location.reload(); // 画面更新
+        location.reload(); 
 
     } catch (e) {
         console.error("Delete error:", e);
@@ -156,6 +156,7 @@ export async function saveScenario(scenarioData) {
     };
 
     try {
+        // ★ここが以前エラーになっていた箇所です（addDoc）
         const docRef = await addDoc(collection(db, "scenarios"), dataToSave);
         console.log("Scenario saved ID:", docRef.id);
         return docRef.id;
@@ -169,6 +170,7 @@ export async function saveScenario(scenarioData) {
 export async function getScenariosForCharacter(charId) {
     if (!currentUser) return [];
     try {
+        // ★ここも以前エラーになっていました（query, where）
         const q = query(
             collection(db, "scenarios"),
             where("members", "array-contains", charId)
